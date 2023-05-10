@@ -2,8 +2,7 @@ import numpy as np
 import ufl
 from dolfinx_materials.quadrature_map import QuadratureMap
 from dolfinx_materials.materials.python import (
-    LinearElasticIsotropic,
-    ElastoPlasticIsotropicHardening,
+   RambergOsgood
 )
 from petsc4py import PETSc
 from mpi4py import MPI
@@ -61,25 +60,17 @@ def strain(u):
         ]
     )
 
-
-elastic_model = LinearElasticIsotropic(70e3, 0.0)
+E = 70e3
+nu = 0.3
 sig0 = 500.0
-sigu = 750.0
-omega = 1.0
+alpha = 2e-3*E/sig0
+n = 1.
+mat_nonlinear_elastic = RambergOsgood(E, nu, sig0, n, alpha)
 
 
-def yield_stress(p):
-    # return sigu + (sig0 - sigu) * np.exp(-p * omega)
-    return 100. + 2e2*p
 
-
-mat_elastoplastic = ElastoPlasticIsotropicHardening(elastic_model, yield_stress)
-
-
-qmap = QuadratureMap(domain, deg_quad, strain(u), mat_elastoplastic)
+qmap = QuadratureMap(domain, deg_quad, strain(u), mat_nonlinear_elastic)
 eps = qmap.add_parameter(dim=6, name="eps")
-eps_p = qmap.add_parameter(dim=6, name="eps_p")
-p = qmap.add_parameter(name="p")
 sig = qmap.add_parameter(dim=6, name="sig")
 print(qmap.parameters)
 
@@ -117,18 +108,19 @@ snes.getKSP().setMonitor(monitor)
 snes.getKSP().getPC().setType("lu")
 
 N = 10
-Exx = np.concatenate(
-    (
-        np.linspace(0, 2e-2, N + 1),
-        np.linspace(2e-2, 1e-2, N + 1)[1:],
-        np.linspace(1e-2, 3e-2, N + 1)[1:],
-    )
-)
+Exx = np.linspace(0, 2e-2, N + 1)
+# Exx = np.concatenate(
+#     (
+#         np.linspace(0, 2e-2, N + 1),
+#         np.linspace(2e-2, 1e-2, N + 1)[1:],
+#         np.linspace(1e-2, 3e-2, N + 1)[1:],
+#     )
+# )
 Sxx = np.zeros_like(Exx)
 for i, exx in enumerate(Exx[1:]):
     Eps.value = [exx, 0.0]
     print("Exx=", exx)
-    sxx = elastic_model.E * exx
+    sxx = E * exx
     print("Sxx=", sxx)
     snes.solve(None, u.vector)
     qmap.advance()

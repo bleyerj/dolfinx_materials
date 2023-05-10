@@ -7,6 +7,10 @@ def Identity(d):
     return np.eye(d * (d + 1) // 2)
 
 
+def J():
+    A = 1/3.*np.ones((3, 3))
+    return sl.block_diag(J, np.zeros((3,3)))
+
 def K():
     A = np.array(
         [

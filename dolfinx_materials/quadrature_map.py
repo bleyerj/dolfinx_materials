@@ -123,7 +123,7 @@ class QuadratureMap:
         g_vals = self.get_gradient_vals()
         flux_vals = np.zeros_like(get_vals(self.flux))
         Ct_vals = np.zeros_like(get_vals(self.jacobian_flatten))
-        param_vals = {
+        self.final_state = {
             key: np.zeros_like(get_vals(param))
             for key, param in self.parameters.items()
         }
@@ -142,10 +142,12 @@ class QuadratureMap:
                 )
                 Ct_vals[:, dof] = Ct_vals_mat.flatten()
 
-                for key, p in param_vals.items():
+                for key, p in self.final_state.items():
                     p[:, dof] = new_state[key]
 
-        for key in self.parameters.keys():
-            update_vals(self.parameters[key], param_vals[key])
         update_vals(self.flux, flux_vals)
         update_vals(self.jacobian_flatten, Ct_vals)
+
+    def advance(self):
+        for key in self.parameters.keys():
+            update_vals(self.parameters[key], self.final_state[key])
