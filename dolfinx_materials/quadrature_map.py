@@ -4,6 +4,10 @@ import numpy as np
 from dolfinx import fem
 
 
+def create_scalar_quadrature_space(mesh, degree):
+    return create_vector_quadrature_space(mesh, degree, 1)
+
+
 def create_vector_quadrature_space(mesh, degree, dim):
     if dim > 0:
         We = ufl.VectorElement(
@@ -13,15 +17,9 @@ def create_vector_quadrature_space(mesh, degree, dim):
             dim=dim,
             quad_scheme="default",
         )
+        return fem.FunctionSpace(mesh, We)
     else:
-        We = ufl.FiniteElement(
-            "Quadrature",
-            mesh.ufl_cell(),
-            degree=degree,
-            quad_scheme="default",
-        )
-
-    return fem.FunctionSpace(mesh, We)
+        raise ValueError("Vector dimension should be at least 1.")
 
 
 def create_tensor_quadrature_space(mesh, degree, shape):
@@ -46,7 +44,7 @@ def update_vals(fun, array):
 
 
 class QuadratureMap:
-    def __init__(self, mesh, deg, g, dim=None):
+    def __init__(self, mesh, deg, g, material, dim=None):
         # Define mesh and cells
         self.mesh = mesh
         map_c = mesh.topology.index_map(mesh.topology.dim)
@@ -66,16 +64,27 @@ class QuadratureMap:
         self.dim = (f_dim, g_dim)
         self.degree = deg
 
+        self.material = material
+
         self.Wg = create_vector_quadrature_space(self.mesh, self.degree, g_dim)
         self.Wf = create_vector_quadrature_space(self.mesh, self.degree, f_dim)
         self.WJ = create_vector_quadrature_space(self.mesh, self.degree, g_dim * f_dim)
         self.gradient = fem.Function(self.Wg)
         self.flux = fem.Function(self.Wf)
-        self.jacobian = fem.Function(self.WJ)
+        self.jacobian_flatten = fem.Function(self.WJ)
+        self.jacobian = ufl.as_matrix(
+            [
+                [self.jacobian_flatten[i + g_dim * j] for i in range(g_dim)]
+                for j in range(f_dim)
+            ]
+        )
         self.parameters = {}
 
-    def add_parameter(self, dim, name=None):
-        W = create_vector_quadrature_space(self.mesh, self.degree, dim)
+    def add_parameter(self, dim=None, name=None):
+        if dim is None:
+            W = create_scalar_quadrature_space(self.mesh, self.degree)
+        else:
+            W = create_vector_quadrature_space(self.mesh, self.degree, dim)
         fun = fem.Function(W, name=name)
         self.parameters.update({fun.name: fun})
         return fun
@@ -86,7 +95,6 @@ class QuadratureMap:
         return quadrature_points
 
     def eval_quadrature(self, ufl_expr, fem_func):
-
         expr_expr = fem.Expression(ufl_expr, self.get_quadrature_points())
         expr_eval = expr_expr.eval(self.cells)
         fem_func.vector.array[:] = expr_eval.flatten()[:]
@@ -98,14 +106,11 @@ class QuadratureMap:
         self.eval_gradient()
         return get_vals(self.gradient)
 
-    def update(self, eval_flux, cells=None):
+    def update(self, cells=None):
         if cells is None:
-            self.update_flux([eval_flux], [self.cells])
-        else:
-            assert len(eval_flux) == len(
-                cells
-            ), "Number of eval functions should map number of cell groups."
-            self.update_flux(eval_flux, cells)
+            self.update_flux([self.material.integrate], [self.cells])
+        else:  # FIXME
+            self.update_flux(self.material.integrate, cells)
 
     def _cell_to_dofs(self, cells):
         num_qp = len(self.get_quadrature_points())
@@ -117,28 +122,30 @@ class QuadratureMap:
     def update_flux(self, eval_flux_list, cell_groups):
         g_vals = self.get_gradient_vals()
         flux_vals = np.zeros_like(get_vals(self.flux))
-        Ct_vals = np.zeros_like(get_vals(self.jacobian))
-        print(Ct_vals.shape)
+        Ct_vals = np.zeros_like(get_vals(self.jacobian_flatten))
         param_vals = {
             key: np.zeros_like(get_vals(param))
             for key, param in self.parameters.items()
         }
         for eval_flux, cells in zip(eval_flux_list, cell_groups):
             dofs = self._cell_to_dofs(cells)
-            g_vals_block = g_vals[:, dofs]
 
-            old_state = {
-                key: get_vals(param)[:, dofs] for key, param in self.parameters.items()
-            }
-            flux_vals[:, dofs], Ct_vals_mat, new_state = eval_flux(
-                g_vals_block, old_state
-            )
-            Ct_vals[:, dofs] = Ct_vals_mat.flatten()
+            for dof in dofs:
+                g_vals_block = g_vals[:, dof]
 
-            for key, p in param_vals.items():
-                p[:, dofs] = new_state[key]
+                old_state = {
+                    key: get_vals(param)[:, dof]
+                    for key, param in self.parameters.items()
+                }
+                flux_vals[:, dof], Ct_vals_mat, new_state = eval_flux(
+                    g_vals_block, old_state
+                )
+                Ct_vals[:, dof] = Ct_vals_mat.flatten()
+
+                for key, p in param_vals.items():
+                    p[:, dof] = new_state[key]
 
         for key in self.parameters.keys():
             update_vals(self.parameters[key], param_vals[key])
         update_vals(self.flux, flux_vals)
-        update_vals(self.jacobian, Ct_vals)
+        update_vals(self.jacobian_flatten, Ct_vals)

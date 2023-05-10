@@ -3,7 +3,7 @@ from .elasticity import LinearElasticIsotropic
 
 
 class LinearViscoElasticity:
-    def __init__(self, branch1, branch2, eta, nud, dt):
+    def __init__(self, branch1, branch2, eta, nud, dt=0):
         self.branch1 = branch1  # should be a LinearElastic material
         self.branch2 = branch2  # should be a LinearElastic material
         self.eta = eta
@@ -14,10 +14,11 @@ class LinearViscoElasticity:
     def integrate(self, eps, state):
         epsv_old = state["epsv"]
         Id = np.eye(6)
-        A = np.linalg.inv(Id + self.dt * self.Cd)
-        epsv_new = A @ (epsv_old + self.dt * self.Cd @ eps)
+        iTau = self.branch2.C @ np.linalg.inv(self.Cd)
+        A = np.linalg.inv(Id + self.dt * iTau)
+        epsv_new = A @ (epsv_old + self.dt * iTau @ eps)
         sig = self.branch1.C @ eps + self.branch2.C @ (eps - epsv_new)
-        Ct = self.branch1.C + self.branch2.C @ (Id - self.dt * A @ self.Cd)
+        Ct = self.branch1.C + self.branch2.C @ (Id - self.dt * A @ iTau)
 
         new_state = state.copy()
         new_state["epsv"] = epsv_new
