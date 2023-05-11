@@ -17,6 +17,10 @@ V = fem.VectorFunctionSpace(domain, ("CG", 1))
 deg_quad = 1
 
 
+def bottom(x):
+    return np.isclose(x[1], 0)
+
+
 def left(x):
     return np.isclose(x[0], 0)
 
@@ -41,6 +45,24 @@ bcs = [
     # fem.dirichletbc(Eps2, middle_dofs, V),
 ]
 
+
+V_ux, mapping = V.sub(1).collapse()
+left_dofs_ux = fem.locate_dofs_geometrical((V.sub(0), V_ux), left)
+right_dofs_ux = fem.locate_dofs_geometrical((V.sub(0), V_ux), right)
+V_uy, mapping = V.sub(1).collapse()
+bottom_dofs_uy = fem.locate_dofs_geometrical((V.sub(1), V_uy), bottom)
+
+Eps = fem.Constant(domain, 0.0)
+uD_x = fem.Function(V_ux)
+uD_y = fem.Function(V_uy)
+uD_x_r = fem.Function(V_ux)
+bcs = [
+    fem.dirichletbc(uD_x, left_dofs_ux, V.sub(0)),
+    fem.dirichletbc(uD_y, bottom_dofs_uy, V.sub(1)),
+    fem.dirichletbc(uD_x_r, right_dofs_ux, V.sub(0)),
+]
+
+
 du = ufl.TrialFunction(V)
 v = ufl.TestFunction(V)
 u = fem.Function(V)
@@ -62,15 +84,15 @@ def strain(u):
     )
 
 
-elastic_model = LinearElasticIsotropic(70e3, 0.0)
+elastic_model = LinearElasticIsotropic(70e3, 0.3)
 sig0 = 500.0
 sigu = 750.0
-omega = 1.0
+omega = 100.0
 
 
 def yield_stress(p):
-    # return sigu + (sig0 - sigu) * np.exp(-p * omega)
-    return 100. + 2e2*p
+    return sigu + (sig0 - sigu) * np.exp(-p * omega)
+    # return 100.0 + 0e3 * p
 
 
 mat_elastoplastic = ElastoPlasticIsotropicHardening(elastic_model, yield_stress)
@@ -88,7 +110,7 @@ cells = qmap.cells
 Res = ufl.dot(qmap.flux, strain(v)) * qmap.dx
 Jac = ufl.dot(strain(du), ufl.dot(qmap.jacobian, strain(v))) * qmap.dx
 
-from dolfinx_materials.solvers import SNESProblem
+from dolfinx_materials.solvers import SNESProblem, CustomNewton
 
 
 problem = SNESProblem(qmap, Res, Jac, u, bcs)
@@ -101,15 +123,21 @@ snes = PETSc.SNES().create()
 snes.setFunction(problem.F, b)
 snes.setJacobian(problem.J, J)
 
-snes.setTolerances(rtol=1.0e-6, atol=1.0e-6, max_it=10)
+snes.setTolerances(rtol=1.0e-6, atol=1.0e-6, max_it=1000)
 snes.getKSP().setType("preonly")
 snes.getKSP().setTolerances(rtol=1.0e-6)
+
+newton = CustomNewton(qmap, Res, Jac, u, bcs)
+solver = PETSc.KSP().create(domain.comm)
+solver.setType(PETSc.KSP.Type.PREONLY)
+solver.getPC().setType(PETSc.PC.Type.LU)
+
 
 reshist = {}
 
 
 def monitor(ksp, its, rnorm):
-    print("  Residual:", rnorm)
+    print(f"Iteration {its}  Residual:", rnorm)
     reshist[its] = rnorm
 
 
@@ -124,16 +152,17 @@ Exx = np.concatenate(
         np.linspace(1e-2, 3e-2, N + 1)[1:],
     )
 )
+# Exx = np.linspace(0, 1e-2, 20)
 Sxx = np.zeros_like(Exx)
 for i, exx in enumerate(Exx[1:]):
-    Eps.value = [exx, 0.0]
+    uD_x_r.vector.array[:] = exx
     print("Exx=", exx)
     sxx = elastic_model.E * exx
     print("Sxx=", sxx)
-    snes.solve(None, u.vector)
-    qmap.advance()
+    # it = snes.solve(None, u.vector)
+    converged, it = newton.solve(solver)
     print("Flux", qmap.flux.vector.array)
-    print("Finished.")
+    print(f"Finished in {it} iterations.")
     Sxx[i + 1] = qmap.flux.vector.array[0]
     # break
 

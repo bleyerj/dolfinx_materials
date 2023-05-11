@@ -145,6 +145,7 @@ class QuadratureMap:
                 for key, p in self.final_state.items():
                     p[:, dof] = new_state[key]
 
+        # self.advance()
         update_vals(self.flux, flux_vals)
         update_vals(self.jacobian_flatten, Ct_vals)
 

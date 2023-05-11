@@ -27,16 +27,23 @@ class ElastoPlasticIsotropicHardening:
         sig_eq_el = np.sqrt(3 / 2.0) * np.linalg.norm(s_el)
         yield_criterion = sig_eq_el - sig_Y_old
         print("Yield:", yield_criterion)
-        if yield_criterion > 0:
+        if yield_criterion >= 0:
             dp = fsolve(
                 lambda dp: sig_eq_el - 3 * mu * dp - self.yield_stress(p_old + dp), 0.0
             )
-            print(dp)
             # dp = yield_criterion / (3 * mu + self.hardening_modulus)
-            depsp = 3 / 2 / sig_eq_el * s_el * dp
+            n_el = s_el / sig_eq_el  # normal vector
+            depsp = 3 / 2 * n_el * dp
+            sig_Y_new = self.yield_stress(p_old + dp)
+            dR_dp = (sig_Y_new - sig_Y_old) / dp
+            beta = 1 - sig_Y_new / sig_eq_el
+            gamma = 3 * mu / (3 * mu + dR_dp)
+            D = 3 * mu * (gamma - beta) * np.outer(n_el, n_el) + 2 * mu * beta * K()
+            Ct = C - D
         else:
             dp = 0
             depsp = 0 * s_el
+            Ct = C
         sig = sig_el - 2 * mu * K() @ depsp
         print("New sig", sig)
         new_state = state.copy()
@@ -44,4 +51,4 @@ class ElastoPlasticIsotropicHardening:
         new_state["eps_p"] = epsp_old + depsp
         new_state["p"] = p_old + dp
         new_state["sig"] = sig
-        return sig, C, new_state
+        return sig, Ct, new_state

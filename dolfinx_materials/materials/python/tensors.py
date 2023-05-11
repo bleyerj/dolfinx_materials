@@ -8,8 +8,9 @@ def Identity(d):
 
 
 def J():
-    A = 1/3.*np.ones((3, 3))
-    return sl.block_diag(J, np.zeros((3,3)))
+    A = 1 / 3.0 * np.ones((3, 3))
+    return sl.block_diag(A, np.zeros((3, 3)))
+
 
 def K():
     A = np.array(
