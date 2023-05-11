@@ -82,6 +82,13 @@ class QuadratureMap:
         for key, dim in self.material.get_variables().items():
             self._add_variable(dim, key)
 
+        self.set_data_manager(self.cells)
+
+    def set_data_manager(self, cells):
+        dofs = self._cell_to_dofs(cells)
+        self.material.set_data_manager(len(dofs))
+
+
     def _add_variable(self, dim=None, name=None):
         if dim is None:
             W = create_scalar_quadrature_space(self.mesh, self.degree)
@@ -130,21 +137,20 @@ class QuadratureMap:
         }
         for eval_flux, cells in zip(eval_flux_list, cell_groups):
             dofs = self._cell_to_dofs(cells)
-
             for dof in dofs:
                 g_vals_block = g_vals[:, dof]
-
-                old_state = {
-                    key: get_vals(param)[:, dof]
-                    for key, param in self.variables.items()
-                }
-                flux_vals[:, dof], Ct_vals_mat, new_state = eval_flux(
-                    g_vals_block, old_state
+                print(g_vals_block.shape)
+                # old_state = {
+                #     key: get_vals(param)[:, dof]
+                #     for key, param in self.variables.items()
+                # }
+                flux_vals[:, dof], Ct_vals_mat = eval_flux(
+                    g_vals_block
                 )
                 Ct_vals[:, dof] = Ct_vals_mat.flatten()
 
-                for key, p in self.final_state.items():
-                    p[:, dof] = new_state[key]
+                # for key, p in self.final_state.items():
+                #     p[:, dof] = new_state[key]
 
         # self.advance()
         update_vals(self.flux, flux_vals)

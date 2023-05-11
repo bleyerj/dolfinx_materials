@@ -17,6 +17,6 @@ Exx = np.linspace(0, 2e-2, N + 1)
 #         np.linspace(2e-2, 1e-2, N + 1)[1:],
 #         np.linspace(1e-2, 3e-2, N + 1)[1:],
 #     )
-# )
+# ) 
 
 uniaxial_test_2D(material, Exx)

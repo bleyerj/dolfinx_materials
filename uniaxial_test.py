@@ -77,6 +77,6 @@ def uniaxial_test_2D(material, Exx, N=1, order=1):
     plt.plot(Exx, Sxx, "-o")
     plt.xlabel(r"Strain $\varepsilon_{xx}$")
     plt.ylabel(r"Stress $\sigma_{xx}$")
-    plt.savefig(f"{material.__class__.__name__}_stress_strain.pdf")
+    plt.savefig(f"{material.name}_stress_strain.pdf")
 
     return Sxx

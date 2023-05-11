@@ -1,9 +1,9 @@
 import numpy as np
 from .tensors import Identity, K, J
 from scipy.optimize import fsolve
+from .python_material import PythonMaterial
 
-
-class RambergOsgood:
+class RambergOsgood(PythonMaterial):
     def __init__(self, E, nu, sig0, n, alpha, eps_tol=1e-10):
         self.E = E
         self.nu = nu
@@ -11,9 +11,6 @@ class RambergOsgood:
         self.n = n
         self.alpha = alpha
         self.eps_tol = eps_tol
-
-    def get_variables(self):
-        return {"eps": 6, "sig": 6}
 
     def integrate(self, eps, state):
         ed = K() @ eps

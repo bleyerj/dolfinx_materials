@@ -1,27 +1,28 @@
 import numpy as np
 from .elasticity import LinearElasticIsotropic
+from .python_material import PythonMaterial
 from .tensors import Identity, K
 from scipy.optimize import fsolve
 
 
-class ElastoPlasticIsotropicHardening:
+class ElastoPlasticIsotropicHardening(PythonMaterial):
     def __init__(self, elastic_model, yield_stress):
         self.elastic_model = elastic_model
         self.yield_stress = yield_stress
         # self.hardening_modulus = hardening_modulus
         # self.hardening = lambda p: self.hardening_modulus * p
     
-    def get_variables(self):
-        return {"eps": 6, "sig": 6, "eps_p": 6, "p": None}
+    def get_internal_state_variables(self):
+        return {"p": 1}
 
 
-    def integrate(self, eps, state):
-        eps_old = state["eps"]
+    def integrate(self, eps):
+        eps_old = self.data_manager.s0.gradients
         deps = eps - eps_old
-        epsp_old = state["eps_p"]
-        p_old = state["p"]
-        sig_old = state["sig"]
-
+        p_old = self.data_manager.s0.get_internal_state_variable("p")
+        sig_old = self.data_manager.s0.fluxes
+        print(deps.shape)
+        print(p_old.shape)
         lmbda, mu = self.elastic_model.get_Lame_parameters()
         C = self.elastic_model.C
         sig_el = sig_old + C @ deps
@@ -49,7 +50,6 @@ class ElastoPlasticIsotropicHardening:
         sig = sig_el - 2 * mu * K() @ depsp
         new_state = state.copy()
         new_state["eps"] = eps_old + deps
-        new_state["eps_p"] = epsp_old + depsp
         new_state["p"] = p_old + dp
         new_state["sig"] = sig
         return sig, Ct, new_state

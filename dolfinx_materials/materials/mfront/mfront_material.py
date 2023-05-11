@@ -36,6 +36,7 @@ class MFrontNonlinearMaterial:
         material_properties={},
         parameters={},
         rotation_matrix=None,
+        dt=0
     ):
         """
         Parameters
@@ -65,6 +66,8 @@ class MFrontNonlinearMaterial:
         self.hypothesis = mgis_hypothesis[hypothesis]
         self.material_properties = material_properties
         self.rotation_matrix = rotation_matrix
+        self.integration_type = mgis_bv.IntegrationType.IntegrationWithConsistentTangentOperator
+        self.dt = dt
         # Loading the behaviour
         try:
             self.load_behaviour()
@@ -104,16 +107,15 @@ class MFrontNonlinearMaterial:
         else:
             self.behaviour = mgis_bv.load(self.path, self.name, self.hypothesis)
 
-    def set_data_manager(self, degree, ngauss, mesh):
+    def set_data_manager(self, ngauss):
         # Setting the material data manager
         self.data_manager = mgis_bv.MaterialDataManager(self.behaviour, ngauss)
-        self.update_material_properties(degree, mesh)
 
     def update_parameters(self, parameters):
         for key, value in parameters.items():
             self.behaviour.setParameter(key, value)
 
-    def update_material_properties(self, degree, mesh, material_properties=None):
+    def update_material_properties(self, material_properties=None):
         if material_properties is not None:
             self.material_properties = material_properties
         for s in [self.data_manager.s0, self.data_manager.s1]:
@@ -171,6 +173,11 @@ class MFrontNonlinearMaterial:
     def get_flux_names(self):
         return [svar.name for svar in self.behaviour.thermodynamic_forces]
 
+    def get_variables(self):
+        dict_grad = {k: dim for k, dim in zip(self.get_gradient_names(), self.get_gradient_sizes())}
+        dict_flux = {k: dim for k, dim in zip(self.get_flux_names(), self.get_flux_sizes())}
+        return {**dict_grad, **dict_flux}
+
     def get_material_property_sizes(self):
         return [
             mgis_bv.getVariableSize(svar, self.hypothesis)
@@ -209,3 +216,22 @@ class MFrontNonlinearMaterial:
             tuple([mgis_bv.getVariableSize(tt, self.hypothesis) for tt in t])
             for t in self.behaviour.tangent_operator_blocks
         ]
+
+    def integrate(self, eps):
+        for s in [self.data_manager.s0, self.data_manager.s1]:
+            mgis_bv.setExternalStateVariable(s, "Temperature", 293.15)
+        self.update_material_properties()
+        self.data_manager.s1.gradients[:, :] = eps
+        print(dir(self.data_manager.s1))
+        mgis_bv.integrate(self.data_manager, self.integration_type, self.dt, 0, self.data_manager.n)
+
+        buff = 0
+        for (i, s) in enumerate(self.get_internal_state_variable_names()):
+            block_shape = self.get_internal_state_variable_sizes()[i]
+            # state[s] =self.data_manager.s1.internal_state_variables[:, buff:buff + block_shape].flatten()
+            buff += block_shape
+            # print(s, state[s])
+        return self.data_manager.s1.thermodynamic_forces[0],self.data_manager.K[0] #, state
+    
+    def advance(self, state, new_state):
+        mgis_bv.update(self.data_manager)
