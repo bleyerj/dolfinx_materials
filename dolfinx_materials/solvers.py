@@ -62,12 +62,15 @@ class CustomNewton:
             # Compute norm of update
             correction_norm = self.du.vector.norm(0)
             error_norm = self.b.norm(0)
+            if i == 1:
+                error_norm0 = error_norm
+            relative_norm = error_norm / error_norm0
             if print_steps:
                 print(
-                    f"    Iteration {i}: Correction norm {correction_norm}, Residual {error_norm}"
+                    f"    Iteration {i}:  Residual abs: {error_norm} rel: {relative_norm}"
                 )
 
-            if correction_norm < self.tol:
+            if relative_norm < self.tol:
                 converged = True
                 break
 

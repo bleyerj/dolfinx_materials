@@ -9,11 +9,11 @@ import matplotlib.pyplot as plt
 from dolfinx_materials.solvers import CustomNewton
 
 
-def uniaxial_test_2D(material, variables, Exx):
-    domain = mesh.create_unit_square(MPI.COMM_WORLD, 1, 1, mesh.CellType.quadrilateral)
-    V = fem.VectorFunctionSpace(domain, ("CG", 1))
+def uniaxial_test_2D(material, variables, Exx, N=1, order=1):
+    domain = mesh.create_unit_square(MPI.COMM_WORLD, N, N, mesh.CellType.quadrilateral)
+    V = fem.VectorFunctionSpace(domain, ("CG", order))
 
-    deg_quad = 1
+    deg_quad = 2 * (order - 1)
 
     def bottom(x):
         return np.isclose(x[1], 0)
@@ -63,7 +63,7 @@ def uniaxial_test_2D(material, variables, Exx):
     Res = ufl.dot(qmap.flux, strain(v)) * qmap.dx
     Jac = ufl.dot(strain(du), ufl.dot(qmap.jacobian, strain(v))) * qmap.dx
 
-    newton = CustomNewton(qmap, Res, Jac, u, bcs)
+    newton = CustomNewton(qmap, Res, Jac, u, bcs, tol=1e-6)
     solver = PETSc.KSP().create(domain.comm)
     solver.setType(PETSc.KSP.Type.PREONLY)
     solver.getPC().setType(PETSc.PC.Type.LU)

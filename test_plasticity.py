@@ -26,4 +26,4 @@ Exx = np.concatenate(
         np.linspace(1e-2, 3e-2, N + 1)[1:],
     )
 )
-uniaxial_test_2D(material, variables, Exx)
+uniaxial_test_2D(material, variables, Exx, N=2, order=2)
