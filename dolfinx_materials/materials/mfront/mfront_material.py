@@ -222,16 +222,26 @@ class MFrontNonlinearMaterial:
             mgis_bv.setExternalStateVariable(s, "Temperature", 293.15)
         self.update_material_properties()
         self.data_manager.s1.gradients[:, :] = eps
-        print(dir(self.data_manager.s1))
         mgis_bv.integrate(self.data_manager, self.integration_type, self.dt, 0, self.data_manager.n)
 
+        _, n, m = self.data_manager.K.shape
+        return self.data_manager.s1.thermodynamic_forces,self.data_manager.K.reshape((-1, n*m))
+    
+    def get_final_state_dict(self):
+        state = {}
+        buff = 0
+        for (i, s) in enumerate(self.get_gradient_names()):
+            block_shape = self.get_gradient_sizes()[i]
+            state[s] = self.data_manager.s1.gradients[:, buff:buff+block_shape]
+            buff += block_shape
+        buff = 0
+        for (i, s) in enumerate(self.get_flux_names()):
+            block_shape = self.get_flux_sizes()[i]
+            state[s] = self.data_manager.s1.thermodynamic_forces[:, buff:buff+block_shape]
+            buff += block_shape
         buff = 0
         for (i, s) in enumerate(self.get_internal_state_variable_names()):
             block_shape = self.get_internal_state_variable_sizes()[i]
-            # state[s] =self.data_manager.s1.internal_state_variables[:, buff:buff + block_shape].flatten()
+            state[s] = self.data_manager.s1.internal_state_variables[:, buff:buff+block_shape]
             buff += block_shape
-            # print(s, state[s])
-        return self.data_manager.s1.thermodynamic_forces[0],self.data_manager.K[0] #, state
-    
-    def advance(self, state, new_state):
-        mgis_bv.update(self.data_manager)
+        return state

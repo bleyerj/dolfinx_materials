@@ -28,7 +28,7 @@ class PythonMaterial:
             flux, Ct = self.constitutive_update(g, state)
             print(state)
             flux_array.append(flux)
-            Ct_array.append(Ct)
+            Ct_array.append(Ct.ravel())
             self.data_manager.s1[i] = state
         return np.array(flux_array), np.array(Ct_array)
     

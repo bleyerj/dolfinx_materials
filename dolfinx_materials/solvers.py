@@ -7,6 +7,7 @@ from dolfinx.fem.petsc import (
     create_vector,
 )
 from petsc4py import PETSc
+from dolfinx.common import Timer
 
 
 ### iteration adopted from Custom Newton Solver tutorial ###
@@ -29,7 +30,8 @@ class CustomNewton:
         i = 0  # number of iterations of the Newton solver
         converged = False
         while i < self.max_it:
-            self.quadrature_map.update()
+            with Timer("Constitutive update"):
+                self.quadrature_map.update()
 
             # Assemble Jacobian and residual
             with self.b.localForm() as loc_b:
@@ -53,7 +55,8 @@ class CustomNewton:
 
             # Solve linear problem
             solver.setOperators(self.A)
-            solver.solve(self.b, self.du.vector)
+            with Timer("Linear solve"):
+                solver.solve(self.b, self.du.vector)
             self.du.x.scatter_forward()
 
             # Update u_{i+1} = u_i + relaxation_param * delta x_i

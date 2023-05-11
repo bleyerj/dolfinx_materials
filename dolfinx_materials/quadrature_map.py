@@ -2,6 +2,7 @@ import ufl
 import basix
 import numpy as np
 from dolfinx import fem
+from dolfinx.common import timed
 
 
 def create_scalar_quadrature_space(mesh, degree):
@@ -40,7 +41,7 @@ def get_vals(fun):
 
 
 def update_vals(fun, array):
-    fun.vector.array[:] = array.flatten()
+    fun.vector.array[:] = array.ravel()
 
 
 class QuadratureMap:
@@ -105,7 +106,7 @@ class QuadratureMap:
     def eval_quadrature(self, ufl_expr, fem_func):
         expr_expr = fem.Expression(ufl_expr, self.get_quadrature_points())
         expr_eval = expr_expr.eval(self.cells)
-        fem_func.vector.array[:] = expr_eval.flatten()[:]
+        fem_func.vector.array[:] = expr_eval.ravel()[:]
 
     def eval_gradient(self):
         self.eval_quadrature(self.g_expr, self.gradient)
@@ -125,7 +126,7 @@ class QuadratureMap:
         return (
             np.repeat(num_qp * cells[:, np.newaxis], num_qp, axis=1)
             + np.repeat(np.arange(num_qp)[np.newaxis, :], len(cells), axis=0)
-        ).flatten()
+        ).ravel()
 
     def update_flux(self, eval_flux_list, cell_groups):
         g_vals = self.get_gradient_vals()
@@ -138,19 +139,11 @@ class QuadratureMap:
         for eval_flux, cells in zip(eval_flux_list, cell_groups):
             dofs = self._cell_to_dofs(cells)
             g_vals_block = g_vals[dofs, :]
-                # old_state = {
-                #     key: get_vals(param)[:, dof]
-                #     for key, param in self.variables.items()
-                # }
             flux_vals[dofs, :], Ct_vals_mat = eval_flux(
                 g_vals_block
             )
-            Ct_vals[dofs, :] = Ct_vals_mat.flatten()
+            Ct_vals[dofs, :] = Ct_vals_mat
 
-                # for key, p in self.final_state.items():
-                #     p[:, dof] = new_state[key]
-
-        # self.advance()
         update_vals(self.flux, flux_vals)
         update_vals(self.jacobian_flatten, Ct_vals)
 
