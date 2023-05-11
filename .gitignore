@@ -32,6 +32,8 @@ build
 dist
 fenics_optim.egg-info
 **/__pycache__
+**/src
+**/include
 
 # LaTeX #
 #########
