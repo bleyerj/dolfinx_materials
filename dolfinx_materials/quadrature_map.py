@@ -78,16 +78,17 @@ class QuadratureMap:
                 for j in range(f_dim)
             ]
         )
-        self.parameters = {}
+        self.variables = {}
+        for key, dim in self.material.get_variables().items():
+            self._add_variable(dim, key)
 
-    def add_parameter(self, dim=None, name=None):
+    def _add_variable(self, dim=None, name=None):
         if dim is None:
             W = create_scalar_quadrature_space(self.mesh, self.degree)
         else:
             W = create_vector_quadrature_space(self.mesh, self.degree, dim)
         fun = fem.Function(W, name=name)
-        self.parameters.update({fun.name: fun})
-        return fun
+        self.variables.update({fun.name: fun})
 
     def get_quadrature_points(self):
         basix_celltype = getattr(basix.CellType, self.mesh.topology.cell_type.name)
@@ -125,7 +126,7 @@ class QuadratureMap:
         Ct_vals = np.zeros_like(get_vals(self.jacobian_flatten))
         self.final_state = {
             key: np.zeros_like(get_vals(param))
-            for key, param in self.parameters.items()
+            for key, param in self.variables.items()
         }
         for eval_flux, cells in zip(eval_flux_list, cell_groups):
             dofs = self._cell_to_dofs(cells)
@@ -135,7 +136,7 @@ class QuadratureMap:
 
                 old_state = {
                     key: get_vals(param)[:, dof]
-                    for key, param in self.parameters.items()
+                    for key, param in self.variables.items()
                 }
                 flux_vals[:, dof], Ct_vals_mat, new_state = eval_flux(
                     g_vals_block, old_state
@@ -150,5 +151,5 @@ class QuadratureMap:
         update_vals(self.jacobian_flatten, Ct_vals)
 
     def advance(self):
-        for key in self.parameters.keys():
-            update_vals(self.parameters[key], self.final_state[key])
+        for key in self.variables.keys():
+            update_vals(self.variables[key], self.final_state[key])

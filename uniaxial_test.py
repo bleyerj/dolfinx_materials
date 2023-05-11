@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 from dolfinx_materials.solvers import CustomNewton
 
 
-def uniaxial_test_2D(material, variables, Exx, N=1, order=1):
+def uniaxial_test_2D(material, Exx, N=1, order=1):
     domain = mesh.create_unit_square(MPI.COMM_WORLD, N, N, mesh.CellType.quadrilateral)
     V = fem.VectorFunctionSpace(domain, ("CG", order))
 
@@ -56,9 +56,6 @@ def uniaxial_test_2D(material, variables, Exx, N=1, order=1):
         )
 
     qmap = QuadratureMap(domain, deg_quad, strain(u), material)
-    for key, dim in variables.items():
-        print(key, dim)
-        qmap.add_parameter(dim=dim, name=key)
 
     Res = ufl.dot(qmap.flux, strain(v)) * qmap.dx
     Jac = ufl.dot(strain(du), ufl.dot(qmap.jacobian, strain(v))) * qmap.dx

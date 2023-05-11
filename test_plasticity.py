@@ -16,8 +16,6 @@ def yield_stress(p):
 
 
 material = ElastoPlasticIsotropicHardening(elastic_model, yield_stress)
-variables = {"eps": 6, "sig": 6, "eps_p": 6, "p": None}
-
 N = 10
 Exx = np.concatenate(
     (
@@ -26,4 +24,4 @@ Exx = np.concatenate(
         np.linspace(1e-2, 3e-2, N + 1)[1:],
     )
 )
-uniaxial_test_2D(material, variables, Exx, N=2, order=2)
+uniaxial_test_2D(material, Exx, N=2, order=2)

@@ -10,6 +10,10 @@ class ElastoPlasticIsotropicHardening:
         self.yield_stress = yield_stress
         # self.hardening_modulus = hardening_modulus
         # self.hardening = lambda p: self.hardening_modulus * p
+    
+    def get_variables(self):
+        return {"eps": 6, "sig": 6, "eps_p": 6, "p": None}
+
 
     def integrate(self, eps, state):
         eps_old = state["eps"]

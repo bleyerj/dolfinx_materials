@@ -12,6 +12,9 @@ class RambergOsgood:
         self.alpha = alpha
         self.eps_tol = eps_tol
 
+    def get_variables(self):
+        return {"eps": 6, "sig": 6}
+
     def integrate(self, eps, state):
         ed = K() @ eps
         eps_eq = np.sqrt(2 / 3.0) * np.linalg.norm(ed)

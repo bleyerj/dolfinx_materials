@@ -8,7 +8,6 @@ sig0 = 500.0
 alpha = 2e-3 * E / sig0
 n = 100.0
 material = RambergOsgood(E, nu, sig0, n, alpha)
-variables = {"eps": 6, "sig": 6}
 
 N = 10
 Exx = np.linspace(0, 2e-2, N + 1)
@@ -20,4 +19,4 @@ Exx = np.linspace(0, 2e-2, N + 1)
 #     )
 # )
 
-uniaxial_test_2D(material, variables, Exx)
+uniaxial_test_2D(material, Exx)

@@ -9,7 +9,7 @@ alpha = 2e-3 * E / sig0
 n = 100.0
 
 material = MFrontNonlinearMaterial(
-    "materials/mfront/src/libBehaviour.so", "RambergOsgoodNonLinearElasticity"
+    "dolfinx_materials/materials/mfront/src/libBehaviour.so", "RambergOsgoodNonLinearElasticity"
 )
 variables = {"eps": 6, "sig": 6}
 
