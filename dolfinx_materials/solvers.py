@@ -103,11 +103,6 @@ class SNESProblem:
             addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD
         )
 
-        # Update constitutive relation
-        print("Current iteration:", self.it)
-        self.quadrature_map.update()
-        self.it += 1
-
         with F.localForm() as f_local:
             f_local.set(0.0)
         assemble_vector(F, self.L)
@@ -117,6 +112,95 @@ class SNESProblem:
 
     def J(self, snes, x, J, P):
         """Assemble Jacobian matrix."""
+        print("Jacobian call:", self.it)
+        self.it += 1
+        # # Update constitutive relation
+        self.quadrature_map.update()
+        # self.it += 1
+
         J.zeroEntries()
         assemble_matrix(J, self.a, bcs=self.bcs)
         J.assemble()
+
+
+class TAOProblem:
+    """Nonlinear problem class compatible with PETSC.TAO solver."""
+
+    def __init__(self, quadrature_map, F, J, u, bcs):
+        self.quadrature_map = quadrature_map
+        self.L = form(F)
+        self.a = form(J)
+        self.bcs = bcs
+        self._F, self._J = None, None
+        self.u = u
+        self.it = 0
+        """This class set up structures for solving a non-linear problem using Newton's method.
+
+        Parameters
+        ==========
+        f: Objective.
+        F: Residual.
+        J: Jacobian.
+        u: Solution.
+        bcs: Dirichlet boundary conditions.
+        """
+
+        # Create matrix and vector to be used for assembly
+        # of the non-linear problem
+        self.A = create_matrix(self.a)
+        self.b = create_vector(self.L)
+
+    def f(self, tao, x: PETSc.Vec):
+        """Assemble the objective f.
+
+        Parameters
+        ==========
+        tao: the tao object
+        x: Vector containing the latest solution.
+        """
+
+        """Assemble residual vector."""
+        x.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+        x.copy(self.u.vector)
+        self.u.vector.ghostUpdate(
+            addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD
+        )
+        self.quadrature_map.update()
+        return 0.0
+
+    def F(self, tao: PETSc.TAO, x: PETSc.Vec, F):
+        """Assemble the residual F into the vector b.
+
+        Parameters
+        ==========
+        tao: the tao object
+        x: Vector containing the latest solution.
+        b: Vector to assemble the residual into.
+        """
+        # We need to assign the vector to the function
+
+        """Assemble residual vector."""
+        x.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+        x.copy(self.u.vector)
+        self.u.vector.ghostUpdate(
+            addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD
+        )
+
+        with F.localForm() as f_local:
+            f_local.set(0.0)
+        assemble_vector(F, self.L)
+        apply_lifting(F, [self.a], bcs=[self.bcs], x0=[x], scale=-1.0)
+        F.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+        set_bc(F, self.bcs, x, -1.0)
+
+    def J(self, tao: PETSc.TAO, x: PETSc.Vec, A: PETSc.Mat, P: PETSc.Mat):
+        """Assemble the Jacobian matrix.
+
+        Parameters
+        ==========
+        x: Vector containing the latest solution.
+        A: Matrix to assemble the Jacobian into.
+        """
+        A.zeroEntries()
+        assemble_matrix(A, self.a, self.bcs)
+        A.assemble()
