@@ -36,11 +36,11 @@ def create_tensor_quadrature_space(mesh, degree, shape):
 
 def get_vals(fun):
     dim = len(fun)
-    return fun.vector.array.reshape((-1, dim)).T
+    return fun.vector.array.reshape((-1, dim))
 
 
 def update_vals(fun, array):
-    fun.vector.array[:] = array.T.flatten()
+    fun.vector.array[:] = array.flatten()
 
 
 class QuadratureMap:
@@ -137,17 +137,15 @@ class QuadratureMap:
         }
         for eval_flux, cells in zip(eval_flux_list, cell_groups):
             dofs = self._cell_to_dofs(cells)
-            for dof in dofs:
-                g_vals_block = g_vals[:, dof]
-                print(g_vals_block.shape)
+            g_vals_block = g_vals[dofs, :]
                 # old_state = {
                 #     key: get_vals(param)[:, dof]
                 #     for key, param in self.variables.items()
                 # }
-                flux_vals[:, dof], Ct_vals_mat = eval_flux(
-                    g_vals_block
-                )
-                Ct_vals[:, dof] = Ct_vals_mat.flatten()
+            flux_vals[dofs, :], Ct_vals_mat = eval_flux(
+                g_vals_block
+            )
+            Ct_vals[dofs, :] = Ct_vals_mat.flatten()
 
                 # for key, p in self.final_state.items():
                 #     p[:, dof] = new_state[key]
@@ -157,5 +155,7 @@ class QuadratureMap:
         update_vals(self.jacobian_flatten, Ct_vals)
 
     def advance(self):
+        self.material.data_manager.update()
+        final_state = self.material.get_final_state_dict()
         for key in self.variables.keys():
-            update_vals(self.variables[key], self.final_state[key])
+            update_vals(self.variables[key], final_state[key])

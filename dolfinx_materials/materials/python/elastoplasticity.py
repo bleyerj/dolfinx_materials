@@ -16,13 +16,12 @@ class ElastoPlasticIsotropicHardening(PythonMaterial):
         return {"p": 1}
 
 
-    def integrate(self, eps):
-        eps_old = self.data_manager.s0.gradients
+    def constitutive_update(self, eps, state):
+        eps_old = state["eps"]
         deps = eps - eps_old
-        p_old = self.data_manager.s0.get_internal_state_variable("p")
-        sig_old = self.data_manager.s0.fluxes
-        print(deps.shape)
-        print(p_old.shape)
+        p_old = state["p"]
+        sig_old = state["sig"]
+        
         lmbda, mu = self.elastic_model.get_Lame_parameters()
         C = self.elastic_model.C
         sig_el = sig_old + C @ deps
@@ -48,8 +47,8 @@ class ElastoPlasticIsotropicHardening(PythonMaterial):
             depsp = 0 * s_el
             Ct = C
         sig = sig_el - 2 * mu * K() @ depsp
-        new_state = state.copy()
-        new_state["eps"] = eps_old + deps
-        new_state["p"] = p_old + dp
-        new_state["sig"] = sig
-        return sig, Ct, new_state
+        
+        state["eps"] = eps_old + deps
+        state["p"] = p_old + dp
+        state["sig"] = sig
+        return sig, Ct

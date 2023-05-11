@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 
 from dolfinx_materials.solvers import CustomNewton
 
-Nx, order = 1, 1
+Nx, order = 2, 1
 domain = mesh.create_unit_square(MPI.COMM_WORLD, Nx, Nx, mesh.CellType.quadrilateral)
 V = fem.VectorFunctionSpace(domain, ("CG", order))
 deg_quad = 2*(order-1)

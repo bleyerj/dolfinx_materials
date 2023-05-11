@@ -12,7 +12,7 @@ class RambergOsgood(PythonMaterial):
         self.alpha = alpha
         self.eps_tol = eps_tol
 
-    def integrate(self, eps, state):
+    def constitutive_update(self, eps, state):
         ed = K() @ eps
         eps_eq = np.sqrt(2 / 3.0) * np.linalg.norm(ed)
 
@@ -51,7 +51,6 @@ class RambergOsgood(PythonMaterial):
                 + sig_eq * dne_deps
             )
 
-        new_state = state.copy()
-        new_state["eps"] = eps
-        new_state["sig"] = sig
-        return sig, C, new_state
+        state["eps"] = eps
+        state["sig"] = sig
+        return sig, C
