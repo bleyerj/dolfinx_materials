@@ -1,4 +1,5 @@
-from .elasticity import LinearElasticIsotropic
+from .elasticity import LinearElasticIsotropic, PlaneStressLinearElasticIsotropic
 from .viscoelasticity import LinearViscoElasticity
 from .elastoplasticity import ElastoPlasticIsotropicHardening
 from .nonlinear_elasticity import RambergOsgood
+from .plates import NielsenPlate

@@ -1,11 +1,11 @@
 import numpy as np
 import ufl
-from dolfinx_materials.quadrature_map import QuadratureMap
 from petsc4py import PETSc
 from mpi4py import MPI
 from dolfinx import fem, mesh
 import matplotlib.pyplot as plt
 
+from dolfinx_materials.quadrature_map import QuadratureMap
 from dolfinx_materials.solvers import CustomNewton
 
 

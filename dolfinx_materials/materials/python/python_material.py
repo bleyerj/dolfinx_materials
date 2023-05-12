@@ -24,9 +24,7 @@ class PythonMaterial:
         Ct_array = []
         for i, g in enumerate(gradients):
             state = self.data_manager.s0[i]
-            print(state)
             flux, Ct = self.constitutive_update(g, state)
-            print(state)
             flux_array.append(flux)
             Ct_array.append(Ct.ravel())
             self.data_manager.s1[i] = state
