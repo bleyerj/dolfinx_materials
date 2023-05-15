@@ -48,6 +48,10 @@ fenics_optim.egg-info
 *.bak
 _minted*
 
+# MFront/MTest
+*.mtest
+*.res
+
 # Output/Mesh #
 *.xdmf
 *.h5
