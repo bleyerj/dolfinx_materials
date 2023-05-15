@@ -39,6 +39,7 @@ class CustomNewton:
             self.A.zeroEntries()
             assemble_matrix(self.A, self.a, bcs=self.bcs)
             self.A.assemble()
+
             assemble_vector(self.b, self.L)
             self.b.ghostUpdate(
                 addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE

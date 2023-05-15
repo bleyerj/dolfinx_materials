@@ -23,7 +23,7 @@ mgis_hypothesis = {
 }
 
 
-class MFrontNonlinearMaterial:
+class MFrontMaterial:
     """
     This class handles the loading of a MFront behaviour through MGIS.
     """
@@ -36,7 +36,7 @@ class MFrontNonlinearMaterial:
         material_properties={},
         parameters={},
         rotation_matrix=None,
-        dt=0
+        dt=0,
     ):
         """
         Parameters
@@ -66,7 +66,9 @@ class MFrontNonlinearMaterial:
         self.hypothesis = mgis_hypothesis[hypothesis]
         self.material_properties = material_properties
         self.rotation_matrix = rotation_matrix
-        self.integration_type = mgis_bv.IntegrationType.IntegrationWithConsistentTangentOperator
+        self.integration_type = (
+            mgis_bv.IntegrationType.IntegrationWithConsistentTangentOperator
+        )
         self.dt = dt
         # Loading the behaviour
         try:
@@ -115,23 +117,17 @@ class MFrontNonlinearMaterial:
         for key, value in parameters.items():
             self.behaviour.setParameter(key, value)
 
-    def update_material_properties(self, material_properties=None):
-        if material_properties is not None:
-            self.material_properties = material_properties
+    def update_material_property(self, name, values):
         for s in [self.data_manager.s0, self.data_manager.s1]:
-            for key, value in self.material_properties.items():
-                if type(value) in [int, float]:
-                    mgis_bv.setMaterialProperty(s, key, value)
-                else:
-                    values = (
-                        compute_on_quadrature(value, mesh, degree).vector().get_local()
-                    )
-                    mgis_bv.setMaterialProperty(
-                        s,
-                        key,
-                        values,
-                        mgis_bv.MaterialStateManagerStorageMode.LocalStorage,
-                    )
+            if type(values) in [int, float]:
+                mgis_bv.setMaterialProperty(s, name, values)
+            else:
+                mgis_bv.setMaterialProperty(
+                    s,
+                    name,
+                    values,
+                    mgis_bv.MaterialStateManagerStorageMode.LocalStorage,
+                )
 
     def update_external_state_variables(self, degree, mesh, external_state_variables):
         s = self.data_manager.s1
@@ -173,10 +169,29 @@ class MFrontNonlinearMaterial:
     def get_flux_names(self):
         return [svar.name for svar in self.behaviour.thermodynamic_forces]
 
+    def get_gradients(self):
+        return {
+            k: dim
+            for k, dim in zip(self.get_gradient_names(), self.get_gradient_sizes())
+        }
+
+    def get_fluxes(self):
+        return {k: dim for k, dim in zip(self.get_flux_names(), self.get_flux_sizes())}
+
+    def get_internal_state_variables(self):
+        return {
+            k: dim
+            for k, dim in zip(
+                self.get_internal_state_variable_names(),
+                self.get_internal_state_variable_sizes(),
+            )
+        }
+
     def get_variables(self):
-        dict_grad = {k: dim for k, dim in zip(self.get_gradient_names(), self.get_gradient_sizes())}
-        dict_flux = {k: dim for k, dim in zip(self.get_flux_names(), self.get_flux_sizes())}
-        return {**dict_grad, **dict_flux}
+        dict_grad = self.get_gradients()
+        dict_flux = self.get_fluxes()
+        dict_isv = self.get_internal_state_variables()
+        return {**dict_grad, **dict_flux, **dict_isv}
 
     def get_material_property_sizes(self):
         return [
@@ -220,28 +235,45 @@ class MFrontNonlinearMaterial:
     def integrate(self, eps):
         for s in [self.data_manager.s0, self.data_manager.s1]:
             mgis_bv.setExternalStateVariable(s, "Temperature", 293.15)
-        self.update_material_properties()
+
         self.data_manager.s1.gradients[:, :] = eps
-        mgis_bv.integrate(self.data_manager, self.integration_type, self.dt, 0, self.data_manager.n)
+        mgis_bv.integrate(
+            self.data_manager, self.integration_type, self.dt, 0, self.data_manager.n
+        )
 
         _, n, m = self.data_manager.K.shape
-        return self.data_manager.s1.thermodynamic_forces,self.data_manager.K.reshape((-1, n*m))
-    
+        return self.data_manager.s1.thermodynamic_forces, self.data_manager.K.reshape(
+            (-1, n * m)
+        )
+
     def get_final_state_dict(self):
         state = {}
         buff = 0
-        for (i, s) in enumerate(self.get_gradient_names()):
+        for i, s in enumerate(self.get_gradient_names()):
             block_shape = self.get_gradient_sizes()[i]
-            state[s] = self.data_manager.s1.gradients[:, buff:buff+block_shape]
+            state[s] = self.data_manager.s1.gradients[:, buff : buff + block_shape]
             buff += block_shape
         buff = 0
-        for (i, s) in enumerate(self.get_flux_names()):
+        for i, s in enumerate(self.get_flux_names()):
             block_shape = self.get_flux_sizes()[i]
-            state[s] = self.data_manager.s1.thermodynamic_forces[:, buff:buff+block_shape]
+            state[s] = self.data_manager.s1.thermodynamic_forces[
+                :, buff : buff + block_shape
+            ]
             buff += block_shape
         buff = 0
-        for (i, s) in enumerate(self.get_internal_state_variable_names()):
+        for i, s in enumerate(self.get_internal_state_variable_names()):
             block_shape = self.get_internal_state_variable_sizes()[i]
-            state[s] = self.data_manager.s1.internal_state_variables[:, buff:buff+block_shape]
+            state[s] = self.data_manager.s1.internal_state_variables[
+                :, buff : buff + block_shape
+            ]
             buff += block_shape
         return state
+
+    def rotate_gradients(self, gradient_vals, rotation_values):
+        mgis_bv.rotateGradients(gradient_vals, self.behaviour, rotation_values)
+
+    def rotate_fluxes(self, flux_vals, rotation_values):
+        mgis_bv.rotateThermodynamicForces(flux_vals, self.behaviour, rotation_values)
+
+    def rotate_tangent_operator(self, Ct_vals, rotation_values):
+        mgis_bv.rotateTangentOperatorBlocks(Ct_vals, self.behaviour, rotation_values)

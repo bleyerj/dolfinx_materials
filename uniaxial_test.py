@@ -2,14 +2,14 @@ import numpy as np
 import ufl
 from petsc4py import PETSc
 from mpi4py import MPI
-from dolfinx import fem, mesh
+from dolfinx import fem, mesh, io
 import matplotlib.pyplot as plt
 
 from dolfinx_materials.quadrature_map import QuadratureMap
 from dolfinx_materials.solvers import CustomNewton
 
 
-def uniaxial_test_2D(material, Exx, N=1, order=1):
+def uniaxial_test_2D(material, Exx, N=1, order=1, save_fields=None):
     domain = mesh.create_unit_square(MPI.COMM_WORLD, N, N, mesh.CellType.quadrilateral)
     V = fem.VectorFunctionSpace(domain, ("CG", order))
 
@@ -24,7 +24,7 @@ def uniaxial_test_2D(material, Exx, N=1, order=1):
     def right(x):
         return np.isclose(x[0], 1.0)
 
-    V_ux, mapping = V.sub(1).collapse()
+    V_ux, mapping = V.sub(0).collapse()
     left_dofs_ux = fem.locate_dofs_geometrical((V.sub(0), V_ux), left)
     right_dofs_ux = fem.locate_dofs_geometrical((V.sub(0), V_ux), right)
     V_uy, mapping = V.sub(1).collapse()
@@ -65,6 +65,12 @@ def uniaxial_test_2D(material, Exx, N=1, order=1):
     solver.setType(PETSc.KSP.Type.PREONLY)
     solver.getPC().setType(PETSc.PC.Type.LU)
 
+    file_results = io.XDMFFile(
+        domain.comm,
+        f"{material.name}_results.xdmf",
+        "w",
+    )
+    file_results.write_mesh(domain)
     Sxx = np.zeros_like(Exx)
     for i, exx in enumerate(Exx[1:]):
         uD_x_r.vector.array[:] = exx
@@ -73,10 +79,16 @@ def uniaxial_test_2D(material, Exx, N=1, order=1):
 
         Sxx[i + 1] = qmap.flux.vector.array[0]
 
+        if save_fields is not None:
+            for field_name in save_fields:
+                field = qmap.project_on(field_name, ("DG", 0))
+                file_results.write_function(field, i)
+
     plt.figure()
     plt.plot(Exx, Sxx, "-o")
     plt.xlabel(r"Strain $\varepsilon_{xx}$")
     plt.ylabel(r"Stress $\sigma_{xx}$")
     plt.savefig(f"{material.name}_stress_strain.pdf")
 
+    file_results.close()
     return Sxx

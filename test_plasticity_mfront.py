@@ -1,5 +1,5 @@
 import numpy as np
-from dolfinx_materials.materials.mfront.mfront_material import MFrontNonlinearMaterial
+from dolfinx_materials.materials.mfront.mfront_material import MFrontMaterial
 from uniaxial_test import uniaxial_test_2D
 import ufl
 from dolfinx_materials.quadrature_map import QuadratureMap
@@ -13,18 +13,26 @@ from dolfinx_materials.solvers import CustomNewton
 Nx, order = 50, 2
 domain = mesh.create_unit_square(MPI.COMM_WORLD, Nx, Nx, mesh.CellType.quadrilateral)
 V = fem.VectorFunctionSpace(domain, ("CG", order))
-deg_quad = 2*(order-1)
+deg_quad = 2 * (order - 1)
 
 E = 70e3
 nu = 0.3
 sig0 = 500.0
 
-material = MFrontNonlinearMaterial(
-    "dolfinx_materials/materials/mfront/src/libBehaviour.so", "IsotropicLinearHardeningPlasticity",
-    material_properties={"YoungModulus": E,
-                         "PoissonRatio": nu,
-                         "YieldStrength": sig0,
-                         "HardeningSlope": E/10,})
+Ef = fem.Constant(domain, 70e3)
+# Ef = fem.Function(V)
+# Ef.interpolate()
+
+material = MFrontMaterial(
+    "dolfinx_materials/materials/mfront/src/libBehaviour.so",
+    "IsotropicLinearHardeningPlasticity",
+    material_properties={
+        "YoungModulus": Ef,
+        "PoissonRatio": nu,
+        "YieldStrength": sig0,
+        "HardeningSlope": E / 10,
+    },
+)
 
 N = 10
 # Exx = np.linspace(0, 2e-2, N + 1)
@@ -36,5 +44,5 @@ Exx = np.concatenate(
     )
 )
 
-uniaxial_test_2D(material, Exx, Nx, order)
+uniaxial_test_2D(material, Exx, Nx, order, save_fields=["EquivalentPlasticStrain"])
 list_timings(domain.comm, [TimingType.wall, TimingType.user])

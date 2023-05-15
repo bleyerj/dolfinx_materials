@@ -2,7 +2,21 @@ import ufl
 import basix
 import numpy as np
 from dolfinx import fem
-from dolfinx.common import timed
+from petsc4py import PETSc
+from .utils import project, get_function_space_type
+
+function_space_dict = {
+    "scalar": ufl.FiniteElement,
+    "vector": ufl.VectorElement,
+    "tensor": ufl.TensorElement,
+}
+
+
+def create_quadrature_space(mesh, degree, type, shape):
+    We = function_space_dict[type](
+        "Quadrature", mesh.ufl_cell(), degree, shape, quad_scheme="default"
+    )
+    return fem.FunctionSpace(mesh, We)
 
 
 def create_scalar_quadrature_space(mesh, degree):
@@ -52,6 +66,7 @@ class QuadratureMap:
         self.num_cells = map_c.size_local + map_c.num_ghosts
         self.cells = np.arange(0, self.num_cells, dtype=np.int32)
         self.dx = ufl.Measure("dx", domain=mesh, metadata={"quadrature_degree": deg})
+        self.mesh_dim = self.mesh.geometry.dim
 
         self.g_expr = g
         if len(ufl.shape(g)) == 1:
@@ -85,10 +100,28 @@ class QuadratureMap:
 
         self.set_data_manager(self.cells)
 
+        if self.material.rotation_matrix is not None:
+            Wrot = create_tensor_quadrature_space(self.mesh, self.degree, (3, 3))
+            self.rotation_func = fem.Function(Wrot)
+            self.eval_quadrature(self.material.rotation_matrix, self.rotation_func)
+
+        self.update_material_properties()
+
+    def update_material_properties(self):
+        for name, mat_prop in self.material.material_properties.items():
+            if isinstance(mat_prop, (fem.Constant, fem.Expression)):
+                fs_type = get_function_space_type(mat_prop)
+                Vm = create_quadrature_space(self.mesh, self.degree, *fs_type)
+                mat_prop_fun = fem.Function(Vm, name=name)
+                mat_prop_fun.interpolate(mat_prop)
+                values = mat_prop_fun.vector.array
+            else:
+                values = mat_prop
+            self.material.update_material_property(name, values)
+
     def set_data_manager(self, cells):
         dofs = self._cell_to_dofs(cells)
         self.material.set_data_manager(len(dofs))
-
 
     def _add_variable(self, dim=None, name=None):
         if dim is None:
@@ -106,7 +139,7 @@ class QuadratureMap:
     def eval_quadrature(self, ufl_expr, fem_func):
         expr_expr = fem.Expression(ufl_expr, self.get_quadrature_points())
         expr_eval = expr_expr.eval(self.cells)
-        fem_func.vector.array[:] = expr_eval.ravel()[:]
+        fem_func.vector.array[:] = expr_eval.flatten()[:]
 
     def eval_gradient(self):
         self.eval_quadrature(self.g_expr, self.gradient)
@@ -129,21 +162,32 @@ class QuadratureMap:
         ).ravel()
 
     def update_flux(self, eval_flux_list, cell_groups):
-        g_vals = self.get_gradient_vals()
+        grad_vals = np.copy(
+            self.get_gradient_vals()
+        )  # copy to avoid changing gradient values when rotating
+        if self.material.rotation_matrix is not None:
+            self.material.rotate_gradients(
+                grad_vals.ravel(), self.rotation_func.vector.array
+            )
+
         flux_vals = np.zeros_like(get_vals(self.flux))
         Ct_vals = np.zeros_like(get_vals(self.jacobian_flatten))
         self.final_state = {
-            key: np.zeros_like(get_vals(param))
-            for key, param in self.variables.items()
+            key: np.zeros_like(get_vals(param)) for key, param in self.variables.items()
         }
         for eval_flux, cells in zip(eval_flux_list, cell_groups):
             dofs = self._cell_to_dofs(cells)
-            g_vals_block = g_vals[dofs, :]
-            flux_vals[dofs, :], Ct_vals_mat = eval_flux(
-                g_vals_block
-            )
+            grad_vals_block = grad_vals[dofs, :]
+            flux_vals[dofs, :], Ct_vals_mat = eval_flux(grad_vals_block)
             Ct_vals[dofs, :] = Ct_vals_mat
 
+        if self.material.rotation_matrix is not None:
+            self.material.rotate_fluxes(
+                flux_vals.ravel(), self.rotation_func.vector.array
+            )
+            self.material.rotate_tangent_operator(
+                Ct_vals.ravel(), self.rotation_func.vector.array
+            )
         update_vals(self.flux, flux_vals)
         update_vals(self.jacobian_flatten, Ct_vals)
 
@@ -151,4 +195,30 @@ class QuadratureMap:
         self.material.data_manager.update()
         final_state = self.material.get_final_state_dict()
         for key in self.variables.keys():
-            update_vals(self.variables[key], final_state[key])
+            if (
+                key not in self.material.get_gradients().keys()
+            ):  # update flux and isv but not gradients
+                update_vals(self.variables[key], final_state[key])
+
+    def project_on(self, key, interp):
+        if key not in self.variables.keys():
+            collected = [
+                v[0]
+                for k, v in self.variables.items()
+                if k.startswith(key) and len(v) == 1
+            ]
+            if len(collected) == 0:
+                raise ValueError(f"Field '{key}' has not been found.")
+            field = ufl.as_vector(collected)
+        else:
+            field = self.variables[key]
+        dim = ufl.shape(field)[0]
+        if dim <= 1:
+            V = fem.FunctionSpace(self.mesh, interp)
+            projected = fem.Function(V, name=key)
+            project(field[0], projected, self.dx)
+        else:
+            V = fem.VectorFunctionSpace(self.mesh, interp, dim=dim)
+            projected = fem.Function(V, name=key)
+            project(field, projected, self.dx)
+        return projected

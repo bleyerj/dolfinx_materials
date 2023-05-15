@@ -1,9 +1,10 @@
 import numpy as np
 from .tensors import Identity, K, J
 from scipy.optimize import fsolve
-from .python_material import PythonMaterial
+from dolfinx_materials.material import Material
 
-class RambergOsgood(PythonMaterial):
+
+class RambergOsgood(Material):
     def __init__(self, E, nu, sig0, n, alpha, eps_tol=1e-10):
         self.E = E
         self.nu = nu

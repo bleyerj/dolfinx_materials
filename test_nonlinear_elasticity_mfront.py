@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 from dolfinx_materials.solvers import CustomNewton
 
 
-domain = mesh.create_unit_square(MPI.COMM_WORLD, 2 , 2, mesh.CellType.quadrilateral)
+domain = mesh.create_unit_square(MPI.COMM_WORLD, 2, 2, mesh.CellType.quadrilateral)
 V = fem.VectorFunctionSpace(domain, ("CG", 2))
 deg_quad = 2
 
@@ -22,12 +22,16 @@ alpha = 2e-3 * E / sig0
 n = 100.0
 
 material = MFrontNonlinearMaterial(
-    "dolfinx_materials/materials/mfront/src/libBehaviour.so", "RambergOsgoodNonLinearElasticity",
-    material_properties={"YoungModulus": E,
-                         "PoissonRatio": nu,
-                         "YieldStrength": sig0,
-                         "alpha": alpha,
-                         "n": n})
+    "dolfinx_materials/materials/mfront/src/libBehaviour.so",
+    "RambergOsgoodNonLinearElasticity",
+    material_properties={
+        "YoungModulus": E,
+        "PoissonRatio": nu,
+        "YieldStrength": sig0,
+        "alpha": alpha,
+        "n": n,
+    },
+)
 
 N = 10
 Exx = np.linspace(0, 2e-2, N + 1)
