@@ -109,14 +109,14 @@ class QuadratureMap:
 
     def update_material_properties(self):
         for name, mat_prop in self.material.material_properties.items():
-            if isinstance(mat_prop, (fem.Constant, fem.Expression)):
+            if isinstance(mat_prop, (int, float, np.ndarray)):
+                values = mat_prop
+            else:
                 fs_type = get_function_space_type(mat_prop)
                 Vm = create_quadrature_space(self.mesh, self.degree, *fs_type)
                 mat_prop_fun = fem.Function(Vm, name=name)
-                mat_prop_fun.interpolate(mat_prop)
+                self.eval_quadrature(mat_prop, mat_prop_fun)
                 values = mat_prop_fun.vector.array
-            else:
-                values = mat_prop
             self.material.update_material_property(name, values)
 
     def set_data_manager(self, cells):

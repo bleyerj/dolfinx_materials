@@ -19,15 +19,14 @@ E = 70e3
 nu = 0.3
 sig0 = 500.0
 
-Ef = fem.Constant(domain, 70e3)
-# Ef = fem.Function(V)
-# Ef.interpolate()
+x = ufl.SpatialCoordinate(domain)
+
 
 material = MFrontMaterial(
     "dolfinx_materials/materials/mfront/src/libBehaviour.so",
     "IsotropicLinearHardeningPlasticity",
     material_properties={
-        "YoungModulus": Ef,
+        "YoungModulus": E,
         "PoissonRatio": nu,
         "YieldStrength": sig0,
         "HardeningSlope": E / 10,
