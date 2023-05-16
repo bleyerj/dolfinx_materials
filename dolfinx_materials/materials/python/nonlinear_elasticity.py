@@ -5,13 +5,8 @@ from dolfinx_materials.material import Material
 
 
 class RambergOsgood(Material):
-    def __init__(self, E, nu, sig0, n, alpha, eps_tol=1e-10):
-        self.E = E
-        self.nu = nu
-        self.sig0 = sig0
-        self.n = n
-        self.alpha = alpha
-        self.eps_tol = eps_tol
+    def default_properties(self):
+        return {"eps_tol": 1e-10}
 
     def constitutive_update(self, eps, state):
         ed = K() @ eps

@@ -6,10 +6,6 @@ from scipy.optimize import fsolve
 
 
 class ElastoPlasticIsotropicHardening(Material):
-    def __init__(self, elastic_model, yield_stress):
-        self.elastic_model = elastic_model
-        self.yield_stress = yield_stress
-
     def get_internal_state_variables(self):
         return {"p": 1}
 
@@ -19,8 +15,10 @@ class ElastoPlasticIsotropicHardening(Material):
         p_old = state["p"]
         sig_old = state["sig"]
 
-        lmbda, mu = self.elastic_model.get_Lame_parameters()
-        C = self.elastic_model.C
+        elastic_model = self.elastic_model
+        E, nu = elastic_model.E, elastic_model.nu
+        lmbda, mu = elastic_model.get_Lame_parameters(E, nu)
+        C = self.elastic_model.compute_C(E, nu)
         sig_el = sig_old + C @ deps
         s_el = K() @ sig_el
         sig_Y_old = self.yield_stress(p_old)

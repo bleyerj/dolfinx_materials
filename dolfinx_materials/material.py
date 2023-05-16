@@ -2,6 +2,18 @@ import numpy as np
 
 
 class Material:
+    def __init__(self, **kwargs):
+        self.material_properties = self.default_properties()
+        self.material_properties.update(kwargs)
+        for key, value in self.material_properties.items():
+            setattr(self, key, value)
+
+    def update_material_property(self, key, value):
+        setattr(self, key, value)
+
+    def default_properties(self):
+        return {}
+
     @property
     def name(self):
         return self.__class__.__name__
@@ -15,6 +27,9 @@ class Material:
 
     def get_fluxes(self):
         return {"sig": 6}
+
+    def get_tangent_blocks(self):
+        return {("sig", "eps"): (6, 6)}
 
     def get_internal_state_variables(self):
         return {}

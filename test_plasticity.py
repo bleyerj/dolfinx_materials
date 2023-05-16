@@ -5,7 +5,8 @@ from dolfinx_materials.materials.python import (
 )
 from uniaxial_test import uniaxial_test_2D
 
-elastic_model = LinearElasticIsotropic(70e3, 0.3)
+
+elastic_model = LinearElasticIsotropic(E=70e3, nu=0.3)
 sig0 = 500.0
 sigu = 750.0
 omega = 100.0
@@ -15,7 +16,9 @@ def yield_stress(p):
     return sigu + (sig0 - sigu) * np.exp(-p * omega)
 
 
-material = ElastoPlasticIsotropicHardening(elastic_model, yield_stress)
+material = ElastoPlasticIsotropicHardening(
+    elastic_model=elastic_model, yield_stress=yield_stress
+)
 N = 10
 Exx = np.concatenate(
     (

@@ -8,12 +8,22 @@ Laboratoire Navier (ENPC,IFSTTAR,CNRS UMR 8205)
 @email: jeremy.bleyer@enpc.f
 """
 import mgis.behaviour as mgis_bv
+import numpy as np
 
 # from .gradient_flux import Var
 # from .utils import compute_on_quadrature
 # import dolfin
 import subprocess
 import os
+
+
+# we filter out brackets from MFront variable names as it messes up with FFCx
+def filter_names(function):
+    def new_function(self):
+        return [f.replace("[", "").replace("]", "") for f in function(self)]
+
+    return new_function
+
 
 mgis_hypothesis = {
     "plane_strain": mgis_bv.Hypothesis.PlaneStrain,
@@ -92,6 +102,7 @@ class MFrontMaterial:
             )
             os.chdir(cwd)
             self.load_behaviour()
+
         self.update_parameters(parameters)
 
     def load_behaviour(self):
@@ -129,23 +140,16 @@ class MFrontMaterial:
                     mgis_bv.MaterialStateManagerStorageMode.LocalStorage,
                 )
 
-    def update_external_state_variables(self, degree, mesh, external_state_variables):
-        s = self.data_manager.s1
-        for key, value in external_state_variables.items():
-            if type(value) in [int, float]:
-                mgis_bv.setExternalStateVariable(s, key, value)
-            elif isinstance(value, dolfin.Constant):
-                mgis_bv.setExternalStateVariable(s, key, float(value))
+    def update_external_state_variable(self, name, values):
+        for s in [self.data_manager.s0, self.data_manager.s1]:
+            if type(values) in [int, float]:
+                mgis_bv.setExternalStateVariable(s, name, values)
             else:
-                if isinstance(value, Var):
-                    value.update()
-                    values = value.function.vector().get_local()
-                else:
-                    values = (
-                        compute_on_quadrature(value, mesh, degree).vector().get_local()
-                    )
                 mgis_bv.setExternalStateVariable(
-                    s, key, values, mgis_bv.MaterialStateManagerStorageMode.LocalStorage
+                    s,
+                    name,
+                    values,
+                    mgis_bv.MaterialStateManagerStorageMode.LocalStorage,
                 )
 
     def get_parameter(self, name):
@@ -157,15 +161,19 @@ class MFrontMaterial:
     def get_material_property_names(self):
         return [svar.name for svar in self.behaviour.mps]
 
+    @filter_names
     def get_external_state_variable_names(self):
         return [svar.name for svar in self.behaviour.external_state_variables]
 
+    @filter_names
     def get_internal_state_variable_names(self):
         return [svar.name for svar in self.behaviour.internal_state_variables]
 
+    @filter_names
     def get_gradient_names(self):
         return [svar.name for svar in self.behaviour.gradients]
 
+    @filter_names
     def get_flux_names(self):
         return [svar.name for svar in self.behaviour.thermodynamic_forces]
 
@@ -232,19 +240,26 @@ class MFrontMaterial:
             for t in self.behaviour.tangent_operator_blocks
         ]
 
-    def integrate(self, eps):
-        for s in [self.data_manager.s0, self.data_manager.s1]:
-            mgis_bv.setExternalStateVariable(s, "Temperature", 293.15)
+    def get_tangent_blocks(self):
+        return {
+            k: dim
+            for k, dim in zip(
+                self.get_tangent_block_names(), self.get_tangent_block_sizes()
+            )
+        }
 
+    def integrate(self, eps):
         self.data_manager.s1.gradients[:, :] = eps
         mgis_bv.integrate(
             self.data_manager, self.integration_type, self.dt, 0, self.data_manager.n
         )
-
-        _, n, m = self.data_manager.K.shape
-        return self.data_manager.s1.thermodynamic_forces, self.data_manager.K.reshape(
-            (-1, n * m)
-        )
+        # _, n, m = self.data_manager.K.shape
+        return (
+            self.data_manager.s1.thermodynamic_forces,
+            self.data_manager.K,
+        )  # reshape(
+        #     (-1, n * m)
+        # )
 
     def get_final_state_dict(self):
         state = {}
