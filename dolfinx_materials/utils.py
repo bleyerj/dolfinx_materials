@@ -63,3 +63,68 @@ def get_function_space_type(x):
         return ("tensor", shape)
     else:
         raise NotImplementedError
+
+
+function_space_dict = {
+    "scalar": ufl.FiniteElement,
+    "vector": ufl.VectorElement,
+    "tensor": ufl.TensorElement,
+}
+
+
+def to_mat(array):
+    M = ufl.as_matrix(array)
+    shape = ufl.shape(M)
+    if shape[0] == 1:
+        return ufl.as_vector(array[0])
+    elif shape[1] == 1:
+        return ufl.as_vector([a[0] for a in array])
+    else:
+        return M
+
+
+def create_quadrature_space(mesh, degree, type, shape):
+    We = function_space_dict[type](
+        "Quadrature", mesh.ufl_cell(), degree, shape, quad_scheme="default"
+    )
+    return fem.FunctionSpace(mesh, We)
+
+
+def create_scalar_quadrature_space(mesh, degree):
+    return create_vector_quadrature_space(mesh, degree, 1)
+
+
+def create_vector_quadrature_space(mesh, degree, dim):
+    if dim > 0:
+        We = ufl.VectorElement(
+            "Quadrature",
+            mesh.ufl_cell(),
+            degree=degree,
+            dim=dim,
+            quad_scheme="default",
+        )
+        return fem.FunctionSpace(mesh, We)
+    else:
+        raise ValueError("Vector dimension should be at least 1.")
+
+
+def create_tensor_quadrature_space(mesh, degree, shape):
+    We = ufl.TensorElement(
+        "Quadrature",
+        mesh.ufl_cell(),
+        degree=degree,
+        shape=shape,
+        quad_scheme="default",
+    )
+
+    return fem.FunctionSpace(mesh, We)
+
+
+def get_vals(fun):
+    """Get values of a function in reshaped form N x dim where dim is the function space dimension"""
+    dim = len(fun)
+    return fun.vector.array.reshape((-1, dim))
+
+
+def update_vals(fun, array):
+    fun.vector.array[:] = array.ravel()

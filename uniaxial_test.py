@@ -56,7 +56,7 @@ def uniaxial_test_2D(material, Exx, N=1, order=1, save_fields=None):
         )
 
     qmap = QuadratureMap(domain, deg_quad, strain(u), material)
-
+    qmap.register_gradient("eps", strain(u))
     Res = ufl.dot(qmap.flux, strain(v)) * qmap.dx
     Jac = qmap.derivative(Res, u, du)
 

@@ -3,71 +3,19 @@ import basix
 import numpy as np
 from dolfinx import fem
 from petsc4py import PETSc
-from .utils import project, get_function_space_type
+from .utils import (
+    project,
+    get_function_space_type,
+    create_quadrature_space,
+    create_scalar_quadrature_space,
+    create_vector_quadrature_space,
+    create_tensor_quadrature_space,
+    to_mat,
+    get_vals,
+    update_vals,
+)
 from .material import Material
-
-function_space_dict = {
-    "scalar": ufl.FiniteElement,
-    "vector": ufl.VectorElement,
-    "tensor": ufl.TensorElement,
-}
-
-
-def to_mat(array):
-    M = ufl.as_matrix(array)
-    shape = ufl.shape(M)
-    if shape[0] == 1:
-        return ufl.as_vector(array[0])
-    elif shape[1] == 1:
-        return ufl.as_vector([a[0] for a in array])
-    else:
-        return M
-
-
-def create_quadrature_space(mesh, degree, type, shape):
-    We = function_space_dict[type](
-        "Quadrature", mesh.ufl_cell(), degree, shape, quad_scheme="default"
-    )
-    return fem.FunctionSpace(mesh, We)
-
-
-def create_scalar_quadrature_space(mesh, degree):
-    return create_vector_quadrature_space(mesh, degree, 1)
-
-
-def create_vector_quadrature_space(mesh, degree, dim):
-    if dim > 0:
-        We = ufl.VectorElement(
-            "Quadrature",
-            mesh.ufl_cell(),
-            degree=degree,
-            dim=dim,
-            quad_scheme="default",
-        )
-        return fem.FunctionSpace(mesh, We)
-    else:
-        raise ValueError("Vector dimension should be at least 1.")
-
-
-def create_tensor_quadrature_space(mesh, degree, shape):
-    We = ufl.TensorElement(
-        "Quadrature",
-        mesh.ufl_cell(),
-        degree=degree,
-        shape=shape,
-        quad_scheme="default",
-    )
-
-    return fem.FunctionSpace(mesh, We)
-
-
-def get_vals(fun):
-    dim = len(fun)
-    return fun.vector.array.reshape((-1, dim))
-
-
-def update_vals(fun, array):
-    fun.vector.array[:] = array.ravel()
+from .quadrature_function import create_quadrature_function, QuadratureExpression
 
 
 class QuadratureMap:
@@ -94,9 +42,10 @@ class QuadratureMap:
 
         self.material = material
 
-        self.Wg = create_vector_quadrature_space(self.mesh, self.degree, g_dim)
         self.Wf = create_vector_quadrature_space(self.mesh, self.degree, f_dim)
-        self.gradient = fem.Function(self.Wg)
+        self.gradients = {}
+        self.fluxes = {}
+
         self.flux = fem.Function(self.Wf)
 
         buff = 0
@@ -126,6 +75,12 @@ class QuadratureMap:
         self.variables = {}
         for key, dim in self.material.get_variables().items():
             self._add_variable(dim, key)
+
+        for name, dim in self.material.get_fluxes().items():
+            self.fluxes.update(
+                {key: create_quadrature_function(name, dim, self.mesh, self.degree)}
+            )
+
         self.external_state_variables = {}
 
         self.set_data_manager(self.cells)
@@ -149,26 +104,17 @@ class QuadratureMap:
             dx for dy, dx in self.material.get_tangent_blocks().keys() if dy == fname
         ]
         for dx in tangent_blocks:
-            print(list(self.material.get_gradients().keys()))
-            if dx in list(self.material.get_gradients().keys()):
+            if dx in self.material.get_gradients():
                 Tang = self.jacobians[(fname, dx)]
-                delta_dx = ufl.algorithms.expand_derivatives(
-                    ufl.derivative(self.g_expr, u, du)
-                )
-                # delta_dx = ufl.replace(self.gradient, {u: du})
-                print("Delta_dx", self.gradient, delta_dx, ufl.grad(du))
-                tdg = Tang * delta_dx
+                delta_dx = self.gradients[dx].variation(u, du)
                 # if len(ufl.shape(tdg)) > 0:
                 #     if ufl.shape(tdg)[0] == 1:
                 #         tdg = tdg[0]
-                print(
-                    dx,
-                    ufl.shape(Tang),
-                    ufl.shape(delta_dx),
-                    ufl.shape(tdg),
-                    ufl.shape(self.flux),
-                )
-                tangent_form += ufl.replace(F, {self.flux: tdg})
+            elif dx in self.external_state_variables:
+                Tang = self.jacobians[(fname, dx)]
+                delta_dx = self.external_state_variables[dx].variation(u, du)
+            tdg = Tang * delta_dx
+            tangent_form += ufl.replace(F, {self.fluxes[fname]: tdg})
         # derivatives of internal state variables
         # for s in self.state_variables["internal"].values():
         #     for t, dg in zip(s.tangent_blocks.values(), s.variables):
@@ -203,18 +149,42 @@ class QuadratureMap:
         ext_state_var : float, np.ndarray, fem.Function
             External state variable
         """
-        self.external_state_variables.update({name: ext_state_var})
+        if isinstance(ext_state_var, (int, float, np.ndarray)):
+            ext_state_var = fem.Constant(self.mesh, ext_state_var)
+        state_var = QuadratureExpression(
+            name,
+            fem.Expression(ext_state_var, self.quadrature_points),
+            self.mesh,
+            self.degree,
+        )
+        self.external_state_variables.update({name: state_var})
+
+    def register_gradient(self, name, gradient):
+        if name in self.material.get_gradients():
+            grad = QuadratureExpression(
+                name,
+                fem.Expression(gradient, self.quadrature_points),
+                self.mesh,
+                self.degree,
+            )
+            self.gradients.update({name: grad})
+        else:
+            raise ValueError(
+                f"Gradient '{name}' is not available from the material law."
+            )
 
     def update_external_state_variables(self):
         for name, esv in self.external_state_variables.items():
-            if isinstance(esv, (int, float, np.ndarray)):
-                values = esv
-            else:
-                fs_type = get_function_space_type(esv)
-                Vm = create_quadrature_space(self.mesh, self.degree, *fs_type)
-                esv_fun = fem.Function(Vm, name=name)
-                self.eval_quadrature(esv, esv_fun)
-                values = esv_fun.vector.array
+            esv.eval(self.cells)
+            values = esv.function.vector.array
+            # if isinstance(esv, (int, float, np.ndarray)):
+            #     values = esv
+            # else:
+            #     fs_type = get_function_space_type(esv)
+            #     Vm = create_quadrature_space(self.mesh, self.degree, *fs_type)
+            #     esv_fun = fem.Function(Vm, name=name)
+            #     self.eval_quadrature(esv, esv_fun)
+            #     values = esv_fun.vector.array
             self.material.update_external_state_variable(name, values)
 
     def set_data_manager(self, cells):
@@ -229,22 +199,20 @@ class QuadratureMap:
         fun = fem.Function(W, name=name)
         self.variables.update({fun.name: fun})
 
-    def get_quadrature_points(self):
+    @property
+    def quadrature_points(self):
         basix_celltype = getattr(basix.CellType, self.mesh.topology.cell_type.name)
         quadrature_points, weights = basix.make_quadrature(basix_celltype, self.degree)
         return quadrature_points
 
     def eval_quadrature(self, ufl_expr, fem_func):
-        expr_expr = fem.Expression(ufl_expr, self.get_quadrature_points())
+        expr_expr = fem.Expression(ufl_expr, self.quadrature_points)
         expr_eval = expr_expr.eval(self.cells)
         fem_func.vector.array[:] = expr_eval.flatten()[:]
 
-    def eval_gradient(self):
-        self.eval_quadrature(self.g_expr, self.gradient)
-
-    def get_gradient_vals(self):
-        self.eval_gradient()
-        return get_vals(self.gradient)
+    def get_gradient_vals(self, gradient, cells):
+        gradient.eval(cells)
+        return get_vals(gradient.function)
 
     def update(self, cells=None):
         if cells is None:
@@ -253,7 +221,7 @@ class QuadratureMap:
             self.update_flux(self.material.integrate, cells)
 
     def _cell_to_dofs(self, cells):
-        num_qp = len(self.get_quadrature_points())
+        num_qp = len(self.quadrature_points)
         return (
             np.repeat(num_qp * cells[:, np.newaxis], num_qp, axis=1)
             + np.repeat(np.arange(num_qp)[np.newaxis, :], len(cells), axis=0)
@@ -261,9 +229,16 @@ class QuadratureMap:
 
     def update_flux(self, eval_flux_list, cell_groups):
         self.update_external_state_variables()
-        grad_vals = np.copy(
-            self.get_gradient_vals()
-        )  # copy to avoid changing gradient values when rotating
+
+        grad_vals = []
+        # loop over gradients in proper order
+        for name in self.material.get_gradients().keys():
+            grad = self.gradients[name]
+            grad_vals.append(
+                self.get_gradient_vals(grad, self.cells)
+            )  # copy to avoid changing gradient values when rotating
+        grad_vals = np.concatenate(grad_vals)
+
         if self.material.rotation_matrix is not None:
             self.material.rotate_gradients(
                 grad_vals.ravel(), self.rotation_func.vector.array
@@ -288,7 +263,15 @@ class QuadratureMap:
                 Ct_vals.ravel(), self.rotation_func.vector.array
             )
         update_vals(self.flux, flux_vals)
+        self.update_fluxes(flux_vals)
         update_vals(self.jacobian_flatten, Ct_vals)
+
+    def update_fluxes(self, flux_vals):
+        buff = 0
+        for name, dim in self.material.get_fluxes().items():
+            flux = self.fluxes[name]
+            update_vals(flux, flux_vals[:, buff : buff + dim])
+            buff += dim
 
     def advance(self):
         self.material.data_manager.update()
