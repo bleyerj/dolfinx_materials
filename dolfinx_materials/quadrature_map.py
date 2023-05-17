@@ -78,7 +78,7 @@ class QuadratureMap:
 
         for name, dim in self.material.get_fluxes().items():
             self.fluxes.update(
-                {key: create_quadrature_function(name, dim, self.mesh, self.degree)}
+                {name: create_quadrature_function(name, dim, self.mesh, self.degree)}
             )
 
         self.external_state_variables = {}

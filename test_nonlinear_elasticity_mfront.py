@@ -21,7 +21,7 @@ sig0 = 500.0
 alpha = 2e-3 * E / sig0
 n = 100.0
 
-material = MFrontNonlinearMaterial(
+material = MFrontMaterial(
     "dolfinx_materials/materials/mfront/src/libBehaviour.so",
     "RambergOsgoodNonLinearElasticity",
     material_properties={

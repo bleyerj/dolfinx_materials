@@ -57,7 +57,9 @@ def uniaxial_test_2D(material, Exx, N=1, order=1, save_fields=None):
 
     qmap = QuadratureMap(domain, deg_quad, strain(u), material)
     qmap.register_gradient("eps", strain(u))
-    Res = ufl.dot(qmap.flux, strain(v)) * qmap.dx
+
+    sig = qmap.fluxes["sig"]
+    Res = ufl.dot(sig, strain(v)) * qmap.dx
     Jac = qmap.derivative(Res, u, du)
 
     newton = CustomNewton(qmap, Res, Jac, u, bcs, tol=1e-6)
