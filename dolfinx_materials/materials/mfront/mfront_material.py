@@ -123,6 +123,7 @@ class MFrontMaterial:
     def set_data_manager(self, ngauss):
         # Setting the material data manager
         self.data_manager = mgis_bv.MaterialDataManager(self.behaviour, ngauss)
+        self.update_external_state_variable("Temperature", 293.15)
 
     def update_parameters(self, parameters):
         for key, value in parameters.items():
@@ -253,10 +254,13 @@ class MFrontMaterial:
         mgis_bv.integrate(
             self.data_manager, self.integration_type, self.dt, 0, self.data_manager.n
         )
-        # _, n, m = self.data_manager.K.shape
+        K = self.data_manager.K
+        if len(K.shape) == 3:
+            K = K.reshape((K.shape[0], -1))
+            print(K.shape)
         return (
             self.data_manager.s1.thermodynamic_forces,
-            self.data_manager.K,
+            K,
         )  # reshape(
         #     (-1, n * m)
         # )
