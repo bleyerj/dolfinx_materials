@@ -55,7 +55,7 @@ def project(
 
 def get_function_space_type(x):
     shape = x.ufl_shape
-    if len(shape) == 0:
+    if len(shape) == 0 or shape == (1,):
         return ("scalar", None)
     elif len(shape) == 1:
         return ("vector", shape[0])
@@ -75,7 +75,9 @@ function_space_dict = {
 def to_mat(array):
     M = ufl.as_matrix(array)
     shape = ufl.shape(M)
-    if shape[0] == 1:
+    if shape == (1, 1):
+        return M[0, 0]
+    elif shape[0] == 1:
         return ufl.as_vector(array[0])
     elif shape[1] == 1:
         return ufl.as_vector([a[0] for a in array])
@@ -84,18 +86,30 @@ def to_mat(array):
 
 
 def create_quadrature_space(mesh, degree, type, shape):
-    We = function_space_dict[type](
-        "Quadrature", mesh.ufl_cell(), degree, shape, quad_scheme="default"
+    if type == "scalar":
+        W = create_scalar_quadrature_space(mesh, degree)
+    elif type == "vector":
+        W = create_vector_quadrature_space(mesh, degree, shape)
+    elif type == "tensor":
+        W = create_tensor_quadrature_space(mesh, degree, shape)
+    return W
+
+
+def create_scalar_quadrature_space(mesh, degree):
+    We = ufl.FiniteElement(
+        "Quadrature",
+        mesh.ufl_cell(),
+        degree=degree,
+        quad_scheme="default",
     )
     return fem.FunctionSpace(mesh, We)
 
 
-def create_scalar_quadrature_space(mesh, degree):
-    return create_vector_quadrature_space(mesh, degree, 1)
+# return create_vector_quadrature_space(mesh, degree, 1)
 
 
 def create_vector_quadrature_space(mesh, degree, dim):
-    if dim > 0:
+    if dim > 1:
         We = ufl.VectorElement(
             "Quadrature",
             mesh.ufl_cell(),
@@ -104,6 +118,8 @@ def create_vector_quadrature_space(mesh, degree, dim):
             quad_scheme="default",
         )
         return fem.FunctionSpace(mesh, We)
+    if dim == 1:
+        We = create_scalar_quadrature_space(mesh, degree)
     else:
         raise ValueError("Vector dimension should be at least 1.")
 

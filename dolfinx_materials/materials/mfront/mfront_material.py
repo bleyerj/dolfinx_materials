@@ -257,13 +257,33 @@ class MFrontMaterial:
         K = self.data_manager.K
         if len(K.shape) == 3:
             K = K.reshape((K.shape[0], -1))
-            print(K.shape)
         return (
             self.data_manager.s1.thermodynamic_forces,
             K,
         )  # reshape(
         #     (-1, n * m)
         # )
+
+    def set_initial_state_dict(self, state):
+        buff = 0
+        for i, s in enumerate(self.get_gradient_names()):
+            block_shape = self.get_gradient_sizes()[i]
+            self.data_manager.s0.gradients[:, buff : buff + block_shape] = state[s]
+            buff += block_shape
+        buff = 0
+        for i, s in enumerate(self.get_flux_names()):
+            block_shape = self.get_flux_sizes()[i]
+            self.data_manager.s0.thermodynamic_forces[
+                :, buff : buff + block_shape
+            ] = state[s]
+            buff += block_shape
+        buff = 0
+        for i, s in enumerate(self.get_internal_state_variable_names()):
+            block_shape = self.get_internal_state_variable_sizes()[i]
+            self.data_manager.s0.internal_state_variables[
+                :, buff : buff + block_shape
+            ] = state[s]
+            buff += block_shape
 
     def get_final_state_dict(self):
         state = {}

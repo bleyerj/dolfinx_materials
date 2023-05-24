@@ -55,7 +55,7 @@ def uniaxial_test_2D(material, Exx, N=1, order=1, save_fields=None):
             ]
         )
 
-    qmap = QuadratureMap(domain, deg_quad, strain(u), material)
+    qmap = QuadratureMap(domain, deg_quad, material)
     qmap.register_gradient("eps", strain(u))
 
     sig = qmap.fluxes["sig"]
@@ -79,7 +79,7 @@ def uniaxial_test_2D(material, Exx, N=1, order=1, save_fields=None):
 
         converged, it = newton.solve(solver)
 
-        Sxx[i + 1] = qmap.flux.vector.array[0]
+        Sxx[i + 1] = sig.vector.array[0]
 
         if save_fields is not None:
             for field_name in save_fields:

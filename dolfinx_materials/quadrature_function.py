@@ -14,7 +14,13 @@ from .utils import project, get_function_space_type, create_quadrature_space
 
 
 def create_quadrature_function(name, shape, mesh, quadrature_degree):
-    function_space = create_quadrature_space(mesh, quadrature_degree, "vector", shape)
+    if shape in [0, 1]:
+        type = "scalar"
+    elif shape > 1:
+        type = "vector"
+    elif len(shape) == 2:
+        type = "tensor"
+    function_space = create_quadrature_space(mesh, quadrature_degree, type, shape)
     return fem.Function(function_space, name=name)
 
 
