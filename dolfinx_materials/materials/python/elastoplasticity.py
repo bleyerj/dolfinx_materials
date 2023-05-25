@@ -6,7 +6,8 @@ from scipy.optimize import fsolve
 
 
 class ElastoPlasticIsotropicHardening(Material):
-    def get_internal_state_variables(self):
+    @property
+    def internal_state_variables(self):
         return {"p": 1}
 
     def constitutive_update(self, eps, state):

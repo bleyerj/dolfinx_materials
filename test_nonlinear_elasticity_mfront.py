@@ -1,5 +1,5 @@
 import numpy as np
-from dolfinx_materials.materials.mfront.mfront_material import MFrontNonlinearMaterial
+from dolfinx_materials.materials.mfront import MFrontMaterial
 from uniaxial_test import uniaxial_test_2D
 import ufl
 from dolfinx_materials.quadrature_map import QuadratureMap

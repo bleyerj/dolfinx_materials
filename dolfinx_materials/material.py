@@ -22,24 +22,41 @@ class Material:
     def rotation_matrix(self):
         return None
 
-    def get_gradients(self):
+    @property
+    def gradients(self):
         return {"eps": 6}
 
-    def get_fluxes(self):
+    @property
+    def fluxes(self):
         return {"sig": 6}
 
-    def get_tangent_blocks(self):
+    @property
+    def tangent_blocks(self):
         return {("sig", "eps"): (6, 6)}
 
-    def get_internal_state_variables(self):
+    @property
+    def internal_state_variables(self):
         return {}
 
-    def get_variables(self):
+    @property
+    def variables(self):
         return {
-            **self.get_gradients(),
-            **self.get_fluxes(),
-            **self.get_internal_state_variables(),
+            **self.gradients,
+            **self.fluxes,
+            **self.internal_state_variables,
         }
+
+    @property
+    def gradient_names(self):
+        return list(self.gradients.keys())
+
+    @property
+    def flux_names(self):
+        return list(self.fluxes.keys())
+
+    @property
+    def internal_state_variable_names(self):
+        return list(self.internal_state_variables.keys())
 
     def set_data_manager(self, ngauss):
         # Setting the material data manager
@@ -62,11 +79,14 @@ class Material:
     def get_final_state_dict(self):
         return self.data_manager.s1[:]
 
+    def set_initial_state_dict(self, state):
+        return self.data_manager.s0.set_item(state)
+
 
 class DataManager:
     def __init__(self, behaviour, ngauss):
-        num_gradients = sum([v for v in behaviour.get_gradients().values()])
-        num_fluxes = sum([v for v in behaviour.get_fluxes().values()])
+        num_gradients = sum([v for v in behaviour.gradients.values()])
+        num_fluxes = sum([v for v in behaviour.fluxes.values()])
         self.K = np.zeros((num_fluxes, num_gradients))
         self.s0 = MaterialStateManager(behaviour, ngauss)
         self.s1 = MaterialStateManager(behaviour, ngauss)
@@ -82,10 +102,10 @@ class MaterialStateManager:
     def __init__(self, behaviour, ngauss):
         self._behaviour = behaviour
         self.n = ngauss
-        self.gradients_stride = [v for v in self._behaviour.get_gradients().values()]
-        self.fluxes_stride = [v for v in self._behaviour.get_fluxes().values()]
+        self.gradients_stride = [v for v in self._behaviour.gradients.values()]
+        self.fluxes_stride = [v for v in self._behaviour.fluxes.values()]
         self.internal_state_variables_stride = [
-            v for v in self._behaviour.get_internal_state_variables().values()
+            v for v in self._behaviour.internal_state_variables.values()
         ]
         self.gradients = np.zeros((ngauss, sum(self.gradients_stride)))
         self.fluxes = np.zeros((ngauss, sum(self.fluxes_stride)))
@@ -99,47 +119,52 @@ class MaterialStateManager:
         self.internal_state_variables = other.internal_state_variables
 
     def get_flux_index(self, name):
-        index = list(self._behaviour.get_fluxes().keys()).index(name)
-        pos = range(index, index + self._behaviour.get_fluxes()[name])
+        index = self._behaviour.flux_names.index(name)
+        pos = np.arange(index, index + self._behaviour.fluxes[name])
         return pos
 
     def get_gradient_index(self, name):
-        index = list(self._behaviour.get_gradients().keys()).index(name)
-        pos = range(index, index + self._behaviour.get_gradients()[name])
+        index = self._behaviour.gradient_names.index(name)
+        pos = np.arange(index, index + self._behaviour.gradients[name])
         return pos
 
     def get_internal_state_variable_index(self, name):
-        index = list(self._behaviour.get_internal_state_variables().keys()).index(name)
-        pos = range(index, index + self._behaviour.get_internal_state_variables()[name])
+        index = self._behaviour.internal_state_variable_names.index(name)
+        pos = np.arange(index, index + self._behaviour.internal_state_variables[name])
         return pos
 
     def __getitem__(self, i):
         state = {}
-        for key, value in self._behaviour.get_gradients().items():
+        for key, value in self._behaviour.gradients.items():
             pos = self.get_gradient_index(key)
             state.update({key: self.gradients[i, pos]})
-        for key, value in self._behaviour.get_fluxes().items():
+        for key, value in self._behaviour.fluxes.items():
             pos = self.get_flux_index(key)
             state.update({key: self.fluxes[i, pos]})
-        for key, value in self._behaviour.get_internal_state_variables().items():
+        for key, value in self._behaviour.internal_state_variables.items():
             pos = self.get_internal_state_variable_index(key)
             state.update({key: self.internal_state_variables[i, pos]})
         return state
 
-    def __setitem__(self, i, state):
+    def set_item(self, state, indices=None):
+        if indices is None:
+            indices = np.arange(self.n)
         state_copy = state.copy()
-        for key, value in self._behaviour.get_gradients().items():
+        for key, value in self._behaviour.gradients.items():
             pos = self.get_gradient_index(key)
-            self.gradients[i, pos] = state[key]
+            self.gradients[np.ix_(indices, pos)] = state[key]
             state_copy.pop(key)
-        for key, value in self._behaviour.get_fluxes().items():
+        for key, value in self._behaviour.fluxes.items():
             pos = self.get_flux_index(key)
-            self.fluxes[i, pos] = state[key]
+            self.fluxes[np.ix_(indices, pos)] = state[key]
             state_copy.pop(key)
-        for key, value in self._behaviour.get_internal_state_variables().items():
+        for key, value in self._behaviour.internal_state_variables.items():
             pos = self.get_internal_state_variable_index(key)
-            self.internal_state_variables[i, pos] = state[key]
+            self.internal_state_variables[np.ix_(indices, pos)] = state[key]
             state_copy.pop(key)
         assert (
             len(state_copy) == 0
         ), "Material state contains unknown field to update with."
+
+    def __setitem__(self, i, state):
+        self.set_item(state, [i])

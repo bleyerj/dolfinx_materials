@@ -10,7 +10,12 @@ QuadratureFunction class and utility functions
 import ufl
 import numpy as np
 from dolfinx import fem
-from .utils import project, get_function_space_type, create_quadrature_space
+from .utils import (
+    project,
+    get_function_space_type,
+    create_quadrature_space,
+    cell_to_dofs,
+)
 
 
 def create_quadrature_function(name, shape, mesh, quadrature_degree):
@@ -42,7 +47,8 @@ class QuadratureExpression:
 
     def eval(self, cells):
         expr_eval = self.expression.eval(cells)
-        self.function.vector.array[:] = expr_eval.flatten()[:]
+        dofs = cell_to_dofs(cells, self._function_space)
+        self.function.vector.array[dofs] = expr_eval.flatten()[:]
 
     def variation(self, u, v):
         deriv = sum(

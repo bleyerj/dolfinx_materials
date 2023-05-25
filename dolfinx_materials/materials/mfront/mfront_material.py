@@ -156,97 +156,109 @@ class MFrontMaterial:
     def get_parameter(self, name):
         return self.behaviour.getParameterDefaultValue(name)
 
-    def get_parameter_names(self):
+    @property
+    def parameter_names(self):
         return self.behaviour.params
 
-    def get_material_property_names(self):
+    @property
+    def material_property_names(self):
         return [svar.name for svar in self.behaviour.mps]
 
+    @property
     @filter_names
-    def get_external_state_variable_names(self):
+    def external_state_variable_names(self):
         return [svar.name for svar in self.behaviour.external_state_variables]
 
+    @property
     @filter_names
-    def get_internal_state_variable_names(self):
+    def internal_state_variable_names(self):
         return [svar.name for svar in self.behaviour.internal_state_variables]
 
+    @property
     @filter_names
-    def get_gradient_names(self):
+    def gradient_names(self):
         return [svar.name for svar in self.behaviour.gradients]
 
+    @property
     @filter_names
-    def get_flux_names(self):
+    def flux_names(self):
         return [svar.name for svar in self.behaviour.thermodynamic_forces]
 
-    def get_gradients(self):
-        return {
-            k: dim
-            for k, dim in zip(self.get_gradient_names(), self.get_gradient_sizes())
-        }
+    @property
+    def gradients(self):
+        return {k: dim for k, dim in zip(self.gradient_names, self.gradient_sizes)}
 
-    def get_fluxes(self):
-        return {k: dim for k, dim in zip(self.get_flux_names(), self.get_flux_sizes())}
+    @property
+    def fluxes(self):
+        return {k: dim for k, dim in zip(self.flux_names, self.flux_sizes)}
 
-    def get_internal_state_variables(self):
+    @property
+    def internal_state_variables(self):
         return {
             k: dim
             for k, dim in zip(
-                self.get_internal_state_variable_names(),
-                self.get_internal_state_variable_sizes(),
+                self.internal_state_variable_names,
+                self.internal_state_variable_sizes,
             )
         }
 
-    def get_variables(self):
-        dict_grad = self.get_gradients()
-        dict_flux = self.get_fluxes()
-        dict_isv = self.get_internal_state_variables()
+    @property
+    def variables(self):
+        dict_grad = self.gradients
+        dict_flux = self.fluxes
+        dict_isv = self.internal_state_variables
         return {**dict_grad, **dict_flux, **dict_isv}
 
-    def get_material_property_sizes(self):
+    @property
+    def material_property_sizes(self):
         return [
             mgis_bv.getVariableSize(svar, self.hypothesis)
             for svar in self.behaviour.mps
         ]
 
-    def get_external_state_variable_sizes(self):
+    @property
+    def external_state_variable_sizes(self):
         return [
             mgis_bv.getVariableSize(svar, self.hypothesis)
             for svar in self.behaviour.external_state_variables
         ]
 
-    def get_internal_state_variable_sizes(self):
+    @property
+    def internal_state_variable_sizes(self):
         return [
             mgis_bv.getVariableSize(svar, self.hypothesis)
             for svar in self.behaviour.internal_state_variables
         ]
 
-    def get_gradient_sizes(self):
+    @property
+    def gradient_sizes(self):
         return [
             mgis_bv.getVariableSize(svar, self.hypothesis)
             for svar in self.behaviour.gradients
         ]
 
-    def get_flux_sizes(self):
+    @property
+    def flux_sizes(self):
         return [
             mgis_bv.getVariableSize(svar, self.hypothesis)
             for svar in self.behaviour.thermodynamic_forces
         ]
 
-    def get_tangent_block_names(self):
+    @property
+    def tangent_block_names(self):
         return [(t[0].name, t[1].name) for t in self.behaviour.tangent_operator_blocks]
 
-    def get_tangent_block_sizes(self):
+    @property
+    def tangent_block_sizes(self):
         return [
             tuple([mgis_bv.getVariableSize(tt, self.hypothesis) for tt in t])
             for t in self.behaviour.tangent_operator_blocks
         ]
 
-    def get_tangent_blocks(self):
+    @property
+    def tangent_blocks(self):
         return {
-            k: dim
-            for k, dim in zip(
-                self.get_tangent_block_names(), self.get_tangent_block_sizes()
-            )
+            k: dim for k, dim in zip(self.tangent_block_names, self.tangent_block_sizes)
         }
 
     def integrate(self, eps):
@@ -266,42 +278,47 @@ class MFrontMaterial:
 
     def set_initial_state_dict(self, state):
         buff = 0
-        for i, s in enumerate(self.get_gradient_names()):
-            block_shape = self.get_gradient_sizes()[i]
-            self.data_manager.s0.gradients[:, buff : buff + block_shape] = state[s]
+        for i, s in enumerate(self.gradient_names):
+            block_shape = self.gradient_sizes[i]
+            if (
+                s in state
+            ):  # test if in state so that we can update only a few state variables
+                self.data_manager.s0.gradients[:, buff : buff + block_shape] = state[s]
             buff += block_shape
         buff = 0
-        for i, s in enumerate(self.get_flux_names()):
-            block_shape = self.get_flux_sizes()[i]
-            self.data_manager.s0.thermodynamic_forces[
-                :, buff : buff + block_shape
-            ] = state[s]
+        for i, s in enumerate(self.flux_names):
+            block_shape = self.flux_sizes[i]
+            if s in state:
+                self.data_manager.s0.thermodynamic_forces[
+                    :, buff : buff + block_shape
+                ] = state[s]
             buff += block_shape
         buff = 0
-        for i, s in enumerate(self.get_internal_state_variable_names()):
-            block_shape = self.get_internal_state_variable_sizes()[i]
-            self.data_manager.s0.internal_state_variables[
-                :, buff : buff + block_shape
-            ] = state[s]
+        for i, s in enumerate(self.internal_state_variable_names):
+            block_shape = self.internal_state_variable_sizes[i]
+            if s in state:
+                self.data_manager.s0.internal_state_variables[
+                    :, buff : buff + block_shape
+                ] = state[s]
             buff += block_shape
 
     def get_final_state_dict(self):
         state = {}
         buff = 0
-        for i, s in enumerate(self.get_gradient_names()):
-            block_shape = self.get_gradient_sizes()[i]
+        for i, s in enumerate(self.gradient_names):
+            block_shape = self.gradient_sizes[i]
             state[s] = self.data_manager.s1.gradients[:, buff : buff + block_shape]
             buff += block_shape
         buff = 0
-        for i, s in enumerate(self.get_flux_names()):
-            block_shape = self.get_flux_sizes()[i]
+        for i, s in enumerate(self.flux_names):
+            block_shape = self.flux_sizes[i]
             state[s] = self.data_manager.s1.thermodynamic_forces[
                 :, buff : buff + block_shape
             ]
             buff += block_shape
         buff = 0
-        for i, s in enumerate(self.get_internal_state_variable_names()):
-            block_shape = self.get_internal_state_variable_sizes()[i]
+        for i, s in enumerate(self.internal_state_variable_names):
+            block_shape = self.internal_state_variable_sizes[i]
             state[s] = self.data_manager.s1.internal_state_variables[
                 :, buff : buff + block_shape
             ]

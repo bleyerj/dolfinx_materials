@@ -10,11 +10,16 @@ Utility functions.
 from dolfinx import fem
 import ufl
 from petsc4py import PETSc
+import numpy as np
 
 
 # The function performs a manual projection of an original_field function onto a target_field space
 def project(
-    original_field, target_field: fem.Function, dx: ufl.Measure = ufl.dx, bcs=[]
+    original_field,
+    target_field: fem.Function,
+    dx: ufl.Measure = ufl.dx,
+    bcs=[],
+    smooth=None,
 ):
     """Performs a manual projection of an original function onto a target space.
 
@@ -28,6 +33,8 @@ def project(
         Volume measure used for projection, by default ufl.dx
     bcs : list, optional
         Boundary conditions, by default []
+    smooth : float, optional
+        Performs a smoothed projection with a Helmholtz filter of size smooth
     """
     # Ensure we have a mesh and attach to measure
     V = target_field.function_space
@@ -35,7 +42,10 @@ def project(
     # Define variational problem for projection
     w = ufl.TestFunction(V)
     Pv = ufl.TrialFunction(V)
-    a = fem.form(ufl.inner(Pv, w) * dx)
+    a = ufl.inner(Pv, w) * dx
+    if smooth is not None:
+        a += smooth**2 * ufl.inner(ufl.grad(Pv), ufl.grad(w)) * dx
+    a = fem.form(a)
     L = fem.form(ufl.inner(original_field, w) * dx)
 
     # Assemble linear system
@@ -138,9 +148,27 @@ def create_tensor_quadrature_space(mesh, degree, shape):
 
 def get_vals(fun):
     """Get values of a function in reshaped form N x dim where dim is the function space dimension"""
-    dim = len(fun)
+    if ufl.shape(fun) == ():
+        dim = 1
+    else:
+        dim = len(fun)
     return fun.vector.array.reshape((-1, dim))
 
 
-def update_vals(fun, array):
-    fun.vector.array[:] = array.ravel()
+def cell_to_dofs(cells, V):
+    dofmap = V.dofmap
+    return np.concatenate(
+        [
+            np.arange(d * dofmap.bs, (d + 1) * dofmap.bs)
+            for c in cells
+            for d in dofmap.cell_dofs(c)
+        ]
+    )
+
+
+def update_vals(fun, array, cells=None):
+    if cells is None:
+        fun.vector.array[:] = array.ravel()
+    else:
+        dofs = cell_to_dofs(cells, fun.function_space)
+        fun.vector.array[dofs] = array.ravel()
