@@ -78,16 +78,15 @@ class CustomNewton:
                 converged = True
                 break
 
-        if print_solution:
-            if converged:
-                # (Residual norm {error_norm})")
-                print(f"Solution reached in {i} iterations.")
-                print("Constitutive relation update for next time step.")
-                self.quadrature_map.advance()
-            else:
-                print(
-                    f"No solution found after {i} iterations. Revert to previous solution and adjust solver parameters."
-                )
+        if converged:
+            # (Residual norm {error_norm})")
+            print(f"Solution reached in {i} iterations.")
+            print("Constitutive relation update for next time step.")
+            self.quadrature_map.advance()
+        else:
+            print(
+                f"No solution found after {i} iterations. Revert to previous solution and adjust solver parameters."
+            )
 
         return converged, i
 
@@ -106,6 +105,7 @@ class SNESProblem:
         """Assemble residual vector."""
         x.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
         x.copy(self.u.vector)
+        self.quadrature_map.update()
         self.u.vector.ghostUpdate(
             addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD
         )
@@ -119,15 +119,30 @@ class SNESProblem:
 
     def J(self, snes, x, J, P):
         """Assemble Jacobian matrix."""
-        print("Jacobian call:", self.it)
-        self.it += 1
+        # print("Jacobian call:", self.it)
+        # self.it += 1
         # # Update constitutive relation
-        self.quadrature_map.update()
         # self.it += 1
 
         J.zeroEntries()
         assemble_matrix(J, self.a, bcs=self.bcs)
         J.assemble()
+
+    def solve(self, solver):
+        solver.solve(None, self.u.vector)
+        converged = solver.getConvergedReason() > 0
+        it = solver.getIterationNumber()
+        if converged:
+            # (Residual norm {error_norm})")
+            print(f"Solution reached in {it} iterations.")
+            print("Constitutive relation update for next time step.")
+            self.quadrature_map.advance()
+        else:
+            print(
+                f"No solution found after {it} iterations. Revert to previous solution and adjust solver parameters."
+            )
+
+        return converged, it
 
 
 class TAOProblem:
