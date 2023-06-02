@@ -12,6 +12,7 @@ from .utils import (
     get_vals,
     update_vals,
 )
+from dolfinx.common import Timer
 from .material import Material
 from .quadrature_function import create_quadrature_function, QuadratureExpression
 from mpi4py import MPI
@@ -240,30 +241,34 @@ class QuadratureMap:
             self._initialize_state()
             self._initialized = True
 
-        self.update_external_state_variables()
+        with Timer("External state var update"):
+            self.update_external_state_variables()
 
-        grad_vals = []
-        # loop over gradients in proper order
-        for name in self.material.gradients.keys():
-            grad = self.gradients[name]
-            grad_vals.append(
-                self.get_gradient_vals(grad, self.cells)
-            )  # copy to avoid changing gradient values when rotating
-        grad_vals = np.concatenate(grad_vals)
+        with Timer("Eval gradients"):
+            grad_vals = []
+            # loop over gradients in proper order
+            for name in self.material.gradients.keys():
+                grad = self.gradients[name]
+                grad_vals.append(
+                    self.get_gradient_vals(grad, self.cells)
+                )  # copy to avoid changing gradient values when rotating
+            grad_vals = np.concatenate(grad_vals)
 
         if self.material.rotation_matrix is not None:
             self.material.rotate_gradients(
                 grad_vals.ravel(), self.rotation_func.vector.array
             )
 
-        flux_size = sum(list(self.material.fluxes.values()))
-        flux_vals = np.zeros((num_QP, flux_size))
-        Ct_vals = np.zeros_like(get_vals(self.jacobian_flatten)[self.dofs])
+        with Timer("Prepare data"):
+            flux_size = sum(list(self.material.fluxes.values()))
+            flux_vals = np.zeros((num_QP, flux_size))
+            Ct_vals = np.zeros_like(get_vals(self.jacobian_flatten)[self.dofs])
 
-        dofs = self._cell_to_dofs(self.cells)
-        grad_vals_block = grad_vals
-        flux_vals, Ct_vals_mat = self.material.integrate(grad_vals_block)
-        Ct_vals = Ct_vals_mat
+            dofs = self._cell_to_dofs(self.cells)
+            grad_vals_block = grad_vals
+
+        with Timer("Material integration"):
+            flux_vals, Ct_vals = self.material.integrate(grad_vals_block)
 
         if self.material.rotation_matrix is not None:
             self.material.rotate_fluxes(
@@ -273,8 +278,9 @@ class QuadratureMap:
                 Ct_vals.ravel(), self.rotation_func.vector.array
             )
 
-        self.update_fluxes(flux_vals)
-        update_vals(self.jacobian_flatten, Ct_vals, self.cells)
+        with Timer("Update flxes and jacobians"):
+            self.update_fluxes(flux_vals)
+            update_vals(self.jacobian_flatten, Ct_vals, self.cells)
 
     def update_fluxes(self, flux_vals):
         buff = 0

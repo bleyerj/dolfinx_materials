@@ -11,6 +11,7 @@ from dolfinx import fem
 import ufl
 from petsc4py import PETSc
 import numpy as np
+from dolfinx.common import Timer
 
 
 # The function performs a manual projection of an original_field function onto a target_field space
@@ -156,14 +157,23 @@ def get_vals(fun):
 
 
 def cell_to_dofs(cells, V):
-    dofmap = V.dofmap
-    return np.concatenate(
-        [
-            np.arange(d * dofmap.bs, (d + 1) * dofmap.bs)
-            for c in cells
-            for d in dofmap.cell_dofs(c)
-        ]
-    )
+    with Timer("dx_mat:cell_to_dofs"):
+        dofs = fem.locate_dofs_topological(V, V.mesh.geometry.dim, cells)
+        block_size = V.dofmap.bs
+        return np.array(
+            np.kron(dofs, block_size * np.ones(block_size))
+            + np.kron(np.ones(len(dofs)), np.arange(0, block_size)),
+            dtype=np.int32,
+        )
+
+        # dofmap = V.dofmap
+        # return np.concatenate(
+        #     [
+        #         np.arange(d * dofmap.bs, (d + 1) * dofmap.bs)
+        #         for c in cells
+        #         for d in dofmap.cell_dofs(c)
+        #     ]
+        # )
 
 
 def update_vals(fun, array, cells=None):

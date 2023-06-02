@@ -8,6 +8,7 @@ from dolfinx.fem.petsc import (
 )
 from petsc4py import PETSc
 from dolfinx.common import Timer
+import numpy as np
 
 
 ### iteration adopted from Custom Newton Solver tutorial ###
@@ -100,11 +101,14 @@ class SNESProblem:
         self._F, self._J = None, None
         self.u = u
         self.it = 0
+        self.anderson_m = 10
+        self.xa_prev = self.u.vector.array[:]
 
     def F(self, snes, x, F):
         """Assemble residual vector."""
         x.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
         x.copy(self.u.vector)
+
         self.quadrature_map.update()
         self.u.vector.ghostUpdate(
             addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD
@@ -119,11 +123,6 @@ class SNESProblem:
 
     def J(self, snes, x, J, P):
         """Assemble Jacobian matrix."""
-        # print("Jacobian call:", self.it)
-        # self.it += 1
-        # # Update constitutive relation
-        # self.it += 1
-
         J.zeroEntries()
         assemble_matrix(J, self.a, bcs=self.bcs)
         J.assemble()

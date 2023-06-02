@@ -10,6 +10,7 @@ QuadratureFunction class and utility functions
 import ufl
 import numpy as np
 from dolfinx import fem
+from dolfinx.common import Timer
 from .utils import (
     project,
     get_function_space_type,
@@ -46,8 +47,10 @@ class QuadratureExpression:
         self.function = fem.Function(self._function_space, name=self.name)
 
     def eval(self, cells):
-        expr_eval = self.expression.eval(cells)
-        dofs = cell_to_dofs(cells, self._function_space)
+        with Timer("dx_mat:Function eval"):
+            expr_eval = self.expression.eval(cells)
+        with Timer("dx_mat:Prepare dofs"):
+            dofs = cell_to_dofs(cells, self._function_space)
         self.function.vector.array[dofs] = expr_eval.flatten()[:]
 
     def variation(self, u, v):
