@@ -166,15 +166,6 @@ def cell_to_dofs(cells, V):
             dtype=np.int32,
         )
 
-        # dofmap = V.dofmap
-        # return np.concatenate(
-        #     [
-        #         np.arange(d * dofmap.bs, (d + 1) * dofmap.bs)
-        #         for c in cells
-        #         for d in dofmap.cell_dofs(c)
-        #     ]
-        # )
-
 
 def update_vals(fun, array, cells=None):
     if cells is None:
@@ -182,3 +173,118 @@ def update_vals(fun, array, cells=None):
     else:
         dofs = cell_to_dofs(cells, fun.function_space)
         fun.vector.array[dofs] = array.ravel()
+
+
+def symmetric_tensor_to_vector(T, T22=0):
+    """Return symmetric tensor components in vector form notation following MFront conventions
+    T22 can be specified when T is only (2,2)"""
+    if ufl.shape(T) == (2, 2):
+        return ufl.as_vector([T[0, 0], T[1, 1], T22, np.sqrt(2) * T[0, 1]])
+    elif ufl.shape(T) == (3, 3):
+        return ufl.as_vector(
+            [
+                T[0, 0],
+                T[1, 1],
+                T[2, 2],
+                np.sqrt(2) * T[0, 1],
+                np.sqrt(2) * T[0, 2],
+                np.sqrt(2) * T[1, 2],
+            ]
+        )
+    elif len(ufl.shape(T)) == 1:
+        return T
+    else:
+        raise NotImplementedError
+
+
+def nonsymmetric_tensor_to_vector(T, T22=0):
+    """Return nonsymmetric tensor components in vector form notation following MFront conventions
+    T22 can be specified when T is only (2,2)"""
+    if ufl.shape(T) == (2, 2):
+        return ufl.as_vector([T[0, 0], T[1, 1], T22, T[0, 1], T[1, 0]])
+    elif ufl.shape(T) == (3, 3):
+        return ufl.as_vector(
+            [
+                T[0, 0],
+                T[1, 1],
+                T[2, 2],
+                T[0, 1],
+                T[1, 0],
+                T[0, 2],
+                T[2, 0],
+                T[1, 2],
+                T[2, 1],
+            ]
+        )
+    elif len(ufl.shape(T)) == 1:
+        return T
+    else:
+        raise NotImplementedError
+
+
+def vector_to_tensor(T):
+    """Return vector following MFront conventions as a tensor"""
+    if ufl.shape(T) == (4,):
+        return ufl.as_matrix([[T[0], T[3] / np.sqrt(2)], T[3] / np.sqrt(2), T[1]])
+    elif ufl.shape(T) == (6,):
+        return ufl.as_matrix(
+            [
+                [T[0], T[3] / np.sqrt(2), T[4] / np.sqrt(2)],
+                [T[3] / np.sqrt(2), T[1], T[5] / np.sqrt(2)],
+                [T[4] / np.sqrt(2), T[5] / np.sqrt(2), T[2]],
+            ]
+        )
+    elif ufl.shape(T) == (5,):
+        return ufl.as_matrix([[T[0], T[3]], T[4], T[1]])
+    elif ufl.shape(T) == (9,):
+        return ufl.as_matrix(
+            [[T[0], T[3], T[5]], [T[4], T[1], T[7]], [T[6], T[8], T[2]]]
+        )
+    else:
+        raise NotImplementedError
+
+
+def axi_grad(r, v):
+    """
+    Axisymmetric gradient in cylindrical coordinate (er, etheta, ez) for:
+    * a scalar v(r, z)
+    * a 2d-vectorial (vr(r,z), vz(r, z))
+    * a 3d-vectorial (vr(r,z), 0, vz(r, z))
+    """
+    if ufl.shape(v) == (3,):
+        return ufl.as_matrix(
+            [
+                [v[0].dx(0), -v[1] / r, v[0].dx(1)],
+                [v[1].dx(0), v[0] / r, v[1].dx(1)],
+                [v[2].dx(0), 0, v[2].dx(1)],
+            ]
+        )
+    elif ufl.shape(v) == (2,):
+        return ufl.as_matrix(
+            [[v[0].dx(0), v[0].dx(1), 0], [v[1].dx(0), v[1].dx(1), 0], [0, 0, v[0] / r]]
+        )
+    elif ufl.shape(v) == ():
+        return ufl.as_vector([v.dx(0), 0, v.dx(1)])
+    else:
+        raise NotImplementedError
+
+
+def grad_3d(u):
+    return ufl.as_matrix(
+        [[u[0].dx(0), u[0].dx(1), 0], [u[1].dx(0), u[1].dx(1), 0], [0, 0, 0]]
+    )
+
+
+def symmetric_gradient(g):
+    """Return symmetric gradient components in vector form"""
+    return symmetric_tensor_to_vector(ufl.sym(g))
+
+
+def transformation_gradient(g, dim=3):
+    """Return transformation gradient components in vector form"""
+    return nonsymmetric_tensor_to_vector(ufl.Identity(dim) + g, T22=1)
+
+
+def gradient(g):
+    """Return displacement gradient components in vector form"""
+    return nonsymmetric_tensor_to_vector(g)
