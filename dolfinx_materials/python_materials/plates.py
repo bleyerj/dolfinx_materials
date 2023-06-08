@@ -5,6 +5,7 @@ import numpy as np
 
 class NielsenPlate(Material):
     def __init__(self, elastic_model, thick, yield_parameters):
+        super().__init__()
         self.elastic_model = elastic_model
         self.thickness = thick
         self.yield_parameters = yield_parameters
@@ -31,10 +32,12 @@ class NielsenPlate(Material):
         self.prob = cp.Problem(cp.Minimize(t), cons)
         # self.prob = cp.Problem(cp.Minimize(obj))
 
-    def get_gradients(self):
+    @property
+    def gradients(self):
         return {"χ": 3}
 
-    def get_fluxes(self):
+    @property
+    def fluxes(self):
         return {"M": 3}
 
     def constitutive_update(self, χ, state):
@@ -64,4 +67,4 @@ class NielsenPlate(Material):
         state["χ"] = χ
         state["M"] = M
 
-        return M, D @ It
+        return M, D  # @ It

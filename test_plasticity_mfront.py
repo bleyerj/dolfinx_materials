@@ -2,15 +2,13 @@ import numpy as np
 from dolfinx_materials.materials.mfront import MFrontMaterial
 from uniaxial_test import uniaxial_test_2D
 import ufl
-from dolfinx_materials.quadrature_map import QuadratureMap
 from petsc4py import PETSc
 from mpi4py import MPI
 from dolfinx import fem, mesh
 import matplotlib.pyplot as plt
 from dolfinx.common import list_timings, TimingType
-from dolfinx_materials.solvers import CustomNewton
 
-Nx, order = 50, 2
+Nx, order = 1, 1
 domain = mesh.create_unit_square(MPI.COMM_WORLD, Nx, Nx, mesh.CellType.quadrilateral)
 V = fem.VectorFunctionSpace(domain, ("CG", order))
 deg_quad = 2 * (order - 1)

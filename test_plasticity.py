@@ -9,11 +9,12 @@ from uniaxial_test import uniaxial_test_2D
 elastic_model = LinearElasticIsotropic(E=70e3, nu=0.3)
 sig0 = 500.0
 sigu = 750.0
-omega = 100.0
+omega = 50.0
 
 
 def yield_stress(p):
     return sigu + (sig0 - sigu) * np.exp(-p * omega)
+    # return sig0 + 70e3 / omega * p
 
 
 material = ElastoPlasticIsotropicHardening(
@@ -22,9 +23,9 @@ material = ElastoPlasticIsotropicHardening(
 N = 10
 Exx = np.concatenate(
     (
-        np.linspace(0, 2e-2, N + 1),
-        np.linspace(2e-2, 1e-2, N + 1)[1:],
+        np.linspace(0, 4e-2, N + 1),
+        np.linspace(4e-2, 1e-2, N + 1)[1:],
         np.linspace(1e-2, 3e-2, N + 1)[1:],
     )
 )
-uniaxial_test_2D(material, Exx, N=2, order=1, save_fields=["p"])
+uniaxial_test_2D(material, Exx, N=1, order=1, save_fields=["p"])

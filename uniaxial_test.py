@@ -6,7 +6,9 @@ from dolfinx import fem, mesh, io
 import matplotlib.pyplot as plt
 
 from dolfinx_materials.quadrature_map import QuadratureMap
-from dolfinx_materials.solvers import CustomNewton
+
+from dolfinx_materials.solvers import NonlinearMaterialProblem
+from dolfinx.cpp.nls.petsc import NewtonSolver
 
 
 def uniaxial_test_2D(material, Exx, N=1, order=1, save_fields=None):
@@ -62,10 +64,9 @@ def uniaxial_test_2D(material, Exx, N=1, order=1, save_fields=None):
     Res = ufl.dot(sig, strain(v)) * qmap.dx
     Jac = qmap.derivative(Res, u, du)
 
-    newton = CustomNewton(qmap, Res, Jac, u, bcs, tol=1e-6)
-    solver = PETSc.KSP().create(domain.comm)
-    solver.setType(PETSc.KSP.Type.PREONLY)
-    solver.getPC().setType(PETSc.PC.Type.LU)
+    problem = NonlinearMaterialProblem(qmap, Res, Jac, u, bcs)
+    newton = NewtonSolver(MPI.COMM_WORLD)
+    newton.rtol = 1e-6
 
     file_results = io.XDMFFile(
         domain.comm,
@@ -77,7 +78,7 @@ def uniaxial_test_2D(material, Exx, N=1, order=1, save_fields=None):
     for i, exx in enumerate(Exx[1:]):
         uD_x_r.vector.array[:] = exx
 
-        converged, it = newton.solve(solver)
+        converged, it = problem.solve(newton)
 
         Sxx[i + 1] = sig.vector.array[0]
 

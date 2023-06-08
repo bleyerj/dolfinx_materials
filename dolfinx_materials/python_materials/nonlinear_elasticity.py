@@ -47,6 +47,6 @@ class RambergOsgood(Material):
                 + sig_eq * dne_deps
             )
 
-        state["eps"] = eps
-        state["sig"] = sig
+        state["Strain"] = eps
+        state["Stress"] = sig
         return sig, C

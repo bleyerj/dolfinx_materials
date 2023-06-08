@@ -12,6 +12,7 @@ import ufl
 from petsc4py import PETSc
 import numpy as np
 from dolfinx.common import Timer
+from functools import lru_cache
 
 
 # The function performs a manual projection of an original_field function onto a target_field space
@@ -160,11 +161,36 @@ def cell_to_dofs(cells, V):
     with Timer("dx_mat:cell_to_dofs"):
         dofs = fem.locate_dofs_topological(V, V.mesh.geometry.dim, cells)
         block_size = V.dofmap.bs
-        return np.array(
-            np.kron(dofs, block_size * np.ones(block_size))
-            + np.kron(np.ones(len(dofs)), np.arange(0, block_size)),
-            dtype=np.int32,
-        )
+        return cell_to_dofs_cached(tuple(dofs), block_size)
+        # return np.asarray(
+        #     np.kron(dofs, block_size * np.ones(block_size))
+        #     + np.kron(np.ones(len(dofs)), np.arange(0, block_size)),
+        #     dtype=np.int32,
+        # )
+
+
+def cacheRef(f):
+    cache = {}
+
+    def g(*args):
+        # use `id` to get memory address for function argument.
+        cache_key = "-".join(list(map(lambda e: str(id(e)), args)))
+        if cache_key in cache:
+            return cache[cache_key]
+        v = f(*args)
+        cache[cache_key] = v
+        return v
+
+    return g
+
+
+@lru_cache
+def cell_to_dofs_cached(dofs, block_size):
+    return np.asarray(
+        np.kron(np.asarray(dofs), block_size * np.ones(block_size))
+        + np.kron(np.ones(len(dofs)), np.arange(0, block_size)),
+        dtype=np.int32,
+    )
 
 
 def update_vals(fun, array, cells=None):

@@ -2,7 +2,7 @@ import numpy as np
 from .elasticity import LinearElasticIsotropic
 from dolfinx_materials.material import Material
 from .tensors import Identity, K, vectorized_outer, expand_size
-from scipy.optimize import root
+from scipy.optimize import root, fsolve
 
 # import jax.numpy as jnp
 # from jax import jit
@@ -92,10 +92,11 @@ class ElastoPlasticIsotropicHardening(Material):
         sig_Y_old = self.yield_stress(p_old)
         sig_eq_el = np.sqrt(3 / 2.0) * np.linalg.norm(s_el)
         yield_criterion = sig_eq_el - sig_Y_old
-        if yield_criterion >= 0:
-            dp = root(
+        if yield_criterion > 0:
+            dp = fsolve(
                 lambda dp: sig_eq_el - 3 * mu * dp - self.yield_stress(p_old + dp), 0.0
-            ).x
+            )
+            # assert dp > 0, f"Wrong value for dp={dp}"
             n_el = s_el / sig_eq_el  # normal vector
             depsp = 3 / 2 * n_el * dp
             sig_Y_new = self.yield_stress(p_old + dp)

@@ -33,7 +33,10 @@ class Material:
 
     @property
     def tangent_blocks(self):
-        return {("Stress", "Strain"): (6, 6)}
+        return {
+            (kf, kg): (vf, vg)
+            for (kf, vf), (kg, vg) in zip(self.fluxes.items(), self.gradients.items())
+        }
 
     @property
     def internal_state_variables(self):
@@ -64,10 +67,13 @@ class Material:
         self.data_manager = DataManager(self, ngauss)
 
     def integrate(self, gradients):
-        # try:
-        # vectorized_state = {k: v.T for (k, v) in self.get_initial_state_dict().items()}
-        # flux, Ct = self.constitutive_update_vectorized(gradients.T, vectorized_state)
-        # except:
+        try:
+            vectorized_state = self.get_initial_state_dict()
+            flux_array, Ct_array = self.constitutive_update_vectorized(
+                gradients, vectorized_state
+            )
+            self.data_manager.s1.set_item(vectorized_state)
+
         # with Timer("dx_mat: Python loop constitutive update"):
         #     state = self.data_manager.s0
         #     results = [
@@ -75,27 +81,20 @@ class Material:
         #     ]
         #     flux_array = np.array([res[0] for res in results])
         #     Ct_array = np.array([res[1] for res in results])
-        flux_array = []
-        Ct_array = []
-        for i, g in enumerate(gradients):
-            with Timer("dx_mat: get state"):
-                state = self.data_manager.s0[i]
-            with Timer("dx_mat: const update"):
-                flux, Ct = self.constitutive_update(g, state)
-            with Timer("dx_mat: appends"):
-                flux_array.append(flux)
-                Ct_array.append(Ct.ravel())
+        except AttributeError:
+            flux_array = []
+            Ct_array = []
+            for i, g in enumerate(gradients):
+                with Timer("dx_mat: get state"):
+                    state = self.data_manager.s0[i]
+                with Timer("dx_mat: const update"):
+                    flux, Ct = self.constitutive_update(g, state)
+                with Timer("dx_mat: appends"):
+                    flux_array.append(flux)
+                    Ct_array.append(Ct.ravel())
 
-            with Timer("dx_mat: set state"):
-                self.data_manager.s1[i] = state
-
-        # with Timer("dx_mat: Python ap constitutive update"):
-        #     L = list(
-        #         map(
-        #             lambda x: self.constitutive_update(*x),
-        #             [(g, self.data_manager.s0[i]) for i, g in enumerate(gradients)],
-        #         )
-        #     )
+                with Timer("dx_mat: set state"):
+                    self.data_manager.s1[i] = state
 
         return np.array(flux_array), np.array(Ct_array)
 
@@ -140,9 +139,9 @@ class MaterialStateManager:
         )
 
     def update(self, other):
-        self.gradients = other.gradients
-        self.fluxes = other.fluxes
-        self.internal_state_variables = other.internal_state_variables
+        self.gradients = np.copy(other.gradients)
+        self.fluxes = np.copy(other.fluxes)
+        self.internal_state_variables = np.copy(other.internal_state_variables)
 
     def get_flux_index(self, name):
         index = self._behaviour.flux_names.index(name)
