@@ -28,22 +28,22 @@ class NielsenPlate(Material):
             cp.quad_over_lin(Mxy, yp["mxm"] + Mxx) <= yp["mym"] + Myy,
             obj <= self.normalization * t,
         ]
-        # cons = [obj <= self.normalization*t, cp.norm(self.M) <= yp["mxp"]]
+        cons = [obj <= self.normalization * t, cp.norm(self.M) <= yp["mxp"]]
         self.prob = cp.Problem(cp.Minimize(t), cons)
         # self.prob = cp.Problem(cp.Minimize(obj))
 
     @property
     def gradients(self):
-        return {"χ": 3}
+        return {"curv": 3}
 
     @property
     def fluxes(self):
-        return {"M": 3}
+        return {"bending": 3}
 
     def constitutive_update(self, χ, state):
-        χ_old = state["χ"]
+        χ_old = state["curv"]
         dχ = χ - χ_old
-        M_old = state["M"]
+        M_old = state["bending"]
 
         D = self.thickness**3 / 12 * self.elastic_model.C
         S = np.linalg.inv(self.elastic_model.C)
@@ -52,19 +52,23 @@ class NielsenPlate(Material):
         self.normalization.value = max(M_pred @ S @ M_pred, 1e-4)
 
         self.prob.solve(
-            requires_grad=True, solver=cp.SCS, verbose=False, eps_abs=1e-6, eps_rel=1e-6
+            # requires_grad=True,
+            solver=cp.ECOS,
+            verbose=False,
+            # eps_abs=1e-6,
+            # eps_rel=1e-6,
         )
         M = self.M.value
+
         # assert np.allclose(M, self.M_el.value)
-        It = np.zeros((3, 3))
-        for i in range(3):
-            e = np.zeros((3,))
-            e[i] = 1
-            self.M_el.delta = e
-            self.prob.derivative()
-            It[:, i] = self.M.delta
+        # It = np.zeros((3, 3))
+        # for i in range(3):
+        #     e = np.zeros((3,))
+        #     e[i] = 1
+        #     self.M_el.delta = e
+        #     self.prob.derivative()
+        #     It[:, i] = self.M.delta
 
-        state["χ"] = χ
-        state["M"] = M
-
+        state["curv"] = χ
+        state["bending"] = M
         return M, D  # @ It

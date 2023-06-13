@@ -1,31 +1,125 @@
 import numpy as np
-from dolfinx_materials.materials.python import (
-    ElastoPlasticIsotropicHardening,
-    LinearElasticIsotropic,
+from dolfinx_materials.python_materials.elasticity import (
+    PlaneStressLinearElasticIsotropic,
 )
-from uniaxial_test import uniaxial_test_2D
+from dolfinx_materials.python_materials.rankine import Rankine
+import ufl
+from petsc4py import PETSc
+from mpi4py import MPI
+from dolfinx import fem, mesh, io
+import matplotlib.pyplot as plt
+
+from dolfinx_materials.quadrature_map import QuadratureMap
+
+from dolfinx_materials.solvers import NonlinearMaterialProblem
+from dolfinx.cpp.nls.petsc import NewtonSolver
+
+E, nu = 70e3, 0.0
+fc, ft = 30.0, 30.0
+elastic_model = PlaneStressLinearElasticIsotropic()
+elastic_model.C = elastic_model.compute_C(E, nu)
+
+material = Rankine(elastic_model, fc, ft)
+
+domain = mesh.create_unit_square(MPI.COMM_WORLD, 1, 1, mesh.CellType.quadrilateral)
+V = fem.VectorFunctionSpace(domain, ("CG", 1))
+
+deg_quad = 0
+
+Eps = fem.Constant(domain, np.zeros((3,)))
+x = ufl.SpatialCoordinate(domain)
+Eps_t = ufl.as_matrix([[Eps[0], Eps[2]], [Eps[2], Eps[1]]])
+
+u_expr = fem.Expression(Eps_t * x, V.element.interpolation_points())
+uD = fem.Function(V)
+uD.interpolate(u_expr)
+
+tdim = domain.topology.dim
+fdim = tdim - 1
+domain.topology.create_connectivity(fdim, tdim)
+boundary_facets = mesh.exterior_facet_indices(domain.topology)
+boundary_dofs = fem.locate_dofs_topological(V, fdim, boundary_facets)
+bcs = [fem.dirichletbc(uD, boundary_dofs)]
+
+du = ufl.TrialFunction(V)
+v = ufl.TestFunction(V)
+u = fem.Function(V)
 
 
-elastic_model = LinearElasticIsotropic(E=70e3, nu=0.3)
-sig0 = 500.0
-sigu = 750.0
-omega = 50.0
-
-
-def yield_stress(p):
-    return sigu + (sig0 - sigu) * np.exp(-p * omega)
-    # return sig0 + 70e3 / omega * p
-
-
-material = ElastoPlasticIsotropicHardening(
-    elastic_model=elastic_model, yield_stress=yield_stress
-)
-N = 10
-Exx = np.concatenate(
-    (
-        np.linspace(0, 4e-2, N + 1),
-        np.linspace(4e-2, 1e-2, N + 1)[1:],
-        np.linspace(1e-2, 3e-2, N + 1)[1:],
+def strain(u):
+    return ufl.as_vector(
+        [
+            u[0].dx(0),
+            u[1].dx(1),
+            1 / np.sqrt(2) * (u[1].dx(0) + u[0].dx(1)),
+        ]
     )
-)
-uniaxial_test_2D(material, Exx, N=1, order=1, save_fields=["p"])
+
+
+qmap = QuadratureMap(domain, deg_quad, material)
+qmap.register_gradient("Strain", strain(u))
+sig = qmap.fluxes["Stress"]
+Res = ufl.dot(sig, strain(v)) * qmap.dx
+Jac = qmap.derivative(Res, u, du)
+
+problem = NonlinearMaterialProblem(qmap, Res, Jac, u, bcs)
+newton = NewtonSolver(MPI.COMM_WORLD)
+newton.rtol = 1e-6
+
+theta_list = np.linspace(0, 2 * np.pi, 15)[:-1]
+Eps_list = np.vstack((np.cos(theta_list), np.sin(theta_list)))
+
+phi_list = np.linspace(0, np.pi, 30)
+t_list = np.linspace(0, 1e-3, 5)
+Stress = np.zeros((len(t_list), len(theta_list) * len(phi_list), 3))
+
+
+fig = plt.figure()
+ax = fig.add_subplot(projection="3d")
+yield_surface = np.array([[-fc, -fc], [-fc, ft], [ft, ft], [ft, -fc], [-fc, -fc]])
+# plt.plot(yield_surface[:, 0], yield_surface[:, 1], "-k", linewidth=0.5)
+c = np.linspace(0, 1, len(t_list))
+colors = plt.cm.inferno(c)
+
+for k, phi in enumerate(phi_list):
+    for j, t in enumerate(theta_list):
+        Eps_dir = np.array(
+            [np.cos(phi) * np.cos(t), np.cos(phi) * np.sin(t), np.sin(phi)]
+        )
+        sig.x.set(0)
+        u.x.set(0)
+        qmap.reinitialize_state()
+
+        pos = len(theta_list) * k + j
+
+        for i, t in enumerate(t_list[1:]):
+            Eps.value = t * Eps_dir
+            uD.interpolate(u_expr)
+
+            converged, it = problem.solve(newton)
+            Stress[i + 1, pos, :] = sig.vector.array[:3]
+
+        # plt.scatter(Stress[:, pos, 0], Stress[:, pos, 1], marker="o", c=colors[:])
+        ax.scatter(
+            Stress[-1, pos, 0],
+            Stress[-1, pos, 1],
+            Stress[-1, pos, 2],
+            marker="o",
+            c="k",
+        )
+
+        ax.scatter(
+            Stress[-1, pos, 0],
+            Stress[-1, pos, 1],
+            -Stress[-1, pos, 2],
+            marker="o",
+            c="k",
+        )
+ax.set_xlabel(r"Stress $\sigma_{xx}$")
+ax.set_ylabel(r"Stress $\sigma_{yy}$")
+ax.set_zlabel(r"Stress $\sigma_{xy}$")
+plt.show()
+
+plt.gca().set_aspect("equal")
+
+plt.savefig(f"{material.name}_stress_strain.pdf")

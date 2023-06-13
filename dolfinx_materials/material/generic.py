@@ -175,18 +175,19 @@ class MaterialStateManager:
         if indices is None:
             indices = np.arange(self.n)
         state_copy = state.copy()
-        for key, value in self._behaviour.gradients.items():
-            pos = self.get_gradient_index(key)
-            self.gradients[np.ix_(indices, pos)] = state[key]
-            state_copy.pop(key)
-        for key, value in self._behaviour.fluxes.items():
-            pos = self.get_flux_index(key)
-            self.fluxes[np.ix_(indices, pos)] = state[key]
-            state_copy.pop(key)
-        for key, value in self._behaviour.internal_state_variables.items():
-            pos = self.get_internal_state_variable_index(key)
-            self.internal_state_variables[np.ix_(indices, pos)] = state[key]
-            state_copy.pop(key)
+        for key, value in state.items():
+            if key in self._behaviour.gradients:
+                pos = self.get_gradient_index(key)
+                self.gradients[np.ix_(indices, pos)] = value
+                state_copy.pop(key)
+            if key in self._behaviour.fluxes:
+                pos = self.get_flux_index(key)
+                self.fluxes[np.ix_(indices, pos)] = value
+                state_copy.pop(key)
+            if key in self._behaviour.internal_state_variables:
+                pos = self.get_internal_state_variable_index(key)
+                self.internal_state_variables[np.ix_(indices, pos)] = value
+                state_copy.pop(key)
         assert (
             len(state_copy) == 0
         ), "Material state contains unknown field to update with."

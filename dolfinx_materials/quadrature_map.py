@@ -208,10 +208,15 @@ class QuadratureMap:
         ).ravel()
 
     def update_initial_state(self, field_name):
-        field = self.internal_state_variables[field_name]
-        self.material.set_initial_state_dict({field_name: field})
+        if field_name in self.fluxes:
+            field = self.fluxes[field_name]
+        elif field_name in self.internal_state_variables:
+            field = self.internal_state_variables[field_name]
+        else:
+            raise ValueError("Can only initialize a flux or internal state variables.")
+        self.material.set_initial_state_dict({field_name: get_vals(field)[self.dofs]})
 
-    def _initialize_state(self):
+    def reinitialize_state(self):
         state_flux = {
             key: get_vals(field)[self.dofs] for key, field in self.fluxes.items()
         }
@@ -229,7 +234,7 @@ class QuadratureMap:
     def update(self):
         num_QP = len(self.quadrature_points) * self.num_cells
         if not self._initialized:
-            self._initialize_state()
+            self.reinitialize_state()
             self._initialized = True
 
         with Timer("External state var update"):

@@ -17,7 +17,7 @@ class ElastoPlasticIsotropicHardening(Material):
     def internal_state_variables(self):
         return {"p": 1}
 
-    def constitutive_update_vectorized(self, eps, state):  # vectorized version
+    def constitutive_update_vectorized_backup(self, eps, state):  # vectorized version
         batch_size = eps.shape[0]
 
         eps_old = state["Strain"]
