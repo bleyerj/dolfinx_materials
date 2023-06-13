@@ -30,7 +30,7 @@ venv*
 #########
 build
 dist
-fenics_optim.egg-info
+*.egg-info
 **/__pycache__
 **/src
 **/include
