@@ -91,6 +91,7 @@ class ElastoPlasticIsotropicHardening(Material):
         s_el = K() @ sig_el
         sig_Y_old = self.yield_stress(p_old)
         sig_eq_el = np.sqrt(3 / 2.0) * np.linalg.norm(s_el)
+        print(sig_eq_el)
         yield_criterion = sig_eq_el - sig_Y_old
         if yield_criterion > 0:
             dp = fsolve(
@@ -110,7 +111,7 @@ class ElastoPlasticIsotropicHardening(Material):
             depsp = 0 * s_el
             Ct = C
         sig = sig_el - 2 * mu * K() @ depsp
-
+        print(p_old + dp)
         state["Strain"] = eps_old + deps
         state["p"] = p_old + dp
         state["Stress"] = sig
