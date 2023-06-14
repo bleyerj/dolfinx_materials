@@ -11,7 +11,7 @@ from dolfinx_materials.solvers import NonlinearMaterialProblem
 from dolfinx.cpp.nls.petsc import NewtonSolver
 
 
-def uniaxial_test_2D(material, Exx, N=1, order=1, save_fields=None):
+def uniaxial_tension_2D(material, Exx, N=1, order=1, save_fields=None):
     domain = mesh.create_unit_square(MPI.COMM_WORLD, N, N, mesh.CellType.quadrilateral)
     V = fem.VectorFunctionSpace(domain, ("CG", order))
 
@@ -83,21 +83,20 @@ def uniaxial_test_2D(material, Exx, N=1, order=1, save_fields=None):
 
         assert converged
         Stress[i + 1, :] = sig.vector.array[:6]
-        print(f"EXX={exx}, SXX={Stress[i + 1, 0]}")
 
         if save_fields is not None:
             for field_name in save_fields:
                 field = qmap.project_on(field_name, ("DG", 0))
                 file_results.write_function(field, i)
 
-    plt.figure()
-    plt.plot(Exx, Stress[:, 0], "-o", label=r"$\sigma_{xx}$")
-    plt.plot(Exx, Stress[:, 1], "-o", label=r"$\sigma_{yy}$")
-    plt.plot(Exx, Stress[:, 2], "-o", label=r"$\sigma_{zz}$")
-    plt.xlabel(r"Strain $\varepsilon_{xx}$")
-    plt.ylabel(r"Stress")
-    plt.legend()
-    plt.savefig(f"{material.name}_stress_strain.pdf")
+    # plt.figure()
+    # plt.plot(Exx, Stress[:, 0], "-o", label=r"$\sigma_{xx}$")
+    # plt.plot(Exx, Stress[:, 1], "-o", label=r"$\sigma_{yy}$")
+    # plt.plot(Exx, Stress[:, 2], "-o", label=r"$\sigma_{zz}$")
+    # plt.xlabel(r"Strain $\varepsilon_{xx}$")
+    # plt.ylabel(r"Stress")
+    # plt.legend()
+    # plt.savefig(f"{material.name}_stress_strain.pdf")
 
     file_results.close()
     return Stress

@@ -1,7 +1,11 @@
 import numpy as np
-from dolfinx_materials.material.mfront import MFrontMaterial
-from uniaxial_test import uniaxial_test_2D
+import os
 
+from dolfinx_materials.material.mfront import MFrontMaterial
+
+
+os.path.join(os.path.abspath(__file__))
+from uniaxial_tension import uniaxial_tension_2D
 
 E = 100e3
 nu = 0.3
@@ -25,7 +29,7 @@ def test_mfront_RambergOsgood():
 
     N = 21
     Exx = np.linspace(0, 1e-2, N + 1)
-    Stress = uniaxial_test_2D(material, Exx, 1, 1)
+    Stress = uniaxial_tension_2D(material, Exx, 1, 1)
     Stress[:, 3:] /= np.sqrt(2)
     np.savetxt(
         "tests/RambergOsgood_dolfinx_mfront.csv",
@@ -44,3 +48,6 @@ def test_against_Mtest():
     S_mtest = res_mtest[:, 7:10]
     S_dolfinx = res_dolfinx[:, 1:4]
     assert np.allclose(S_mtest, S_dolfinx, rtol=1e-4)
+
+
+test_mfront_RambergOsgood()
