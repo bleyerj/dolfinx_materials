@@ -2,6 +2,9 @@
 
 Author: Jeremy Bleyer, jeremy.bleyer@enpc.fr, Laboratoire Navier, Ecole des Ponts ParisTech
 
+![Navier](https://navier-lab.fr/wp-content/uploads/2021/11/NAVIER-LOGO-COULEUR-RVB-ECRAN-72ppp_pour-site.png)
+
+
 ## About
 
 `dolfinx_materials` is a Python add-on package to the `dolfinx` interface to the [FEniCSx project](https://fenicsproject.org/).
