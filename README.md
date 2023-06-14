@@ -16,4 +16,11 @@ The library supports in particular:
 - constitutive relations based on inference of trained Neural Networks
 - constitutive relations solved using external libraries including convex optimization libraries such as [cvxpy](http://cvxpy.org/)
 
+## Extensibility
 
+*Disclaimer: The following functionalities are not currently available but should in theory be possible to implement relatively easily. Contributions are most welcome!*
+
+This library should also help you in:
+- writing additional interface to other material libraries such as UMATs of Abaqus for instance
+- performing multi-scale simulations (FE²) where constitutive update is obtained from the solution of a problem formulated on a RVE.
+- implementing data-driven constitutive models
