@@ -3,6 +3,12 @@ from dolfinx_materials.material import Material
 
 
 class LinearElasticIsotropic(Material):
+    def __init__(self, E, nu):
+        super().__init__()
+        self.E = E
+        self.nu = nu
+        self.C = self.compute_C(E, nu)
+
     def get_Lame_parameters(self, E, nu):
         return E * nu / (1 + nu) / (1 - 2 * nu), E / 2 / (1 + nu)
 
@@ -13,9 +19,6 @@ class LinearElasticIsotropic(Material):
         return C
 
     def constitutive_update(self, eps, state):
-        E = self.material_properties["E"]
-        nu = self.material_properties["nu"]
-        C = self.compute_C(E, nu)
         return np.dot(self.C, eps), self.C
 
 

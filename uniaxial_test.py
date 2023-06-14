@@ -67,6 +67,7 @@ def uniaxial_test_2D(material, Exx, N=1, order=1, save_fields=None):
     problem = NonlinearMaterialProblem(qmap, Res, Jac, u, bcs)
     newton = NewtonSolver(MPI.COMM_WORLD)
     newton.rtol = 1e-6
+    newton.max_it = 10
 
     file_results = io.XDMFFile(
         domain.comm,
@@ -74,13 +75,15 @@ def uniaxial_test_2D(material, Exx, N=1, order=1, save_fields=None):
         "w",
     )
     file_results.write_mesh(domain)
-    Sxx = np.zeros_like(Exx)
+    Stress = np.zeros((len(Exx), 6))
     for i, exx in enumerate(Exx[1:]):
         uD_x_r.vector.array[:] = exx
 
         converged, it = problem.solve(newton)
 
-        Sxx[i + 1] = sig.vector.array[0]
+        assert converged
+        Stress[i + 1, :] = sig.vector.array[:6]
+        print(f"EXX={exx}, SXX={Stress[i + 1, 0]}")
 
         if save_fields is not None:
             for field_name in save_fields:
@@ -88,10 +91,13 @@ def uniaxial_test_2D(material, Exx, N=1, order=1, save_fields=None):
                 file_results.write_function(field, i)
 
     plt.figure()
-    plt.plot(Exx, Sxx, "-o")
+    plt.plot(Exx, Stress[:, 0], "-o", label=r"$\sigma_{xx}$")
+    plt.plot(Exx, Stress[:, 1], "-o", label=r"$\sigma_{yy}$")
+    plt.plot(Exx, Stress[:, 2], "-o", label=r"$\sigma_{zz}$")
     plt.xlabel(r"Strain $\varepsilon_{xx}$")
-    plt.ylabel(r"Stress $\sigma_{xx}$")
+    plt.ylabel(r"Stress")
+    plt.legend()
     plt.savefig(f"{material.name}_stress_strain.pdf")
 
     file_results.close()
-    return Sxx
+    return Stress
