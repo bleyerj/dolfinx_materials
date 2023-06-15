@@ -1,15 +1,12 @@
 import numpy as np
+import ufl
+from mpi4py import MPI
+from dolfinx import fem, mesh, io
+from dolfinx.cpp.nls.petsc import NewtonSolver
 from dolfinx_materials.material import TannMaterial
 from dolfinx_materials.utils import symmetric_tensor_to_vector
 from dolfinx_materials.solvers import NonlinearMaterialProblem
-from dolfinx.cpp.nls.petsc import NewtonSolver
-import ufl
-from ufl import SpatialCoordinate, sin, cos, dot, grad, as_matrix
 from dolfinx_materials.quadrature_map import QuadratureMap
-from petsc4py import PETSc
-from mpi4py import MPI
-from dolfinx import fem, mesh, io
-import matplotlib.pyplot as plt
 
 L = 3.0
 N = 8
@@ -86,14 +83,8 @@ for n, Ui in enumerate(U_list):
     num_its, converged = problem.solve(newton)
     assert converged
 
-    u.x.scatter_forward()  # updates ghost values for parallel computations
-
     isv = qmap.project_on("ivars", ("DG", 0))
 
     with io.XDMFFile(domain.comm, out_file, "a") as xdmf:
         xdmf.write_function(u, n + 1)
         xdmf.write_function(isv, n + 1)
-
-from dolfinx.common import TimingType, list_timings
-
-list_timings(domain.comm, [TimingType.wall, TimingType.user])

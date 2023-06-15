@@ -48,6 +48,3 @@ def test_against_Mtest():
     S_mtest = res_mtest[:, 7:10]
     S_dolfinx = res_dolfinx[:, 1:4]
     assert np.allclose(S_mtest, S_dolfinx, rtol=1e-4)
-
-
-test_mfront_RambergOsgood()

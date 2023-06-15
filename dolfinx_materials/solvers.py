@@ -89,7 +89,6 @@ class CustomNewtonProblem:
             if converged:
                 # (Residual norm {error_norm})")
                 print(f"Solution reached in {i} iterations.")
-                print("Constitutive relation update for next time step.")
                 self.quadrature_map.advance()
             else:
                 print(
@@ -125,10 +124,10 @@ class NonlinearMaterialProblem(NonlinearProblem):
 
         it, converged = solver.solve(self.u.vector)
         self.u.x.scatter_forward()
+
         if converged:
             # (Residual norm {error_norm})")
             mpiprint(f"Solution reached in {it} iterations.")
-            mpiprint("Constitutive relation update for next time step.")
             self.quadrature_map.advance()
         else:
             mpiprint(
