@@ -8,4 +8,8 @@
 """
 from .generic import Material
 from .mfront import MFrontMaterial
-from .tann import TannMaterial
+
+try:
+    from .tann import TannMaterial
+except ModuleNotFoundError:
+    print("TannMaterial not available. Check that tensorflow has been installed.")
