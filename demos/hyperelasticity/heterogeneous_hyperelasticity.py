@@ -16,7 +16,7 @@ from dolfinx_materials.utils import (
 
 Nx, order = 20, 1
 domain = mesh.create_unit_cube(
-    MPI.COMM_WORLD, Nx, Nx, Nx, mesh.CellType.hexahedron, mesh.GhostMode.none
+    MPI.COMM_WORLD, Nx, Nx, Nx, cell_type=mesh.CellType.hexahedron, ghost_mode=mesh.GhostMode.none
 )
 gdim = domain.topology.dim
 
