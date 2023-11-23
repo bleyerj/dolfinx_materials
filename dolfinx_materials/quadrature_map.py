@@ -193,7 +193,7 @@ class QuadratureMap:
 
     @property
     def quadrature_points(self):
-        basix_celltype = getattr(basix.CellType, self.mesh.topology.cell_type.name)
+        basix_celltype = getattr(basix.CellType, self.mesh.topology.cell_types[0].name)
         quadrature_points, weights = basix.make_quadrature(basix_celltype, self.degree)
         return quadrature_points
 
@@ -254,7 +254,7 @@ class QuadratureMap:
                 grad_vals.append(
                     self.get_gradient_vals(grad, self.cells)
                 )  # copy to avoid changing gradient values when rotating
-            grad_vals = np.concatenate(grad_vals)
+            grad_vals = np.concatenate(grad_vals, axis=1)
 
         if self.material.rotation_matrix is not None:
             self.material.rotate_gradients(

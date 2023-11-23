@@ -6,7 +6,7 @@ QuadratureFunction class and utility functions
 @Author  :   Jeremy Bleyer, Ecole des Ponts ParisTech, Navier
 @Contact :   jeremy.bleyer@enpc.fr
 @Time    :   17/05/2023
-""" 
+"""
 import ufl
 import numpy as np
 from dolfinx import fem
