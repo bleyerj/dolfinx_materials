@@ -18,6 +18,14 @@ from .quadrature_function import create_quadrature_function, QuadratureExpressio
 from mpi4py import MPI
 
 
+def my_dot(a, b):
+    if a.ufl_shape == ():
+        return a * b
+    if b.ufl_shape == ():
+        return b * a
+    return ufl.dot(a, b)
+
+
 def mpi_print(s):
     print(f"Rank {MPI.COMM_WORLD.rank}: {s}")
 
@@ -114,7 +122,7 @@ class QuadratureMap:
                 raise ValueError(
                     f"Function '{dx}' to differentiate with is not a gradient or an external state variable."
                 )
-            tdg = Tang * delta_dx
+            tdg = my_dot(Tang, delta_dx)
             tangent_form += ufl.derivative(F, var_y, tdg)
         return tangent_form
 
@@ -257,7 +265,7 @@ class QuadratureMap:
         flux_vals = np.zeros((num_QP, flux_size))
         Ct_vals = np.zeros_like(get_vals(self.jacobian_flatten)[self.dofs])
 
-        flux_vals, Ct_vals = self.material.integrate(grad_vals)
+        flux_vals, isv_vals, Ct_vals = self.material.integrate(grad_vals)
 
         if self.material.rotation_matrix is not None:
             self.material.rotate_fluxes(
@@ -268,6 +276,7 @@ class QuadratureMap:
             )
 
         self.update_fluxes(flux_vals)
+        self.update_internal_state_variables(isv_vals)
         update_vals(self.jacobian_flatten, Ct_vals, self.cells)
 
     def update_fluxes(self, flux_vals):
@@ -275,6 +284,13 @@ class QuadratureMap:
         for name, dim in self.material.fluxes.items():
             flux = self.fluxes[name]
             update_vals(flux, flux_vals[:, buff : buff + dim], self.cells)
+            buff += dim
+
+    def update_internal_state_variables(self, isv_vals):
+        buff = 0
+        for name, dim in self.material.internal_state_variables.items():
+            isv = self.internal_state_variables[name]
+            update_vals(isv, isv_vals[:, buff : buff + dim], self.cells)
             buff += dim
 
     def advance(self):

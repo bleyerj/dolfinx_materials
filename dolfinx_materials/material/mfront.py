@@ -285,10 +285,9 @@ class MFrontMaterial:
             K = K.reshape((K.shape[0], -1))
         return (
             self.data_manager.s1.thermodynamic_forces,
+            self.data_manager.s1.internal_state_variables,
             K,
-        )  # reshape(
-        #     (-1, n * m)
-        # )
+        )
 
     def set_initial_state_dict(self, state):
         buff = 0
