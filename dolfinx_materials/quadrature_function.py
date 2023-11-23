@@ -48,7 +48,7 @@ class QuadratureExpression:
 
     def eval(self, cells):
         with Timer("dx_mat:Function eval"):
-            expr_eval = self.expression.eval(cells)
+            expr_eval = self.expression.eval(self.mesh, cells)
         with Timer("dx_mat:Prepare dofs"):
             dofs = cell_to_dofs(cells, self._function_space)
         self.function.vector.array[dofs] = expr_eval.flatten()[:]
