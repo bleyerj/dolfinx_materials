@@ -178,6 +178,8 @@ cells_matrix = cell_tag.find(2)
 qmap = QuadratureMap(domain, deg_quad, material, cells=cells_matrix)
 qmap.register_gradient("DeformationGradient", F(u))
 dx = qmap.dx(subdomain_data=cell_tag)
+
+print(qmap.internal_state_variables)
 sig = qmap.fluxes["FirstPiolaKirchhoffStress"]
 Res = 1e-6 * (ufl.dot(sig, dF(v)) * dx(2) + E * ufl.dot(strain(u), strain(v)) * dx(1))
 Jac = qmap.derivative(Res, u, du)

@@ -13,6 +13,9 @@
 
 @LocalVariable StiffnessTensor dS_dC;
 
+@StateVariable StressStensor S;
+S.setEntryName("PK2Stress");
+
 @Integrator{
   const auto a   = alpha/2;
   const auto id  = Stensor::Id();
@@ -48,6 +51,7 @@
   const auto fv    = vp(0)*vp(0)*pwv(0)+vp(1)*vp(1)*pwv(1)+vp(2)*vp(2)*pwv(2);
   const auto df_dC = Stensor::computeIsotropicFunction(dfv,m);
   const StressStensor Si = mu*c*iJb*((fv*diJb_dC+(iJb/a)*df_dC));
+  S=Si;
   // The Cauchy Stress
   sig = convertSecondPiolaKirchhoffStressToCauchyStress(Sv+Si,F1);
   if(computeTangentOperator_){

@@ -122,8 +122,6 @@ class QuadratureMap:
         for name, mat_prop in self.material.material_properties.items():
             if isinstance(mat_prop, (int, float, np.ndarray)):
                 values = mat_prop
-            elif isinstance(mat_prop, Material) or callable(mat_prop):  # FIXME
-                values = None
             else:
                 fs_type = get_function_space_type(mat_prop)
                 Vm = create_quadrature_space(self.mesh, self.degree, *fs_type)
