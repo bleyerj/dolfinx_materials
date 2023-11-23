@@ -193,7 +193,7 @@ class QuadratureMap:
 
     @property
     def quadrature_points(self):
-        basix_celltype = getattr(basix.CellType, self.mesh.topology.cell_types[0].name)
+        basix_celltype = getattr(basix.CellType, self.mesh.topology.cell_type.name)
         quadrature_points, weights = basix.make_quadrature(basix_celltype, self.degree)
         return quadrature_points
 
