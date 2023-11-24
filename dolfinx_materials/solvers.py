@@ -117,7 +117,7 @@ class NonlinearMaterialProblem(NonlinearProblem):
     def vector(self):
         return create_vector(self.L)
 
-    def solve(self, solver):
+    def solve(self, solver, print_solution=True):
         solver.setF(self.F, self.vector())
         solver.setJ(self.J, self.matrix())
         solver.set_form(self.form)
@@ -127,7 +127,8 @@ class NonlinearMaterialProblem(NonlinearProblem):
 
         if converged:
             # (Residual norm {error_norm})")
-            mpiprint(f"Solution reached in {it} iterations.")
+            if print_solution:
+                mpiprint(f"Solution reached in {it} iterations.")
             self.quadrature_map.advance()
         else:
             mpiprint(
