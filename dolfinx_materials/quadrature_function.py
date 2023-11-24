@@ -12,7 +12,6 @@ import numpy as np
 from dolfinx import fem
 from dolfinx.common import Timer
 from .utils import (
-    project,
     get_function_space_type,
     create_quadrature_space,
     cell_to_dofs,
@@ -38,6 +37,11 @@ class QuadratureExpression:
         self.type, self.shape = get_function_space_type(expression.ufl_expression)
         self.initialize_function(mesh, quadrature_degree)
 
+        map_c = mesh.topology.index_map(mesh.topology.dim)
+        num_cells = map_c.size_local + map_c.num_ghosts
+        self._mesh_cells = np.arange(0, num_cells, dtype=np.int32)
+        self.eval(None)
+
     def initialize_function(self, mesh, quadrature_degree):
         self.quadrature_degree = quadrature_degree
         self.mesh = mesh
@@ -47,6 +51,8 @@ class QuadratureExpression:
         self.function = fem.Function(self._function_space, name=self.name)
 
     def eval(self, cells):
+        if cells is None:
+            cells = self._mesh_cells
         with Timer("dx_mat:Function eval"):
             expr_eval = self.expression.eval(self.mesh, cells)
         with Timer("dx_mat:Prepare dofs"):
