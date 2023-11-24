@@ -243,6 +243,10 @@ class MFrontMaterial:
         ]
 
     @property
+    def has_internal_state_variables(self):
+        return len(self.behaviour.internal_state_variables) > 0
+
+    @property
     def gradient_sizes(self):
         return [
             mgis_bv.getVariableSize(svar, self.hypothesis)
@@ -281,6 +285,11 @@ class MFrontMaterial:
         if integrate_status < 1:
             warnings.warn("Integration of constitutive law has failed.")
         K = self.data_manager.K
+
+        if self.has_internal_state_variables:
+            isv = self.data_manager.s1.internal_state_variables
+        else:
+            isv = []
         if len(K.shape) == 3:
             K = K.reshape((K.shape[0], -1))
         return (
