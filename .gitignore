@@ -57,6 +57,9 @@ _minted*
 *.h5
 *.msh
 *.json
+*.vtu
+*.pvtu
+*.pvd
 
 # Vscode
 .vscode
