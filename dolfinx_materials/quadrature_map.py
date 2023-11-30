@@ -162,6 +162,9 @@ class QuadratureMap:
             self.degree,
         )
         self.external_state_variables.update({name: state_var})
+        state_var.eval(self.cells)
+        values = state_var.function.vector.array
+        self.material.initialize_external_state_variable(name, values)
 
     def register_gradient(self, name, gradient):
         if name in self.material.gradients:
