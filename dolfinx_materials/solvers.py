@@ -19,19 +19,33 @@ def mpiprint(s):
 
 
 class CustomNewtonProblem:
-    def __init__(self, quadrature_map, F, J, u, bcs, max_it=50, tol=1e-8):
+    def __init__(self, quadrature_map, F, J, u, bcs, max_it=50, rtol=1e-8, atol=1e-8):
         self.quadrature_map = quadrature_map
-        self.L = form(F)
-        self.a = form(J)
+        if isinstance(F, list):
+            self.L = [form(f) for f in F]
+        else:
+            self.L = form(F)
+        if isinstance(J, list):
+            self.a = [form(j) for j in J]
+        else:
+            self.a = form(J)
         self.bcs = bcs
         self._F, self._J = None, None
         self.u = u
         self.du = Function(self.u.function_space, name="Increment")
         self.it = 0
-        self.A = create_matrix(self.a)  # preallocating sparse jacobian matrix
-        self.b = create_vector(self.L)  # preallocating residual vector
+
+        if isinstance(self.a, list):
+            self.A = create_matrix(self.a[0])
+        else:
+            self.A = create_matrix(self.a)  # preallocating sparse jacobian matrix
+        if isinstance(self.L, list):
+            self.b = create_vector(self.L[0])  # preallocating residual vector
+        else:
+            self.b = create_vector(self.L)  # preallocating residual vector
         self.max_it = max_it
-        self.tol = tol
+        self.rtol = rtol
+        self.atol = atol
 
     def solve(self, solver, print_steps=True, print_solution=True):
         i = 0  # number of iterations of the Newton solver
@@ -44,17 +58,33 @@ class CustomNewtonProblem:
             with self.b.localForm() as loc_b:
                 loc_b.set(0)
             self.A.zeroEntries()
-            assemble_matrix(self.A, self.a, bcs=self.bcs)
-            self.A.assemble()
+            if isinstance(self.a, list):
+                self.A.assemble()
+                for ai in self.a:
+                    Ai = assemble_matrix(ai, bcs=self.bcs)
+                    Ai.assemble()
+                    self.A.axpy(1.0, Ai)
+            else:
+                assemble_matrix(self.A, self.a, bcs=self.bcs)
+                self.A.assemble()
 
-            assemble_vector(self.b, self.L)
+            if isinstance(self.L, list):
+                for Li in self.L:
+                    bi = assemble_vector(Li)
+                    self.b.axpy(1.0, bi)
+            else:
+                assemble_vector(self.b, self.L)
             self.b.ghostUpdate(
                 addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE
             )
             self.b.scale(-1)
 
             # Compute b - J(u_D-u_(i-1))
-            apply_lifting(self.b, [self.a], [self.bcs], x0=[self.u.vector], scale=1)
+            if isinstance(self.a, list):
+                for ai in self.a:
+                    apply_lifting(self.b, [ai], [self.bcs], x0=[self.u.vector], scale=1)
+            else:
+                apply_lifting(self.b, [self.a], [self.bcs], x0=[self.u.vector], scale=1)
             # Set dx|_bc = u_{i-1}-u_D
             set_bc(self.b, self.bcs, self.u.vector, 1.0)
             self.b.ghostUpdate(
@@ -81,7 +111,7 @@ class CustomNewtonProblem:
                     f"    Iteration {i}:  Residual abs: {error_norm} rel: {relative_norm}"
                 )
 
-            if relative_norm < self.tol:
+            if relative_norm < self.rtol or error_norm < self.atol:
                 converged = True
                 break
 
