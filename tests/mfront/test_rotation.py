@@ -7,7 +7,6 @@
 @Time    :   20/12/2023
 """
 import numpy as np
-import os
 import ufl
 from mpi4py import MPI
 from dolfinx import fem, mesh
@@ -83,7 +82,7 @@ def test_rotation_isotropy():
         "src/libBehaviour.so",
         "MericCailletaudSingleCrystalViscoPlasticity",
         rotation_matrix=R,
-        material_properties={"YoungModulus1": 20800.0},
+        material_properties={"YoungModulus1": 208000.0},
     )
     rotation_symmetry(material, phi, True)
 
@@ -91,9 +90,6 @@ def test_rotation_isotropy():
         "src/libBehaviour.so",
         "MericCailletaudSingleCrystalViscoPlasticity",
         rotation_matrix=R,
-        material_properties={"YoungModulus1": 10000.0},
+        material_properties={"YoungModulus1": 100000.0},
     )
     rotation_symmetry(material, phi, False)
-
-
-test_rotation_isotropy()

@@ -280,6 +280,7 @@ class MFrontMaterial:
         }
 
     def integrate(self, eps):
+        print(self.data_manager.s0.thermodynamic_forces)
         self.data_manager.s1.gradients[:, :] = eps
         integrate_status = mgis_bv.integrate(
             self.data_manager, self.integration_type, self.dt, 0, self.data_manager.n

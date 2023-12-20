@@ -200,6 +200,7 @@ class QuadratureMap:
         return quadrature_points
 
     def eval_quadrature(self, ufl_expr, fem_func):
+        """Evaluates an expression at quadrature points and updates the corresponding function."""
         expr_expr = fem.Expression(ufl_expr, self.quadrature_points)
         expr_eval = expr_expr.eval(self.mesh, self.cells)
         fem_func.vector.array[:] = expr_eval.flatten()[:]
@@ -215,14 +216,22 @@ class QuadratureMap:
             + np.repeat(np.arange(num_qp)[np.newaxis, :], len(cells), axis=0)
         ).ravel()
 
-    def update_initial_state(self, field_name):
+    def update_initial_state(self, field_name, value=None):
         if field_name in self.fluxes:
             field = self.fluxes[field_name]
         elif field_name in self.internal_state_variables:
             field = self.internal_state_variables[field_name]
         else:
             raise ValueError("Can only initialize a flux or internal state variables.")
-        self.material.set_initial_state_dict({field_name: get_vals(field)[self.dofs]})
+        # if a value is provided we update the field with t
+        values = get_vals(field)[self.dofs]
+        if isinstance(value, (int, float, np.ndarray)):
+            values = np.full_like(values, value)
+            update_vals(field, values, self.cells)
+        elif value is not None:
+            self.eval_quadrature(value, field)
+            values = get_vals(field)[self.dofs]
+        self.material.set_initial_state_dict({field_name: values})
 
     def initialize_state(self):
         state_flux = {

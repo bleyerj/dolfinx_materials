@@ -49,7 +49,7 @@ p.setGlossaryName("EquivalentPlasticStrain");
  */
 @ProvidesSymmetricTangentOperator;
 @Integrator{
-  cout << "Old plastic strain" << p << endl;
+  cout << "Old plastic strain " << p << endl;
   const auto lambda = computeLambda(young,nu);
   const auto mu     = computeMu(young,nu);
   eel += deto;
