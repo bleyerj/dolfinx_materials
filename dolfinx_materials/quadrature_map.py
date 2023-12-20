@@ -93,7 +93,7 @@ class QuadratureMap:
         if self.material.rotation_matrix is not None:
             Wrot = create_tensor_quadrature_space(self.mesh, self.degree, (3, 3))
             self.rotation_func = fem.Function(Wrot)
-            self.eval_quadrature(self.material.rotation_matrix, self.rotation_func)
+            self.update_material_rotation_matrix()
 
         self.update_material_properties()
 
@@ -139,10 +139,6 @@ class QuadratureMap:
             if values is not None:
                 self.material.update_material_property(name, values)
 
-    # def initialize_function(self, fun):
-    #     fun.eval(self.cells)
-    #     values = fun.function.vector.array
-
     def register_external_state_variable(self, name, ext_state_var):
         """Registers a dolfinx object as an external state variable.
 
@@ -186,6 +182,9 @@ class QuadratureMap:
             values = esv.function.vector.array
             self.material.update_external_state_variable(name, values)
 
+    def update_material_rotation_matrix(self):
+        self.eval_quadrature(self.material.rotation_matrix, self.rotation_func)
+
     def set_data_manager(self, cells):
         self.dofs = self._cell_to_dofs(cells)
         self.material.set_data_manager(len(self.dofs))
@@ -202,7 +201,7 @@ class QuadratureMap:
 
     def eval_quadrature(self, ufl_expr, fem_func):
         expr_expr = fem.Expression(ufl_expr, self.quadrature_points)
-        expr_eval = expr_expr.eval(self.cells)
+        expr_eval = expr_expr.eval(self.mesh, self.cells)
         fem_func.vector.array[:] = expr_eval.flatten()[:]
 
     def get_gradient_vals(self, gradient, cells):
@@ -225,7 +224,7 @@ class QuadratureMap:
             raise ValueError("Can only initialize a flux or internal state variables.")
         self.material.set_initial_state_dict({field_name: get_vals(field)[self.dofs]})
 
-    def reinitialize_state(self):
+    def initialize_state(self):
         state_flux = {
             key: get_vals(field)[self.dofs] for key, field in self.fluxes.items()
         }
@@ -239,12 +238,12 @@ class QuadratureMap:
         }
         state = {**state_grad, **state_flux, **state_isv}
         self.material.set_initial_state_dict(state)
+        self._initialized = True
 
     def update(self):
         num_QP = len(self.quadrature_points) * self.num_cells
         if not self._initialized:
-            self.reinitialize_state()
-            self._initialized = True
+            self.initialize_state()
 
         with Timer("External state var update"):
             self.update_external_state_variables()
@@ -268,6 +267,7 @@ class QuadratureMap:
         flux_vals = np.zeros((num_QP, flux_size))
         Ct_vals = np.zeros_like(get_vals(self.jacobian_flatten)[self.dofs])
 
+        # material integration
         flux_vals, isv_vals, Ct_vals = self.material.integrate(grad_vals)
 
         if self.material.rotation_matrix is not None:

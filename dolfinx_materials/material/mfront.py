@@ -119,6 +119,7 @@ class MFrontMaterial:
     def set_data_manager(self, ngauss):
         # Setting the material data manager
         self.data_manager = mgis_bv.MaterialDataManager(self.behaviour, ngauss)
+        self.initialize_external_state_variable("Temperature", 293.15)
         self.update_external_state_variable("Temperature", 293.15)
 
     def update_parameters(self, parameters):
