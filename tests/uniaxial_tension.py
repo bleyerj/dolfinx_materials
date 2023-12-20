@@ -89,14 +89,5 @@ def uniaxial_tension_2D(material, Exx, N=1, order=1, save_fields=None):
                 field = qmap.project_on(field_name, ("DG", 0))
                 file_results.write_function(field, i)
 
-    # plt.figure()
-    # plt.plot(Exx, Stress[:, 0], "-o", label=r"$\sigma_{xx}$")
-    # plt.plot(Exx, Stress[:, 1], "-o", label=r"$\sigma_{yy}$")
-    # plt.plot(Exx, Stress[:, 2], "-o", label=r"$\sigma_{zz}$")
-    # plt.xlabel(r"Strain $\varepsilon_{xx}$")
-    # plt.ylabel(r"Stress")
-    # plt.legend()
-    # plt.savefig(f"{material.name}_stress_strain.pdf")
-
     file_results.close()
     return Stress
