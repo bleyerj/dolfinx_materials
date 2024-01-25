@@ -1,17 +1,15 @@
 @DSL DefaultDSL;
 @Behaviour IsotropicLinearHardeningPlasticity;
 @Author Thomas Helfer;
-@Date   14/10/2016;
+@Date 14 / 10 / 2016;
 
-@Description{
-  An implicit implementation of a simple
-  isotropic plasticity behaviour with
-  isotropic linear hardening.
+@Description {
+  An implicit implementation of a simple isotropic plasticity behaviour with
+      isotropic linear hardening.
 
-  The yield surface is defined by:
-  "\["
-  "  f(\sigmaeq,p) = \sigmaeq-s_{0}-H\,p"
-  "\]"
+      The yield surface is defined by : "\["
+                                        "  f(\sigmaeq,p) = \sigmaeq-s_{0}-H\,p"
+                                        "\]"
 }
 
 @MaterialProperty stress young;
@@ -36,44 +34,44 @@ p.setGlossaryName("EquivalentPlasticStrain");
  * saving an auxiliary state variable stating if a plastic loading
  * occured at the previous time step.
  */
-@PredictionOperator{
+@PredictionOperator {
   // silent "unused parameter" warning
   static_cast<void>(smt);
-  const auto lambda = computeLambda(young,nu);
-  const auto mu     = computeMu(young,nu);
-  Dt = lambda*Stensor4::IxI()+2*mu*Stensor4::Id();
+  const auto lambda = computeLambda(young, nu);
+  const auto mu = computeMu(young, nu);
+  Dt = lambda * Stensor4::IxI() + 2 * mu * Stensor4::Id();
 }
 
 /*!
  * behaviour integration using a fully implicit Euler-backwark scheme.
  */
 @ProvidesSymmetricTangentOperator;
-@Integrator{
-  cout << "Old plastic strain " << p << endl;
-  const auto lambda = computeLambda(young,nu);
-  const auto mu     = computeMu(young,nu);
+@Integrator {
+  const auto lambda = computeLambda(young, nu);
+  const auto mu = computeMu(young, nu);
   eel += deto;
-  const auto se     = 2*mu*deviator(eel);
-  const auto seq_e  = sigmaeq(se);
-  const auto b      = seq_e-s0-H*p>stress{0};
-  if(b){
-    const auto iseq_e = 1/seq_e;
-    const auto n      = eval(3*se/(2*seq_e));
-    const auto cste   = 1/(H+3*mu);
-    dp   = (seq_e-s0-H*p)*cste;
-    eel -= dp*n;
-    if(computeTangentOperator_){
-      if(smt==CONSISTENTTANGENTOPERATOR){
-	Dt = (lambda*Stensor4::IxI()+2*mu*Stensor4::Id()
-	      -4*mu*mu*(dp*iseq_e*(Stensor4::M()-(n^n))+cste*(n^n)));
+  const auto se = 2 * mu * deviator(eel);
+  const auto seq_e = sigmaeq(se);
+  const auto b = seq_e - s0 - H * p > stress{0};
+  if (b) {
+    const auto iseq_e = 1 / seq_e;
+    const auto n = eval(3 * se / (2 * seq_e));
+    const auto cste = 1 / (H + 3 * mu);
+    dp = (seq_e - s0 - H * p) * cste;
+    eel -= dp * n;
+    if (computeTangentOperator_) {
+      if (smt == CONSISTENTTANGENTOPERATOR) {
+        Dt = (lambda * Stensor4::IxI() + 2 * mu * Stensor4::Id() -
+              4 * mu * mu *
+                  (dp * iseq_e * (Stensor4::M() - (n ^ n)) + cste * (n ^ n)));
       } else {
-	Dt = lambda*Stensor4::IxI()+2*mu*Stensor4::Id();
+        Dt = lambda * Stensor4::IxI() + 2 * mu * Stensor4::Id();
       }
     }
   } else {
-    if(computeTangentOperator_){
-      Dt = lambda*Stensor4::IxI()+2*mu*Stensor4::Id();
+    if (computeTangentOperator_) {
+      Dt = lambda * Stensor4::IxI() + 2 * mu * Stensor4::Id();
     }
   }
-  sig = lambda*trace(eel)*Stensor::Id()+2*mu*eel;
+  sig = lambda * trace(eel) * Stensor::Id() + 2 * mu * eel;
 }
