@@ -116,18 +116,6 @@ class MFrontMaterial:
                     mgis_bv.MaterialStateManagerStorageMode.LocalStorage,
                 )
 
-    def initialize_external_state_variable(self, name, values):
-        for s in [self.data_manager.s0]:
-            if type(values) in [int, float]:
-                mgis_bv.setExternalStateVariable(s, name, values)
-            else:
-                mgis_bv.setExternalStateVariable(
-                    s,
-                    name,
-                    values,
-                    mgis_bv.MaterialStateManagerStorageMode.LocalStorage,
-                )
-
     def _set_external_state_variable(self, state, name, values):
         if type(values) in [int, float]:
             mgis_bv.setExternalStateVariable(state, name, values)
