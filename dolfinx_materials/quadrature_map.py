@@ -343,7 +343,8 @@ class QuadratureMap:
             projected = fem.Function(V, name=key)
             project(field[0], projected, self.dx)
         else:
-            V = fem.VectorFunctionSpace(self.mesh, interp, dim=dim)
+            shape = (dim,)
+            V = fem.functionspace(self.mesh, interp + (shape,))
             projected = fem.Function(V, name=key)
             project(field, projected, self.dx)
         return projected
