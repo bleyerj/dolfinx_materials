@@ -19,7 +19,8 @@ domain = mesh.create_box(
 )
 
 degree = 1
-V = fem.VectorFunctionSpace(domain, ("CG", degree))
+shape = (2,)
+V = fem.functionspace(domain, ("P", degree, shape))
 
 
 def bottom(x):

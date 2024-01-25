@@ -59,8 +59,9 @@ ds = ufl.Measure("ds", subdomain_data=facet_tag)
 
 order = 2
 deg_quad = 2 * (order - 1)
+shape = (2,)
 if hypothesis == "plane_strain":
-    V = fem.VectorFunctionSpace(domain, ("CG", order))
+    V = fem.functionspace(domain, ("P", order, shape))
     top_dofs = fem.locate_dofs_geometrical(V, top)
     bottom_dofs = fem.locate_dofs_geometrical(V, bottom)
 

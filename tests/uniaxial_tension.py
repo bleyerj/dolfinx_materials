@@ -13,7 +13,7 @@ from dolfinx.cpp.nls.petsc import NewtonSolver
 
 def uniaxial_tension_2D(material, Exx, N=1, order=1, save_fields=None):
     domain = mesh.create_unit_square(MPI.COMM_WORLD, N, N, mesh.CellType.quadrilateral)
-    V = fem.VectorFunctionSpace(domain, ("CG", order))
+    V = fem.functionspace(domain, ("P", order, (2,)))
 
     deg_quad = 2 * (order - 1)
 

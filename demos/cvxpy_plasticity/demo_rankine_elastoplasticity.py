@@ -22,7 +22,7 @@ elastic_model.C = elastic_model.compute_C(E, nu)
 material = Rankine(elastic_model, fc, ft)
 
 domain = mesh.create_unit_square(MPI.COMM_WORLD, 1, 1, mesh.CellType.quadrilateral)
-V = fem.VectorFunctionSpace(domain, ("CG", 1))
+V = fem.functionspace(domain, ("P", 1, (2,)))
 
 deg_quad = 0
 
