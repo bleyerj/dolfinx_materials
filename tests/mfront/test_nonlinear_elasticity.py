@@ -1,14 +1,12 @@
+import pathlib
 import numpy as np
-import os
 import sys
 
 from dolfinx_materials.material.mfront import MFrontMaterial
 
+path = pathlib.Path(__file__).parent.absolute()
 
-current_dir = os.path.dirname(__file__)
-parent_dir = os.path.abspath(os.path.join(current_dir, ".."))
-sys.path.append(parent_dir)
-
+sys.path.append(str(path.parent.absolute()))
 from uniaxial_tension import uniaxial_tension_2D
 
 E = 100e3
@@ -20,7 +18,7 @@ n = 100.0
 
 def test_mfront_RambergOsgood():
     material = MFrontMaterial(
-        "src/libBehaviour.so",
+        path / "src/libBehaviour.so",
         "RambergOsgoodNonLinearElasticity",
         material_properties={
             "YoungModulus": E,
@@ -36,7 +34,7 @@ def test_mfront_RambergOsgood():
     Stress = uniaxial_tension_2D(material, Exx, 1, 1)
     Stress[:, 3:] /= np.sqrt(2)
     np.savetxt(
-        "RambergOsgood_dolfinx_mfront.csv",
+        path / "RambergOsgood_dolfinx_mfront.csv",
         np.concatenate((Exx[:, np.newaxis], Stress), axis=1),
         header="EXX SXX SYY SZZ SXY SXZ SYZ",
         delimiter=",",
@@ -44,9 +42,9 @@ def test_mfront_RambergOsgood():
 
 
 def test_against_Mtest():
-    res_mtest = np.loadtxt("mtest/RambergOsgood.csv", skiprows=1, delimiter=",")
+    res_mtest = np.loadtxt(path / "mtest/RambergOsgood.csv", skiprows=1, delimiter=",")
     res_dolfinx = np.loadtxt(
-        "RambergOsgood_dolfinx_mfront.csv", skiprows=1, delimiter=","
+        path / "RambergOsgood_dolfinx_mfront.csv", skiprows=1, delimiter=","
     )
     S_mtest = res_mtest[:, 7:10]
     S_dolfinx = res_dolfinx[:, 1:4]

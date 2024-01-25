@@ -6,6 +6,7 @@
 @Contact :   jeremy.bleyer@enpc.fr
 @Time    :   20/12/2023
 """
+import pathlib
 import numpy as np
 import ufl
 from mpi4py import MPI
@@ -17,9 +18,9 @@ from dolfinx_materials.material.mfront import MFrontMaterial
 from dolfinx_materials.utils import (
     symmetric_tensor_to_vector,
 )
-import os
 
-path = os.getcwd()
+path = pathlib.Path(__file__).parent.absolute()
+
 
 domain = mesh.create_unit_square(
     MPI.COMM_WORLD,
@@ -85,7 +86,7 @@ mat_prop = {
 
 material, material_l, material_r = [
     MFrontMaterial(
-        path + "/src/libBehaviour.so",
+        path / "src/libBehaviour.so",
         "IsotropicLinearHardeningPlasticity",
         hypothesis="plane_strain",
         material_properties=mat_prop,

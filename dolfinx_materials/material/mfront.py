@@ -66,7 +66,7 @@ class MFrontMaterial:
             frame to the material frame. The matrix can be spatially variable
             (either UFL matrix or function of Tensor type)
         """
-        self.path = path
+        self.path = str(path)  # ensure string in case we use a PosixPath from pathlib
         self.name = name
         # Defining the modelling hypothesis
         self.hypothesis = mgis_hypothesis[hypothesis]
@@ -77,34 +77,12 @@ class MFrontMaterial:
         )
         self.dt = dt
         # Loading the behaviour
-        try:
-            self.load_behaviour()
-        except:
-            cwd = os.getcwd()
-            install_path = "/".join(path.split("/")[:-2]) + "/"
-            os.chdir(install_path)
-            print(
-                "Behaviour '{}' has not been found in '{}'.".format(
-                    self.name, self.path
-                )
-            )
-            print(
-                "Attempting to compile '{}.mfront' in '{}'...".format(
-                    self.name, install_path
-                )
-            )
-            subprocess.run(
-                ["mfront", "--obuild", "--interface=generic", self.name + ".mfront"]
-            )
-            os.chdir(cwd)
-            self.load_behaviour()
+        self.load_behaviour(self.path)
 
         self.update_parameters(parameters)
 
-    def load_behaviour(self):
-        self.is_finite_strain = mgis_bv.isStandardFiniteStrainBehaviour(
-            self.path, self.name
-        )
+    def load_behaviour(self, path):
+        self.is_finite_strain = mgis_bv.isStandardFiniteStrainBehaviour(path, self.name)
         if self.is_finite_strain:
             # finite strain options
             bopts = mgis_bv.FiniteStrainBehaviourOptions()
@@ -112,9 +90,9 @@ class MFrontMaterial:
             bopts.tangent_operator = (
                 mgis_bv.FiniteStrainBehaviourOptionsTangentOperator.DPK1_DF
             )
-            self.behaviour = mgis_bv.load(bopts, self.path, self.name, self.hypothesis)
+            self.behaviour = mgis_bv.load(bopts, path, self.name, self.hypothesis)
         else:
-            self.behaviour = mgis_bv.load(self.path, self.name, self.hypothesis)
+            self.behaviour = mgis_bv.load(path, self.name, self.hypothesis)
 
     def set_data_manager(self, ngauss):
         # Setting the material data manager

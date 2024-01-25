@@ -6,6 +6,7 @@
 @Contact :   jeremy.bleyer@enpc.fr
 @Time    :   20/12/2023
 """
+import pathlib
 import numpy as np
 import ufl
 from mpi4py import MPI
@@ -16,6 +17,7 @@ from dolfinx_materials.utils import (
     symmetric_tensor_to_vector,
 )
 
+path = pathlib.Path(__file__).parent.absolute()
 
 domain = mesh.create_unit_cube(
     MPI.COMM_WORLD,
@@ -79,7 +81,7 @@ def test_rotation_isotropy():
     )
 
     material = MFrontMaterial(
-        "src/libBehaviour.so",
+        path / "src/libBehaviour.so",
         "MericCailletaudSingleCrystalViscoPlasticity",
         rotation_matrix=R,
         material_properties={"YoungModulus1": 208000.0},
@@ -87,7 +89,7 @@ def test_rotation_isotropy():
     rotation_symmetry(material, phi, True)
 
     material = MFrontMaterial(
-        "src/libBehaviour.so",
+        path / "src/libBehaviour.so",
         "MericCailletaudSingleCrystalViscoPlasticity",
         rotation_matrix=R,
         material_properties={"YoungModulus1": 100000.0},
