@@ -77,7 +77,11 @@ def rotation_symmetry(material, phi, isotropic):
 def test_rotation_isotropy():
     phi = fem.Constant(domain, 0.0)
     R = ufl.as_matrix(
-        [[ufl.cos(phi), ufl.sin(phi), 0], [-ufl.sin(phi), ufl.cos(phi), 0], [0, 0, 1]]
+        [
+            [ufl.cos(phi), ufl.sin(phi), 0],
+            [-ufl.sin(phi), ufl.cos(phi), 0],
+            [0, 0, 1],
+        ]
     )
 
     material = MFrontMaterial(

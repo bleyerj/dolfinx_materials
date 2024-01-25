@@ -1,14 +1,12 @@
 import numpy as np
 import ufl
-from petsc4py import PETSc
 from mpi4py import MPI
 from dolfinx import fem, mesh, io
-import matplotlib.pyplot as plt
 
 from dolfinx_materials.quadrature_map import QuadratureMap
 
 from dolfinx_materials.solvers import NonlinearMaterialProblem
-from dolfinx.cpp.nls.petsc import NewtonSolver
+from dolfinx.cpp.nls.petsc import NewtonSolver  # noqa
 
 
 def uniaxial_tension_2D(material, Exx, N=1, order=1, save_fields=None):
@@ -26,10 +24,10 @@ def uniaxial_tension_2D(material, Exx, N=1, order=1, save_fields=None):
     def right(x):
         return np.isclose(x[0], 1.0)
 
-    V_ux, mapping = V.sub(0).collapse()
+    V_ux, _ = V.sub(0).collapse()
     left_dofs_ux = fem.locate_dofs_geometrical((V.sub(0), V_ux), left)
     right_dofs_ux = fem.locate_dofs_geometrical((V.sub(0), V_ux), right)
-    V_uy, mapping = V.sub(1).collapse()
+    V_uy, _ = V.sub(1).collapse()
     bottom_dofs_uy = fem.locate_dofs_geometrical((V.sub(1), V_uy), bottom)
 
     uD_x = fem.Function(V_ux)
@@ -79,7 +77,7 @@ def uniaxial_tension_2D(material, Exx, N=1, order=1, save_fields=None):
     for i, exx in enumerate(Exx[1:]):
         uD_x_r.vector.array[:] = exx
 
-        converged, it = problem.solve(newton)
+        converged, _ = problem.solve(newton)
 
         assert converged
         Stress[i + 1, :] = sig.vector.array[:6]
