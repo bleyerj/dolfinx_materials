@@ -5,7 +5,7 @@ MFrontNonlinearMaterial class
 
 @author: Jeremy Bleyer, Ecole des Ponts ParisTech,
 Laboratoire Navier (ENPC,IFSTTAR,CNRS UMR 8205)
-@email: jeremy.bleyer@enpc.f
+@email: jeremy.bleyer@enpc.fr
 """
 import mgis.behaviour as mgis_bv
 import subprocess
