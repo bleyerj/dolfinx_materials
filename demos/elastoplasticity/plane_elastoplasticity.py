@@ -1,6 +1,7 @@
 import numpy as np
 from mpi4py import MPI
 import ufl
+import basix
 from dolfinx import mesh, io, fem
 from dolfinx.cpp.nls.petsc import NewtonSolver
 from dolfinx.common import list_timings, TimingType
@@ -12,11 +13,11 @@ from dolfinx_materials.python_materials import (
 )
 from generate_mesh import generate_perforated_plate
 
-hypothesis = "plane_strain"
-# hypothesis = "plane_stress"
+# hypothesis = "plane_strain"
+hypothesis = "plane_stress"
 
 E = 70e3
-H = E / 1e3
+H = E / 1e2
 sig0 = 500.0
 elastic_model = LinearElasticIsotropic(E=70e3, nu=0.3)
 
@@ -25,18 +26,17 @@ def yield_stress(p):
     return sig0 + H * p
 
 
-material = ElastoPlasticIsotropicHardening(
-    elastic_model=elastic_model, yield_stress=yield_stress
-)
-N = 15
+material = ElastoPlasticIsotropicHardening(elastic_model, yield_stress)
+
+N = 30
 Eyy = np.linspace(0, 10e-3, N + 1)
 
-W = 1.0
-H = 2.0
+Lx = 1.0
+Ly = 2.0
 R = 0.2
-mesh_size = 0.05
+mesh_size = 0.1
 
-generate_perforated_plate(W, H, R, [0.02, 0.2])
+generate_perforated_plate(Lx, Ly, R, [mesh_size, 0.2])
 
 with io.XDMFFile(MPI.COMM_WORLD, "mesh.xdmf", "r") as infile:
     domain = infile.read_mesh(mesh.GhostMode.none)
@@ -47,7 +47,7 @@ def bottom(x):
 
 
 def top(x):
-    return np.isclose(x[1], H)
+    return np.isclose(x[1], Ly)
 
 
 top_facets = mesh.locate_entities(domain, 1, top)
@@ -82,9 +82,9 @@ if hypothesis == "plane_strain":
         )
 
 elif hypothesis == "plane_stress":
-    Ue = ufl.VectorElement("CG", domain.ufl_cell(), order)
-    Ee = ufl.FiniteElement("DG", domain.ufl_cell(), order - 1)
-    V = fem.FunctionSpace(domain, ufl.MixedElement([Ue, Ee]))
+    Ue = basix.ufl.element("P", domain.basix_cell(), order, shape=(2,))
+    Ee = basix.ufl.element("DG", domain.basix_cell(), order - 1)
+    V = fem.functionspace(domain, basix.ufl.mixed_element([Ue, Ee]))
 
     V_u, mapping = V.sub(0).collapse()
     top_dofs = fem.locate_dofs_geometrical((V.sub(0), V_u), top)
@@ -131,8 +131,10 @@ problem = NonlinearMaterialProblem(qmap, Res, Jac, u, bcs)
 
 newton = NewtonSolver(MPI.COMM_WORLD)
 newton.rtol = 1e-6
-newton.convergence_criterion = "incremental"
+newton.atol = 1e-6
+newton.convergence_criterion = "residual"
 newton.report = True
+newton.max_it = 50
 
 
 file_results = io.XDMFFile(
@@ -143,16 +145,17 @@ file_results = io.XDMFFile(
 file_results.write_mesh(domain)
 Syy = np.zeros_like(Eyy)
 for i, eyy in enumerate(Eyy[1:]):
-    uD_t.vector.array[1::2] = eyy * H
+    uD_t.vector.array[1::2] = eyy * Ly
 
     converged, it = problem.solve(newton)
 
-    p = qmap.project_on("p", ("DG", 0))
+    # raise
+    # p = qmap.project_on("p", ("DG", 0))
     stress = qmap.project_on("Stress", ("DG", 0))
-    file_results.write_function(p, i)
+    # file_results.write_function(p, i)
     file_results.write_function(stress, i)
 
-    Syy[i + 1] = fem.assemble_scalar(fem.form(stress[1] * ds(1))) / W
+    Syy[i + 1] = fem.assemble_scalar(fem.form(stress[1] * ds(1))) / Lx
     print(Syy)
 
 
