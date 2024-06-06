@@ -11,11 +11,6 @@ import ufl
 import numpy as np
 from dolfinx import fem
 from dolfinx.common import Timer
-from .utils import (
-    get_function_space_type,
-    create_quadrature_space,
-    cell_to_dofs,
-)
 from .utils import cell_to_dofs, create_quadrature_functionspace
 
 
