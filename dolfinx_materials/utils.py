@@ -13,6 +13,7 @@ from petsc4py import PETSc
 import numpy as np
 from dolfinx.common import Timer
 from functools import lru_cache
+import basix
 
 
 # The function performs a manual projection of an original_field function onto a target_field space
@@ -65,25 +66,6 @@ def project(
     target_field.x.scatter_forward()
 
 
-def get_function_space_type(x):
-    shape = x.ufl_shape
-    if len(shape) == 0 or shape == (1,):
-        return ("scalar", None)
-    elif len(shape) == 1:
-        return ("vector", shape[0])
-    elif len(shape) == 2:
-        return ("tensor", shape)
-    else:
-        raise NotImplementedError
-
-
-function_space_dict = {
-    "scalar": ufl.FiniteElement,
-    "vector": ufl.VectorElement,
-    "tensor": ufl.TensorElement,
-}
-
-
 def to_mat(array):
     M = ufl.as_matrix(array)
     shape = ufl.shape(M)
@@ -97,55 +79,18 @@ def to_mat(array):
         return M
 
 
-def create_quadrature_space(mesh, degree, type, shape):
-    if type == "scalar":
-        W = create_scalar_quadrature_space(mesh, degree)
-    elif type == "vector":
-        W = create_vector_quadrature_space(mesh, degree, shape)
-    elif type == "tensor":
-        W = create_tensor_quadrature_space(mesh, degree, shape)
-    return W
-
-
-def create_scalar_quadrature_space(mesh, degree):
-    We = ufl.FiniteElement(
-        "Quadrature",
-        mesh.ufl_cell(),
-        degree=degree,
-        quad_scheme="default",
+def create_quadrature_functionspace(domain, deg_quad, shape):
+    if shape == 0:
+        shape = ()
+    elif isinstance(shape, int) or isinstance(shape, np.integer):
+        shape = (shape,)
+    We = basix.ufl.quadrature_element(
+        domain.topology.cell_name(),
+        value_shape=shape,
+        scheme="default",
+        degree=deg_quad,
     )
-    return fem.FunctionSpace(mesh, We)
-
-
-# return create_vector_quadrature_space(mesh, degree, 1)
-
-
-def create_vector_quadrature_space(mesh, degree, dim):
-    if dim > 1:
-        We = ufl.VectorElement(
-            "Quadrature",
-            mesh.ufl_cell(),
-            degree=degree,
-            dim=dim,
-            quad_scheme="default",
-        )
-        return fem.FunctionSpace(mesh, We)
-    if dim == 1:
-        We = create_scalar_quadrature_space(mesh, degree)
-    else:
-        raise ValueError("Vector dimension should be at least 1.")
-
-
-def create_tensor_quadrature_space(mesh, degree, shape):
-    We = ufl.TensorElement(
-        "Quadrature",
-        mesh.ufl_cell(),
-        degree=degree,
-        shape=shape,
-        quad_scheme="default",
-    )
-
-    return fem.FunctionSpace(mesh, We)
+    return fem.functionspace(domain, We)
 
 
 def get_vals(fun):
