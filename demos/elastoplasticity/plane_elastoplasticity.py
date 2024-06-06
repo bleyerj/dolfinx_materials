@@ -149,10 +149,9 @@ for i, eyy in enumerate(Eyy[1:]):
 
     converged, it = problem.solve(newton)
 
-    # raise
-    # p = qmap.project_on("p", ("DG", 0))
+    p = qmap.project_on("p", ("DG", 0))
     stress = qmap.project_on("Stress", ("DG", 0))
-    # file_results.write_function(p, i)
+    file_results.write_function(p, i)
     file_results.write_function(stress, i)
 
     Syy[i + 1] = fem.assemble_scalar(fem.form(stress[1] * ds(1))) / Lx

@@ -5,6 +5,7 @@ from dolfinx_materials.python_materials import (
     LinearViscoElasticity,
 )
 import matplotlib.pyplot as plt
+import jax.numpy as jnp
 
 
 def test_elastoplastic(Nbatch):
@@ -15,24 +16,35 @@ def test_elastoplastic(Nbatch):
     elastic_model = LinearElasticIsotropic(E, nu)
     mu = E / 2 / (1 + nu)
 
-    def yield_stress(p):
-        return sig0 + H * p
+    # def yield_stress(p):
+    #     return sig0 + H * p
 
-    material = ElastoPlasticIsotropicHardening(elastic_model, yield_stress)
+    b = 1e3
+    sigu = 750.0
+
+    def yield_stress(p):
+        return sig0 + (sigu - sig0) * (1 - jnp.exp(-b * p))
+
+    material = ElastoPlasticIsotropicHardening(
+        elastic_model, yield_stress, method="implicit"
+    )
     eps = 2e-2
     Eps = np.vstack(([0, 0, 0, np.sqrt(2) * eps, 0, 0],) * Nbatch)
     material.set_data_manager(Nbatch)
     state = material.get_initial_state_dict()
 
     plt.figure()
-    for t in np.linspace(0, 1.0, 20):
+    for t in np.linspace(0, 1.0, 50):
+        # print(t)
         G = 2 * mu
         GH = H / np.sqrt(3)
         sig_th = G * eps * t
         k0 = sig0 / np.sqrt(3)
         if abs(sig_th) > k0:
             sig_th = k0 + G * GH / (G + GH) * (eps * t - k0 / G)
-        sig, state, Ct = material.integrate(t * Eps)
+        with Timer("Integration"):
+            sig, state, Ct = material.integrate(t * Eps)
+        print(Ct[:, :, :])
         material.data_manager.update()
         plt.scatter(eps * t, sig[0, 3] / np.sqrt(2), color="b")
         plt.scatter(eps * t, sig_th, color="r")
@@ -40,13 +52,18 @@ def test_elastoplastic(Nbatch):
     plt.show()
 
 
+from mpi4py import MPI
+from dolfinx.common import list_timings, TimingType, Timer
+
+
 def test_viscoelastic(Nbatch):
-    times = np.linspace(0, 0.1, 10) ** 0.5
-    dt = 1 / len(times)
+    times = np.linspace(0, 0.5, 10)
+    dt = np.diff(times)
     E0 = 70e3
     E1 = 20e3
-    nu = 0.3
+    nu = 0.0
     eta = 1e3
+    tau = eta / E1
     branch0 = LinearElasticIsotropic(E0, nu)
     branch1 = LinearElasticIsotropic(E1, nu)
     material = LinearViscoElasticity(branch0, branch1, eta, nu)
@@ -55,18 +72,24 @@ def test_viscoelastic(Nbatch):
     Eps = np.vstack(([epsr, 0, 0, 0, 0, 0],) * Nbatch)
     material.set_data_manager(Nbatch)
     state = material.get_initial_state_dict()
+    t = 0
+
     plt.figure()
-    for t in times:
-        dt *= 2
-        sig, state, Ct = material.integrate(Eps, dt)
+    for dti in dt:
+        t += dti
+        with Timer("Integration"):
+            sig, state, Ct = material.integrate(Eps, dti)
         print(Ct[0, 0, 0])
 
+        sig_th = E0 * epsr + E1 * epsr * np.exp(-t / tau)
         material.data_manager.update()
-        plt.scatter(t, sig[0, 0], color="b")
-        # plt.scatter(times, sig_th, color="r")
-    plt.show()
+    #     plt.scatter(t, sig[0, 0], color="b")
+    #     plt.scatter(t, sig_th, color="r")
+    # plt.show()
 
 
-test_elastoplastic(2)
+# test_elastoplastic(1)
 
-# test_viscoelastic(2)
+test_viscoelastic(int(2000))
+
+print(list_timings(MPI.COMM_WORLD, [TimingType.wall, TimingType.user]))

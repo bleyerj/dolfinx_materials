@@ -13,6 +13,7 @@ import numpy as np
 from mpi4py import MPI
 import jax
 import jax.numpy as jnp
+from functools import partial
 
 
 def mpiprint(s):
@@ -250,22 +251,30 @@ class JAXNewton:
         # residual
         self.r = r
         if dr_dx is None:
-            self.dr_dx = jax.jacfwd(r)
+            self.dr_dx = jax.jit(jax.jacfwd(r))
         else:
             self.dr_dx = dr_dx
 
+    @property
+    def jacobian(self):
+        return self.dr_dx
+
+    @partial(jax.jit, static_argnums=(0,))
     def solve(self, x):
         niter = 0
 
         res = self.r(x)
         norm_res0 = jnp.linalg.norm(res)
 
+        @jax.jit
         def cond_fun(state):
             norm_res, niter, _ = state
+            # jax.debug.print("Iteration {n}, residual {r}", n=niter, r=norm_res)
             return jnp.logical_and(
                 norm_res > self.tol * norm_res0, niter < self.Nitermax
             )
 
+        @jax.jit
         def body_fun(state):
             norm_res, niter, history = state
 
@@ -273,13 +282,16 @@ class JAXNewton:
 
             J = self.dr_dx(x)
 
-            j_inv_vp = jnp.linalg.solve(J, -res)
+            # TODO: check info of linear solver
+            # j_inv_vp = jnp.linalg.inv(J) @ -res
+            # j_inv_vp, info = jax.scipy.sparse.linalg.cg(J, -res)
+            lufac = jax.scipy.linalg.lu_factor(J)
+            j_inv_vp = jax.scipy.linalg.lu_solve(lufac, -res)
             x += j_inv_vp
 
             res = self.r(x)
             norm_res = jnp.linalg.norm(res)
             history = x, res
-
             niter += 1
 
             return (norm_res, niter, history)
