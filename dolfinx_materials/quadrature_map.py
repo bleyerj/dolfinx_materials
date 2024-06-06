@@ -4,10 +4,7 @@ import numpy as np
 from dolfinx import fem
 from .utils import (
     project,
-    get_function_space_type,
-    create_quadrature_space,
-    create_vector_quadrature_space,
-    create_tensor_quadrature_space,
+    create_quadrature_functionspace,
     to_mat,
     get_vals,
     update_vals,
@@ -35,6 +32,7 @@ class QuadratureMap:
         # Define mesh and cells
         self.mesh = mesh
         map_c = mesh.topology.index_map(mesh.topology.dim)
+        mesh.topology.create_connectivity(mesh.topology.dim, mesh.topology.dim)
         if cells is None:
             self.num_cells = map_c.size_local + map_c.num_ghosts
             self.cells = np.arange(0, self.num_cells, dtype=np.int32)
@@ -53,7 +51,7 @@ class QuadratureMap:
         buff = 0
         for block, shape in self.material.tangent_blocks.items():
             buff += np.prod(shape)
-        self.WJ = create_vector_quadrature_space(self.mesh, self.degree, buff)
+        self.WJ = create_quadrature_functionspace(self.mesh, self.degree, buff)
         self.jacobian_flatten = fem.Function(self.WJ)
         self.jacobians = {}
         buff = 0
@@ -91,7 +89,7 @@ class QuadratureMap:
         self.set_data_manager(self.cells)
 
         if self.material.rotation_matrix is not None:
-            Wrot = create_tensor_quadrature_space(self.mesh, self.degree, (3, 3))
+            Wrot = create_quadrature_functionspace(self.mesh, self.degree, (3, 3))
             self.rotation_func = fem.Function(Wrot)
             self.update_material_rotation_matrix()
 
@@ -131,8 +129,8 @@ class QuadratureMap:
             if isinstance(mat_prop, (int, float, np.ndarray)):
                 values = mat_prop
             else:
-                fs_type = get_function_space_type(mat_prop)
-                Vm = create_quadrature_space(self.mesh, self.degree, *fs_type)
+                shape = mat_prop.ufl_shape
+                Vm = create_quadrature_functionspace(self.mesh, self.degree, shape)
                 mat_prop_fun = fem.Function(Vm, name=name)
                 self.eval_quadrature(mat_prop, mat_prop_fun)
                 values = mat_prop_fun.vector.array
@@ -195,7 +193,7 @@ class QuadratureMap:
 
     @property
     def quadrature_points(self):
-        basix_celltype = getattr(basix.CellType, self.mesh.topology.cell_types[0].name)
+        basix_celltype = getattr(basix.CellType, self.mesh.topology.cell_type.name)
         quadrature_points, weights = basix.make_quadrature(basix_celltype, self.degree)
         return quadrature_points
 
@@ -331,20 +329,7 @@ class QuadratureMap:
             shape = field.ufl_shape
             field = field.expression.ufl_expression
 
-        if shape == ():
-            V = fem.FunctionSpace(self.mesh, interp)
-            projected = fem.Function(V, name=key)
-            project(field, projected, self.dx)
-            return projected
-        else:
-            dim = shape[0]
-        if dim <= 1:
-            V = fem.FunctionSpace(self.mesh, interp)
-            projected = fem.Function(V, name=key)
-            project(field[0], projected, self.dx)
-        else:
-            shape = (dim,)
-            V = fem.functionspace(self.mesh, interp + (shape,))
-            projected = fem.Function(V, name=key)
-            project(field, projected, self.dx)
+        V = fem.functionspace(self.mesh, interp + (shape,))
+        projected = fem.Function(V, name=key)
+        project(field, projected, self.dx)
         return projected

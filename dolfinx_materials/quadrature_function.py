@@ -16,16 +16,13 @@ from .utils import (
     create_quadrature_space,
     cell_to_dofs,
 )
+from .utils import cell_to_dofs, create_quadrature_functionspace
 
 
 def create_quadrature_function(name, shape, mesh, quadrature_degree):
     if shape in [0, 1]:
-        type = "scalar"
-    elif shape > 1:
-        type = "vector"
-    elif len(shape) == 2:
-        type = "tensor"
-    function_space = create_quadrature_space(mesh, quadrature_degree, type, shape)
+        shape = ()
+    function_space = create_quadrature_functionspace(mesh, quadrature_degree, shape)
     return fem.Function(function_space, name=name)
 
 
@@ -34,7 +31,7 @@ class QuadratureExpression:
         self.ufl_shape = expression.ufl_expression.ufl_shape
         self.name = name
         self.expression = expression
-        self.type, self.shape = get_function_space_type(expression.ufl_expression)
+        self.shape = expression.ufl_expression.ufl_shape
         self.initialize_function(mesh, quadrature_degree)
 
         map_c = mesh.topology.index_map(mesh.topology.dim)
@@ -45,8 +42,8 @@ class QuadratureExpression:
     def initialize_function(self, mesh, quadrature_degree):
         self.quadrature_degree = quadrature_degree
         self.mesh = mesh
-        self._function_space = create_quadrature_space(
-            self.mesh, self.quadrature_degree, self.type, self.shape
+        self._function_space = create_quadrature_functionspace(
+            self.mesh, self.quadrature_degree, self.shape
         )
         self.function = fem.Function(self._function_space, name=self.name)
 
