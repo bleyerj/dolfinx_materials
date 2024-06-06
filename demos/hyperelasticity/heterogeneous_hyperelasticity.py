@@ -164,7 +164,7 @@ def matrix(x):
     return np.logical_not(inclusion(x))
 
 
-V0 = fem.FunctionSpace(domain, ("DG", 0))
+V0 = fem.functionspace(domain, ("DG", 0))
 kappa = fem.Function(V0)
 cells_incl = mesh.locate_entities(domain, gdim, inclusion)
 cells_matrix = mesh.locate_entities(domain, gdim, matrix)

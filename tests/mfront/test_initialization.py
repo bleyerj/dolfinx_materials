@@ -80,7 +80,7 @@ qmap.update_initial_state("EquivalentPlasticStrain", p0)
 assert np.allclose(p.vector.array, 2e-3)
 
 # with fem.Function
-V0 = fem.FunctionSpace(domain, ("DG", 0))
+V0 = fem.functionspace(domain, ("DG", 0))
 p0 = fem.Function(V0)
 p0.vector.set(3e-3)
 qmap.update_initial_state("EquivalentPlasticStrain", p0)
