@@ -33,6 +33,8 @@ Simply clone the [`dolfinx_materials` public repository](https://github.com/bley
 
 and install the package by typing
 
+```bash
 pip install dolfinx_materials/ --user
+```
 
 > Note: With the latest pip versions, you might need to add `--break-system-packages` to install it in your system Python environment. Or use `pipx`.
