@@ -7,4 +7,8 @@
 @Time    :   08/06/2023
 """
 from .generic import Material
-from .mfront import MFrontMaterial
+
+try:
+    from .mfront import MFrontMaterial
+except ImportError:
+    print("MGIS is not available. MFront behaviors cannot be used.")

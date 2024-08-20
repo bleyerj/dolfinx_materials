@@ -1,5 +1,18 @@
 import numpy as np
 from dolfinx.common import Timer
+import jax
+from functools import wraps, partial
+
+jax.config.update("jax_enable_x64", True)  # use double-precision
+
+
+def tangent_AD(compute_stress_method):
+    @wraps(compute_stress_method)
+    def wrapper(self, *args):
+        compute_stress = partial(compute_stress_method, self)
+        return jax.jacfwd(compute_stress, argnums=0, has_aux=True)(*args)
+
+    return wrapper
 
 
 class Material:
@@ -8,6 +21,10 @@ class Material:
         self.material_properties.update(kwargs)
         for key, value in self.material_properties.items():
             setattr(self, key, value)
+
+        self.batched_constitutive_update = jax.jit(
+            jax.vmap(self.constitutive_update, in_axes=(0, 0, None))
+        )
 
     def update_material_property(self, key, value):
         setattr(self, key, value)
@@ -66,37 +83,25 @@ class Material:
         # Setting the material data manager
         self.data_manager = DataManager(self, ngauss)
 
-    def integrate(self, gradients):
-        try:
-            vectorized_state = self.get_initial_state_dict()
-            flux_array, Ct_array = self.constitutive_update_vectorized(
-                gradients, vectorized_state
-            )
-            self.data_manager.s1.set_item(vectorized_state)
+    def integrate(self, gradients, dt=0):
+        vectorized_state = self.get_initial_state_dict()
 
-        # with Timer("dx_mat: Python loop constitutive update"):
-        #     state = self.data_manager.s0
-        #     results = [
-        #         self.constitutive_update(g, state[i]) for i, g in enumerate(gradients)
-        #     ]
-        #     flux_array = np.array([res[0] for res in results])
-        #     Ct_array = np.array([res[1] for res in results])
-        except AttributeError:
-            flux_array = []
-            Ct_array = []
-            for i, g in enumerate(gradients):
-                with Timer("dx_mat: get state"):
-                    state = self.data_manager.s0[i]
-                with Timer("dx_mat: const update"):
-                    flux, Ct = self.constitutive_update(g, state)
-                with Timer("dx_mat: appends"):
-                    flux_array.append(flux)
-                    Ct_array.append(Ct.ravel())
+        Ct_array, new_state = self.batched_constitutive_update(
+            gradients, vectorized_state, dt
+        )
 
-                with Timer("dx_mat: set state"):
-                    self.data_manager.s1[i] = state
+        new_sig = new_state["Stress"]
+        self.data_manager.s1.set_item(new_state)
+        self.data_manager.s1.set_item({"Stress": new_sig})
 
-        return np.array(flux_array), np.array(Ct_array)
+        return (
+            self.data_manager.s1.fluxes,
+            self.data_manager.s1.internal_state_variables,
+            Ct_array,
+        )
+
+    def constitutive_update(self):
+        pass
 
     def get_initial_state_dict(self):
         return self.data_manager.s0[:]

@@ -2,6 +2,7 @@
 Created on May 24, 2022
 @author: Ioannis Stefanou & Filippo Masi
 """
+
 from dolfinx_materials.material import Material
 import os
 
@@ -32,7 +33,7 @@ class TannMaterial(Material):
         :type integer
         """
         super().__init__()
-        self.model = tf.saved_model.load(ANN_filename)
+        self.model = tf.keras.layers.TFSMLayer(ANN_filename)
         self.nb_isv = nb_isv
         self.dt = 0.0
 

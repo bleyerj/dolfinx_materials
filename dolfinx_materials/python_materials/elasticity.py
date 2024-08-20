@@ -1,5 +1,6 @@
 import numpy as np
 from dolfinx_materials.material import Material
+import jax.numpy as jnp
 
 
 class LinearElasticIsotropic(Material):
@@ -19,10 +20,14 @@ class LinearElasticIsotropic(Material):
         return C
 
     def constitutive_update(self, eps, state):
-        return np.dot(self.C, eps), self.C
+        sig = jnp.dot(self.C, eps)
+        state["Stress"] = sig
+        return self.C, state
 
 
 class PlaneStressLinearElasticIsotropic(LinearElasticIsotropic):
-    def compute_C(self, E, nu):
-        C = E / (1 - nu**2) * np.array([[1, nu, 0], [nu, 1, 0], [0, 0, 1 - nu]])
-        return C
+
+    def get_Lame_parameters(self, E, nu):
+        lmbda_ = E * nu / (1 + nu) / (1 - 2 * nu)
+        mu = E / 2 / (1 + nu)
+        return 2 * mu * lmbda_ / (lmbda_ + 2 * mu), mu
