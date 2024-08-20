@@ -1,13 +1,12 @@
 import numpy as np
 from dolfinx.common import Timer
 import jax
+from functools import wraps, partial
 
 jax.config.update("jax_enable_x64", True)  # use double-precision
 
 
 def tangent_AD(compute_stress_method):
-    from functools import wraps, partial
-
     @wraps(compute_stress_method)
     def wrapper(self, *args):
         compute_stress = partial(compute_stress_method, self)
@@ -86,9 +85,11 @@ class Material:
 
     def integrate(self, gradients, dt=0):
         vectorized_state = self.get_initial_state_dict()
+
         Ct_array, new_state = self.batched_constitutive_update(
             gradients, vectorized_state, dt
         )
+
         new_sig = new_state["Stress"]
         self.data_manager.s1.set_item(new_state)
         self.data_manager.s1.set_item({"Stress": new_sig})

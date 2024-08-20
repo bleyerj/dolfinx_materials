@@ -283,10 +283,10 @@ class JAXNewton:
             J = self.dr_dx(x)
 
             # TODO: check info of linear solver
-            # j_inv_vp = jnp.linalg.inv(J) @ -res
-            # j_inv_vp, info = jax.scipy.sparse.linalg.cg(J, -res)
-            lufac = jax.scipy.linalg.lu_factor(J)
-            j_inv_vp = jax.scipy.linalg.lu_solve(lufac, -res)
+            j_inv_vp = jnp.linalg.inv(J) @ -res
+            j_inv_vp, info = jax.scipy.sparse.linalg.cg(J, -res)
+            # lufac = jax.scipy.linalg.lu_factor(J)
+            # j_inv_vp = jax.scipy.linalg.lu_solve(lufac, -res)
             x += j_inv_vp
 
             res = self.r(x)

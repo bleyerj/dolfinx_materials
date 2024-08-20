@@ -25,9 +25,7 @@ def test_elastoplastic(Nbatch):
     def yield_stress(p):
         return sig0 + (sigu - sig0) * (1 - jnp.exp(-b * p))
 
-    material = ElastoPlasticIsotropicHardening(
-        elastic_model, yield_stress, method="implicit"
-    )
+    material = ElastoPlasticIsotropicHardening(elastic_model, yield_stress)
     eps = 2e-2
     Eps = np.vstack(([0, 0, 0, np.sqrt(2) * eps, 0, 0],) * Nbatch)
     material.set_data_manager(Nbatch)
@@ -44,10 +42,10 @@ def test_elastoplastic(Nbatch):
             sig_th = k0 + G * GH / (G + GH) * (eps * t - k0 / G)
         with Timer("Integration"):
             sig, state, Ct = material.integrate(t * Eps)
-        print(Ct[:, :, :])
+
         material.data_manager.update()
         plt.scatter(eps * t, sig[0, 3] / np.sqrt(2), color="b")
-        plt.scatter(eps * t, sig_th, color="r")
+        # plt.scatter(eps * t, sig_th, color="r")
 
     plt.show()
 
@@ -88,8 +86,8 @@ def test_viscoelastic(Nbatch):
     # plt.show()
 
 
-# test_elastoplastic(1)
+test_elastoplastic(10000)
 
-test_viscoelastic(int(2000))
+# test_viscoelastic(int(2000))
 
 print(list_timings(MPI.COMM_WORLD, [TimingType.wall, TimingType.user]))
