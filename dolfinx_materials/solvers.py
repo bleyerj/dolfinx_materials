@@ -11,9 +11,6 @@ from petsc4py import PETSc
 from dolfinx.common import Timer
 import numpy as np
 from mpi4py import MPI
-import jax
-import jax.numpy as jnp
-from functools import partial
 
 
 def mpiprint(s):
@@ -226,79 +223,3 @@ class SNESNonlinearMaterialProblem(NonlinearMaterialProblem):
             )
 
         return converged, it
-
-
-class JAXNewton:
-    """A tiny Newton solver implemented in JAX."""
-
-    def __init__(self, r, dr_dx=None, tol=1e-8, Nitermax=200):
-        """Newton solver for a vector of residual r(x).
-
-        Parameters
-        ----------
-        r : callable
-            Residual to solve for. r(x) is a function of R^n to R^n, n>=1.
-        dr_dx : callable, optional
-            The jacobian of the residual. dr_dx(x) is a function of R^n to R^{n}xR^n. If None (default),
-            JAX computes the residual using forward-mode automatic differentiation.
-        tol :float, optional
-            Relative tolerance for the Newton method, by default 1e-8
-        Nitermax : int, optional
-            Maximum number of allowed iterations, by default 200
-        """
-        self.Nitermax = Nitermax
-        self.tol = tol
-        # residual
-        self.r = r
-        if dr_dx is None:
-            self.dr_dx = jax.jit(jax.jacfwd(r))
-        else:
-            self.dr_dx = dr_dx
-
-    @property
-    def jacobian(self):
-        return self.dr_dx
-
-    @partial(jax.jit, static_argnums=(0,))
-    def solve(self, x):
-        niter = 0
-
-        res = self.r(x)
-        norm_res0 = jnp.linalg.norm(res)
-
-        @jax.jit
-        def _solve_linear_system(x, b):
-            J = self.dr_dx(x)
-            dx = jax.scipy.linalg.solve(J, b)
-            return dx
-
-        @jax.jit
-        def cond_fun(state):
-            norm_res, niter, _ = state
-            # jax.debug.print("Iteration {n}, residual {r}", n=niter, r=norm_res)
-            return jnp.logical_and(
-                norm_res > self.tol * norm_res0, niter < self.Nitermax
-            )
-
-        @jax.jit
-        def body_fun(state):
-            norm_res, niter, history = state
-
-            x, res = history
-
-            dx = _solve_linear_system(x, -res)
-            x += dx
-
-            res = self.r(x)
-            norm_res = jnp.linalg.norm(res)
-            history = x, res
-            niter += 1
-
-            return (norm_res, niter, history)
-
-        history = (x, res)
-
-        norm_res, niter_total, history = jax.lax.while_loop(
-            cond_fun, body_fun, (norm_res0, niter, history)
-        )
-        return history

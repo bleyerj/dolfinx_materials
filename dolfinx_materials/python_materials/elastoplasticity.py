@@ -2,7 +2,7 @@ import numpy as np
 from .elasticity import LinearElasticIsotropic
 from dolfinx_materials.material import Material
 from dolfinx_materials.material.generic import tangent_AD
-from dolfinx_materials.solvers import JAXNewton
+from dolfinx_materials.jax_newton_solver import JAXNewton
 from .tensors import K
 import jax
 import jax.numpy as jnp
@@ -18,14 +18,13 @@ class ElastoPlasticIsotropicHardening(Material):
     def internal_state_variables(self):
         return {"p": 1}
 
-    @jax.profiler.annotate_function
     @tangent_AD
     def constitutive_update(self, eps, state, dt):
         eps_old = state["Strain"]
         deps = eps - eps_old
         p_old = state["p"][0]  # scalar instead of 1-dim vector
         sig_old = state["Stress"]
-
+        jax.debug.print("Shape={s}", s=state["p"].shape)
         elastic_model = self.elastic_model
         E, nu = elastic_model.E, elastic_model.nu
         lmbda, mu = elastic_model.get_Lame_parameters(E, nu)
@@ -58,37 +57,38 @@ class ElastoPlasticIsotropicHardening(Material):
                 yield_criterion,
             )
 
-        newton = JAXNewton(lambda x: jnp.array([r(x[0])]))
-        dp = 0.0
-        x = jnp.array([dp])
-        x, res = newton.solve(x)
-        dp = x[0]
+        # newton = JAXNewton(lambda x: jnp.array([r(x[0])]))
+        # dp = 0.0
+        # x = newton.solve(jnp.array([dp]))
+        # dp = x[0]
+
+        newton = JAXNewton(r)
+        dp, res = newton.solve(0.0)
 
         sig = sig_el - 2 * mu * deps_p(dp, yield_criterion)
 
-        dR_dp = jax.grad(self.yield_stress)(p_old + dp)
-        n_el = s_el / sig_eq_el  # normal vector
-        beta = 3 * mu * dp / sig_eq_el
-        gamma = 3 * mu / (3 * mu + dR_dp)
-        D = 3 * mu * (gamma - beta) * jnp.outer(n_el, n_el) + 2 * mu * beta * K()
+        # dR_dp = jax.grad(self.yield_stress)(p_old + dp)
+        # n_el = s_el / sig_eq_el  # normal vector
+        # beta = 3 * mu * dp / sig_eq_el
+        # gamma = 3 * mu / (3 * mu + dR_dp)
+        # D = 3 * mu * (gamma - beta) * jnp.outer(n_el, n_el) + 2 * mu * beta * K()
 
-        def Ct(dp, yield_criterion):
-            def Ct_elastic(dp, yield_criterion):
-                return C
+        # def Ct(dp, yield_criterion):
+        #     def Ct_elastic(dp, yield_criterion):
+        #         return C
 
-            def Ct_plastic(dp, yield_criterion):
-                return C - D
+        #     def Ct_plastic(dp, yield_criterion):
+        #         return C - D
 
-            return jax.lax.cond(
-                yield_criterion < 0.0,
-                Ct_elastic,
-                Ct_plastic,
-                dp,
-                yield_criterion,
-            )
+        #     return jax.lax.cond(
+        #         yield_criterion < 0.0,
+        #         Ct_elastic,
+        #         Ct_plastic,
+        #         dp,
+        #         yield_criterion,
+        #     )
 
         state["Strain"] = eps_old + deps
         state["p"] += dp
         state["Stress"] = sig
-        # return Ct(dp, yield_criterion), state
         return sig, state

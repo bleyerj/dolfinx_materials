@@ -108,7 +108,7 @@ out_file = "elastoplasticity.pvd"
 vtk = io.VTKFile(domain.comm, out_file, "w")
 
 N = 10
-Eyy = np.linspace(0, 1e-2, N + 1)
+Eyy = np.linspace(0, 10e-3, N + 1)
 Syy = np.zeros_like(Eyy)
 for i, eyy in enumerate(Eyy[1:]):
     uD_t.vector.array[1::2] = eyy * Ly
