@@ -1,6 +1,6 @@
 import numpy as np
 from dolfinx_materials.material import Material
-from dolfinx_materials.material.generic import tangent_AD
+from dolfinx_materials.material.jax import tangent_AD
 from .elasticity import LinearElasticIsotropic
 import jax.numpy as jnp
 

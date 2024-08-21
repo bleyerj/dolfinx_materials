@@ -12,9 +12,12 @@ from dolfinx.cpp.nls.petsc import NewtonSolver
 from dolfinx.common import list_timings, TimingType
 from dolfinx_materials.quadrature_map import QuadratureMap
 from dolfinx_materials.solvers import NonlinearMaterialProblem
-from dolfinx_materials.python_materials import (
+from dolfinx_materials.jax_materials import (
     vonMisesIsotropicHardening,
     GeneralIsotropicHardening,
+    # LinearElasticIsotropic,
+)
+from dolfinx_materials.python_materials import (
     LinearElasticIsotropic,
 )
 from generate_mesh import generate_perforated_plate
@@ -42,7 +45,8 @@ def yield_stress(p):
 
 
 # material = vonMisesIsotropicHardening(elastic_model, yield_stress)
-material = GeneralIsotropicHardening(elastic_model, yield_stress, norm_type="von_Mises")
+material = elastic_model
+# material = GeneralIsotropicHardening(elastic_model, yield_stress, norm_type="von_Mises")
 
 # %% [markdown]
 # We then generate the mesh of a rectangular plate of dimensions $L_x\times L_y$ perforated by a circular hole of radius R at its center.
@@ -51,12 +55,12 @@ material = GeneralIsotropicHardening(elastic_model, yield_stress, norm_type="von
 Lx = 1.0
 Ly = 2.0
 R = 0.2
-mesh_sizes = (0.01, 0.2)
+mesh_sizes = (0.2, 0.2)
 domain, markers, facets = generate_perforated_plate(Lx, Ly, R, mesh_sizes)
 ds = ufl.Measure("ds", subdomain_data=facets)
 
 # %%
-order = 2
+order = 1
 deg_quad = 2 * (order - 1)
 shape = (2,)
 
@@ -117,7 +121,7 @@ for i, eyy in enumerate(Eyy[1:]):
 
     converged, it = problem.solve(newton)
 
-    p = qmap.project_on("p", ("DG", 0))
+    # p = qmap.project_on("p", ("DG", 0))
     stress = qmap.project_on("Stress", ("DG", 0))
 
     Syy[i + 1] = fem.assemble_scalar(fem.form(stress[1] * ds(2))) / Lx
@@ -125,7 +129,7 @@ for i, eyy in enumerate(Eyy[1:]):
     syy = stress.sub(1).collapse()
     syy.name = "Stress"
     vtk.write_function(u, i + 1)
-    vtk.write_function(p, i + 1)
+    # vtk.write_function(p, i + 1)
     vtk.write_function(syy, i + 1)
 
 vtk.close()

@@ -1,5 +1,5 @@
 import numpy as np
-from dolfinx_materials.python_materials import (
+from dolfinx_materials.jax_materials import (
     ElastoPlasticIsotropicHardening,
     LinearElasticIsotropic,
     LinearViscoElasticity,

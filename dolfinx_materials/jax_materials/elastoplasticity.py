@@ -1,7 +1,7 @@
 import numpy as np
 from .elasticity import LinearElasticIsotropic
 from dolfinx_materials.material import Material
-from dolfinx_materials.material.generic import tangent_AD
+from dolfinx_materials.material.jax import tangent_AD
 from dolfinx_materials.jax_newton_solver import JAXNewton
 from .tensors import dev, to_mat
 import jax
@@ -79,7 +79,7 @@ class vonMisesIsotropicHardening(Material):
         newton = JAXNewton(r)
         dp, res = newton.solve(0.0)
 
-        sig = sig_el - 3 * mu * n_el * dp  # deps_p(dp, yield_criterion)
+        sig = sig_el - deps_p(dp, yield_criterion)
 
         state["Strain"] += deps
         state["p"] += dp
