@@ -15,13 +15,9 @@ from dolfinx_materials.solvers import NonlinearMaterialProblem
 from dolfinx_materials.jax_materials import (
     vonMisesIsotropicHardening,
     GeneralIsotropicHardening,
-    # LinearElasticIsotropic,
-)
-from dolfinx_materials.python_materials import (
     LinearElasticIsotropic,
 )
 from generate_mesh import generate_perforated_plate
-import jax
 
 
 # %% [markdown]
@@ -44,8 +40,7 @@ def yield_stress(p):
     return sig0 + (sigu - sig0) * (1 - jnp.exp(-b * p))
 
 
-# material = vonMisesIsotropicHardening(elastic_model, yield_stress)
-material = elastic_model
+material = vonMisesIsotropicHardening(elastic_model, yield_stress)
 # material = GeneralIsotropicHardening(elastic_model, yield_stress, norm_type="von_Mises")
 
 # %% [markdown]
@@ -55,12 +50,12 @@ material = elastic_model
 Lx = 1.0
 Ly = 2.0
 R = 0.2
-mesh_sizes = (0.2, 0.2)
+mesh_sizes = (0.02, 0.2)
 domain, markers, facets = generate_perforated_plate(Lx, Ly, R, mesh_sizes)
 ds = ufl.Measure("ds", subdomain_data=facets)
 
 # %%
-order = 1
+order = 2
 deg_quad = 2 * (order - 1)
 shape = (2,)
 
@@ -121,7 +116,7 @@ for i, eyy in enumerate(Eyy[1:]):
 
     converged, it = problem.solve(newton)
 
-    # p = qmap.project_on("p", ("DG", 0))
+    p = qmap.project_on("p", ("DG", 0))
     stress = qmap.project_on("Stress", ("DG", 0))
 
     Syy[i + 1] = fem.assemble_scalar(fem.form(stress[1] * ds(2))) / Lx
@@ -129,7 +124,7 @@ for i, eyy in enumerate(Eyy[1:]):
     syy = stress.sub(1).collapse()
     syy.name = "Stress"
     vtk.write_function(u, i + 1)
-    # vtk.write_function(p, i + 1)
+    vtk.write_function(p, i + 1)
     vtk.write_function(syy, i + 1)
 
 vtk.close()
@@ -141,10 +136,10 @@ plt.figure()
 plt.plot(Eyy, Syy, "-o")
 plt.xlabel(r"Strain $\varepsilon_{yy}$")
 plt.ylabel(r"Stress $\sigma_{yy}$")
-plt.savefig(f"{material.name}_stress_strain.pdf")
+# plt.savefig(f"{material.name}_stress_strain.pdf")
 res = np.zeros((len(Eyy), 2))
 res[:, 0] = Eyy
 res[:, 1] = Syy
-np.savetxt(f"plasticity_results.csv", res, delimiter=",")
+# np.savetxt(f"plasticity_results.csv", res, delimiter=",")
 
 # %%

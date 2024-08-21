@@ -1,11 +1,8 @@
-import numpy as np
-from .elasticity import LinearElasticIsotropic
-from dolfinx_materials.material import Material
-from dolfinx_materials.material.jax import tangent_AD
-from dolfinx_materials.jax_newton_solver import JAXNewton
-from .tensors import dev, to_mat
 import jax
 import jax.numpy as jnp
+from dolfinx_materials.material.jax import JAXMaterial, tangent_AD
+from dolfinx_materials.jax_newton_solver import JAXNewton
+from .tensors import dev, to_mat
 
 
 def Hosford_stress(sig, a=10):
@@ -27,7 +24,7 @@ equivalent_norms = {
 }
 
 
-class vonMisesIsotropicHardening(Material):
+class vonMisesIsotropicHardening(JAXMaterial):
     def __init__(self, elastic_model, yield_stress):
         super().__init__()
         self.elastic_model = elastic_model
@@ -79,7 +76,7 @@ class vonMisesIsotropicHardening(Material):
         newton = JAXNewton(r)
         dp, res = newton.solve(0.0)
 
-        sig = sig_el - deps_p(dp, yield_criterion)
+        sig = sig_el - 2 * mu * deps_p(dp, yield_criterion)
 
         state["Strain"] += deps
         state["p"] += dp
@@ -87,7 +84,7 @@ class vonMisesIsotropicHardening(Material):
         return sig, state
 
 
-class GeneralIsotropicHardening(Material):
+class GeneralIsotropicHardening(JAXMaterial):
 
     def __init__(self, elastic_model, yield_stress, norm_type="vonMises"):
         super().__init__()

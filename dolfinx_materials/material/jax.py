@@ -17,7 +17,7 @@ def tangent_AD(compute_stress_method):
 
 class JAXMaterial(Material):
     def __init__(self, **kwargs):
-        super().__init__(self, **kwargs)
+        super().__init__(**kwargs)
         self.batched_constitutive_update = jax.jit(
             jax.vmap(self.constitutive_update, in_axes=(0, 0, None))
         )

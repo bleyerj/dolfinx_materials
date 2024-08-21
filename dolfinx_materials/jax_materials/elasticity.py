@@ -1,9 +1,9 @@
 import numpy as np
-from dolfinx_materials.material import Material
+from dolfinx_materials.material.jax import JAXMaterial
 import jax.numpy as jnp
 
 
-class LinearElasticIsotropic(Material):
+class LinearElasticIsotropic(JAXMaterial):
     def __init__(self, E, nu):
         super().__init__()
         self.E = E
