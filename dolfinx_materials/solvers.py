@@ -267,6 +267,12 @@ class JAXNewton:
         norm_res0 = jnp.linalg.norm(res)
 
         @jax.jit
+        def _solve_linear_system(x, b):
+            J = self.dr_dx(x)
+            dx = jax.scipy.linalg.solve(J, b)
+            return dx
+
+        @jax.jit
         def cond_fun(state):
             norm_res, niter, _ = state
             # jax.debug.print("Iteration {n}, residual {r}", n=niter, r=norm_res)
@@ -280,14 +286,8 @@ class JAXNewton:
 
             x, res = history
 
-            J = self.dr_dx(x)
-
-            # TODO: check info of linear solver
-            j_inv_vp = jnp.linalg.inv(J) @ -res
-            j_inv_vp, info = jax.scipy.sparse.linalg.cg(J, -res)
-            # lufac = jax.scipy.linalg.lu_factor(J)
-            # j_inv_vp = jax.scipy.linalg.lu_solve(lufac, -res)
-            x += j_inv_vp
+            dx = _solve_linear_system(x, -res)
+            x += dx
 
             res = self.r(x)
             norm_res = jnp.linalg.norm(res)

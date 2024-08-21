@@ -20,8 +20,6 @@ from generate_mesh import generate_perforated_plate
 import jax
 
 
-jax.profiler.start_trace("/tmp/tensorboard")
-
 # %% [markdown]
 # We first define our elastoplastic material using the `ElastoPlasticIsotropicHardening` class which represents a von Mises elastoplastic material which takes as input arguments a `LinearElasticIsotropic` material and a custom hardening yield stress function. Here we use a Voce-type exponential harding such that:
 #
@@ -40,7 +38,6 @@ elastic_model = LinearElasticIsotropic(E=70e3, nu=0.3)
 
 def yield_stress(p):
     return sig0 + (sigu - sig0) * (1 - jnp.exp(-b * p))
-    # return sig0 + E/100*p
 
 
 material = ElastoPlasticIsotropicHardening(elastic_model, yield_stress)
@@ -100,14 +97,18 @@ Jac = qmap.derivative(Res, u, du)
 # %%
 problem = NonlinearMaterialProblem(qmap, Res, Jac, u, bcs)
 newton = NewtonSolver(MPI.COMM_WORLD)
-newton.rtol = 1e-4
-newton.atol = 1e-4
+newton.rtol = 1e-6
+newton.atol = 1e-6
 newton.convergence_criterion = "residual"
 newton.max_it = 20
 
 # %%
+
+out_file = "elastoplasticity.pvd"
+vtk = io.VTKFile(domain.comm, out_file, "w")
+
 N = 10
-Eyy = np.linspace(0, 3e-3, N + 1)
+Eyy = np.linspace(0, 1e-2, N + 1)
 Syy = np.zeros_like(Eyy)
 for i, eyy in enumerate(Eyy[1:]):
     uD_t.vector.array[1::2] = eyy * Ly
@@ -119,6 +120,13 @@ for i, eyy in enumerate(Eyy[1:]):
 
     Syy[i + 1] = fem.assemble_scalar(fem.form(stress[1] * ds(2))) / Lx
 
+    syy = stress.sub(1).collapse()
+    syy.name = "Stress"
+    vtk.write_function(u, i + 1)
+    vtk.write_function(p, i + 1)
+    vtk.write_function(syy, i + 1)
+
+vtk.close()
 # %%
 list_timings(domain.comm, [TimingType.wall, TimingType.user])
 jax.profiler.stop_trace()
