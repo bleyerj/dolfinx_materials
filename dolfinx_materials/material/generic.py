@@ -90,9 +90,7 @@ class Material:
             gradients, vectorized_state, dt
         )
 
-        new_sig = new_state["Stress"]
         self.data_manager.s1.set_item(new_state)
-        self.data_manager.s1.set_item({"Stress": new_sig})
 
         return (
             self.data_manager.s1.fluxes,
@@ -132,16 +130,19 @@ class MaterialStateManager:
     def __init__(self, behaviour, ngauss):
         self._behaviour = behaviour
         self.n = ngauss
-        self.gradients_stride = [v for v in self._behaviour.gradients.values()]
-        self.fluxes_stride = [v for v in self._behaviour.fluxes.values()]
-        self.internal_state_variables_stride = [
-            v for v in self._behaviour.internal_state_variables.values()
+        self.gradients_size = [max(1, v) for v in self._behaviour.gradients.values()]
+        self.fluxes_size = [max(1, v) for v in self._behaviour.fluxes.values()]
+        self.internal_state_variables_size = [
+            max(1, v) for v in self._behaviour.internal_state_variables.values()
         ]
-        self.gradients = np.zeros((ngauss, sum(self.gradients_stride)))
-        self.fluxes = np.zeros((ngauss, sum(self.fluxes_stride)))
+        self.gradients = np.zeros((ngauss, sum(self.gradients_size)))
+        self.fluxes = np.zeros((ngauss, sum(self.fluxes_size)))
         self.internal_state_variables = np.zeros(
-            (ngauss, sum(self.internal_state_variables_stride))
+            (ngauss, sum(self.internal_state_variables_size))
         )
+        self.internal_state_variables_pos = np.concatenate(
+            ([0], self.internal_state_variables_size)
+        ).cumsum()
 
     def update(self, other):
         self.gradients = np.copy(other.gradients)
@@ -160,7 +161,9 @@ class MaterialStateManager:
 
     def get_internal_state_variable_index(self, name):
         index = self._behaviour.internal_state_variable_names.index(name)
-        pos = np.arange(index, index + self._behaviour.internal_state_variables[name])
+        start = self.internal_state_variables_pos[index]
+        size = self.internal_state_variables_size[index]
+        pos = np.arange(start, index + size)
         return pos
 
     def __getitem__(self, i):
@@ -191,7 +194,8 @@ class MaterialStateManager:
                 state_copy.pop(key)
             if key in self._behaviour.internal_state_variables:
                 pos = self.get_internal_state_variable_index(key)
-                self.internal_state_variables[np.ix_(indices, pos)] = value
+                values = self.internal_state_variables[indices, :]
+                values[:, pos] = value
                 state_copy.pop(key)
         assert (
             len(state_copy) == 0
