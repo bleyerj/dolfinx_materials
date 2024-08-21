@@ -13,7 +13,8 @@ from dolfinx.common import list_timings, TimingType
 from dolfinx_materials.quadrature_map import QuadratureMap
 from dolfinx_materials.solvers import NonlinearMaterialProblem
 from dolfinx_materials.python_materials import (
-    ElastoPlasticIsotropicHardening,
+    vonMisesIsotropicHardening,
+    GeneralIsotropicHardening,
     LinearElasticIsotropic,
 )
 from generate_mesh import generate_perforated_plate
@@ -40,7 +41,8 @@ def yield_stress(p):
     return sig0 + (sigu - sig0) * (1 - jnp.exp(-b * p))
 
 
-material = ElastoPlasticIsotropicHardening(elastic_model, yield_stress)
+# material = vonMisesIsotropicHardening(elastic_model, yield_stress)
+material = GeneralIsotropicHardening(elastic_model, yield_stress, norm_type="von_Mises")
 
 # %% [markdown]
 # We then generate the mesh of a rectangular plate of dimensions $L_x\times L_y$ perforated by a circular hole of radius R at its center.
@@ -129,7 +131,7 @@ for i, eyy in enumerate(Eyy[1:]):
 vtk.close()
 # %%
 list_timings(domain.comm, [TimingType.wall, TimingType.user])
-jax.profiler.stop_trace()
+
 # %%
 plt.figure()
 plt.plot(Eyy, Syy, "-o")
