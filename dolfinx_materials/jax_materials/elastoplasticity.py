@@ -41,9 +41,8 @@ class vonMisesIsotropicHardening(JAXMaterial):
         deps = eps - eps_old
         p_old = state["p"][0]  # convert to scalar
         sig_old = state["Stress"]
-        elastic_model = self.elastic_model
-        E, nu = elastic_model.E, elastic_model.nu
-        lmbda, mu = elastic_model.get_Lame_parameters(E, nu)
+
+        mu = self.elastic_model.mu
         C = self.elastic_model.C
         sig_el = sig_old + C @ deps
         sig_Y_old = self.yield_stress(p_old)
@@ -106,9 +105,7 @@ class GeneralIsotropicHardening(JAXMaterial):
         deps = eps - eps_old
         p_old = state["p"][0]  # convert to scalar
         sig_old = state["Stress"]
-        elastic_model = self.elastic_model
-        E, nu = elastic_model.E, elastic_model.nu
-        lmbda, mu = elastic_model.get_Lame_parameters(E, nu)
+
         C = self.elastic_model.C
         sig_el = sig_old + C @ deps
         sig_Y_old = self.yield_stress(p_old)
