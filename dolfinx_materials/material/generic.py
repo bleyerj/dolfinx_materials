@@ -3,7 +3,7 @@ from dolfinx.common import Timer
 import warnings
 
 
-def vmap(fn, in_axes=0, out_axes=0):
+def _vmap(fn, in_axes=0, out_axes=0):
     """
     Vectorizes the given function fn, applying it along the specified axes.
 
@@ -94,13 +94,18 @@ def vmap(fn, in_axes=0, out_axes=0):
 
 
 class Material:
+    """
+    This class is used to define a material behavior implemented in pure Python.
+    This will be extremely slow if looping over all quadrature points.
+    """
+
     def __init__(self, **kwargs):
         self.material_properties = self.default_properties()
         self.material_properties.update(kwargs)
         for key, value in self.material_properties.items():
             setattr(self, key, value)
 
-        self.batched_constitutive_update = vmap(
+        self.batched_constitutive_update = _vmap(
             self.constitutive_update, in_axes=(0, 0, None), out_axes=(0, 0)
         )
 

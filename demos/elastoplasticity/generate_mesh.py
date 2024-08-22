@@ -53,9 +53,5 @@ def generate_perforated_plate(W, H, R, mesh_sizes):
             gdim=gdim,
         )
 
-        # with XDMFFile(MPI.COMM_WORLD, "mesh.xdmf", "w") as infile:
-        #     infile.write_mesh(mesh)
-    # ft.name = "Facet markers"
-    gmsh.write("plate.geo_unrolled")
     gmsh.finalize()
     return domain, markers, facets

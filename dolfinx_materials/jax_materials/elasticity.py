@@ -1,6 +1,13 @@
-import numpy as np
-from dolfinx_materials.material.jax import JAXMaterial
+#!/usr/bin/env python
+# -*-coding:utf-8 -*-
+"""
+
+@Author  :   Jeremy Bleyer, Ecole Nationale des Ponts et Chaussées, Navier
+@Contact :   jeremy.bleyer@enpc.fr
+@Time    :   22/08/2024
+"""
 import jax.numpy as jnp
+from dolfinx_materials.material.jax import JAXMaterial
 from .tensors import J, K
 
 

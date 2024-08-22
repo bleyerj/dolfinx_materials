@@ -1,7 +1,6 @@
 import jax
 import jax.numpy as jnp
-from dolfinx_materials.material.jax import JAXMaterial, tangent_AD
-from dolfinx_materials.jax_newton_solver import JAXNewton
+from dolfinx_materials.material.jax import JAXMaterial, tangent_AD, JAXNewton
 from .tensors import dev, to_mat
 
 

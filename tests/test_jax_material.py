@@ -57,7 +57,7 @@ def test_viscoelastic(Nbatch):
     dt = np.diff(times)
     E0 = 70e3
     E1 = 20e3
-    nu = 0.3
+    nu = 0.0
     tau = 0.05
     branch0 = LinearElasticIsotropic(E0, nu)
     branch1 = LinearElasticIsotropic(E1, nu)
