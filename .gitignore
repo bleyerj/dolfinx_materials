@@ -65,16 +65,14 @@ _minted*
 .vscode
 
 # Sphinx
-doc/_build
-doc/_static
-doc/_templates
+docs/_build
+docs/_static
+docs/_templates
 # ignore copied medias from notebooks
-doc/*.gif
-doc/*.png
-doc/demos/**/*.png
-doc/demos/**/*.gif
-doc/demos/**/*.svg
-doc/*.csv
+docss/*.gif
+docs/*.png
+docs/demos
+docs/**/_autosummary
 
 # FEniCS failures
 jitfailure*
