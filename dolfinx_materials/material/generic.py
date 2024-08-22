@@ -76,7 +76,6 @@ def vmap(fn, in_axes=0, out_axes=0):
             out_axes_tuple = (out_axes,)
         else:
             out_axes_tuple = out_axes
-        print(out_axes_tuple)
 
         # Stack the results along the specified out_axes
         if isinstance(results[0], tuple):
@@ -273,8 +272,7 @@ class MaterialStateManager:
                 state_copy.pop(key)
             if key in self._behaviour.internal_state_variables:
                 pos = self.get_internal_state_variable_index(key)
-                values = self.internal_state_variables[indices, :]
-                values[:, pos] = value
+                self.internal_state_variables[np.ix_(indices, pos)] = value
                 state_copy.pop(key)
         assert (
             len(state_copy) == 0
