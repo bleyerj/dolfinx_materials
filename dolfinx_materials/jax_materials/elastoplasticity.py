@@ -49,27 +49,26 @@ class vonMisesIsotropicHardening(JAXMaterial):
         n_el = dev(sig_el) / sig_eq_el
         yield_criterion = sig_eq_el - sig_Y_old
 
+        def deps_p_elastic(dp):
+            return jnp.zeros(6)
+
+        def deps_p_plastic(dp):
+            return 3 / 2 * n_el * dp  # n=n_el simplification due to radial return
+
+        def deps_p(dp, yield_criterion):
+            return jax.lax.cond(
+                yield_criterion < 0.0,
+                deps_p_elastic,
+                deps_p_plastic,
+                dp,
+            )
+
         def r(dp):
             r_elastic = lambda dp: dp
             r_plastic = (
                 lambda dp: sig_eq_el - 3 * mu * dp - self.yield_stress(p_old + dp)
             )
             return jax.lax.cond(yield_criterion < 0.0, r_elastic, r_plastic, dp)
-
-        def deps_p(dp, yield_criterion):
-            def deps_p_elastic(dp, yield_criterion):
-                return jnp.zeros(6)
-
-            def deps_p_plastic(dp, yield_criterion):
-                return 3 / 2 * n_el * dp  # n=n_el simplification due to radial return
-
-            return jax.lax.cond(
-                yield_criterion < 0.0,
-                deps_p_elastic,
-                deps_p_plastic,
-                dp,
-                yield_criterion,
-            )
 
         newton = JAXNewton(r)
         dp, res = newton.solve(0.0)

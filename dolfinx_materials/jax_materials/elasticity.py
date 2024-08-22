@@ -57,7 +57,7 @@ class LinearElasticIsotropic(JAXMaterial):
         kappa = lmbda + 2 / 3 * mu
         return 3 * kappa * J + 2 * mu * K
 
-    def constitutive_update(self, eps, state):
+    def constitutive_update(self, eps, state, dt):
         sig = jnp.dot(self.C, eps)
         state["Stress"] = sig
         return self.C, state

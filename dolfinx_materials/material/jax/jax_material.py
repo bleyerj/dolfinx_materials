@@ -6,11 +6,11 @@ from functools import wraps, partial
 jax.config.update("jax_enable_x64", True)  # use double-precision
 
 
-def tangent_AD(compute_stress_method):
-    @wraps(compute_stress_method)
+def tangent_AD(consitutive_upate_method):
+    @wraps(consitutive_upate_method)
     def wrapper(self, *args):
-        compute_stress = partial(compute_stress_method, self)
-        return jax.jacfwd(compute_stress, argnums=0, has_aux=True)(*args)
+        constitutive_update_fun = partial(consitutive_upate_method, self)
+        return jax.jacfwd(constitutive_update_fun, argnums=0, has_aux=True)(*args)
 
     return wrapper
 

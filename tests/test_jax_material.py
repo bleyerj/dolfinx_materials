@@ -52,6 +52,21 @@ from mpi4py import MPI
 from dolfinx.common import list_timings, TimingType, Timer
 
 
+def test_elastic(Nbatch):
+    E = 10.0
+    nu = 0.3
+    material = LinearElasticIsotropic(E, nu)
+
+    eps = [1e-3, 0, 0, 0, 0, 0]
+    Eps = np.vstack((eps,) * Nbatch)
+    material.set_data_manager(Nbatch)
+    state = material.get_initial_state_dict()
+
+    dt = 0
+    sig, state, Ct = material.integrate(Eps, dt)
+    assert np.allclose(sig, Eps @ material.C)
+
+
 def test_viscoelastic(Nbatch):
     times = np.linspace(0, 0.5, 100)
     dt = np.diff(times)
@@ -95,6 +110,4 @@ def test_viscoelastic(Nbatch):
 
 # test_elastoplastic(1)
 
-test_viscoelastic(1)
-
-print(list_timings(MPI.COMM_WORLD, [TimingType.wall, TimingType.user]))
+test_elastic(10)

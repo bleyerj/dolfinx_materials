@@ -10,8 +10,12 @@ parts:
   - caption: User guide
     chapters:
       - file: intro.md
+      - file: jax.md
       
-  - caption: Documented demos
+  - caption: JAX demos
+    chapters:
+      - file: jax_elastoplasticity.md
+  - caption: MFront demos
     chapters:
       - file: demos/mfront/heat_transfer/nonlinear_heat_transfer.md
       - file: demos/mfront/heat_transfer/phase_change.md

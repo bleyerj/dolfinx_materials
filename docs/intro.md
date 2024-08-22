@@ -118,5 +118,5 @@ where $T_0$ is a reference temperature, $s$ the entropy per unit of mass and $\b
 In a fully coupled setting, $s,\bq$ and $\bsig$ are typically functions of the temperature $T$, the temperature gradient $\nabla T$ and the strain $\beps$. The same abstract constitutive mapping as in {eq}`constitutive-black-box` can therefore be considered by replacing the input with a set of *external state variables* (here the temperature $T$) and of *gradients* (here the temperature gradient $\nabla T$ and the strain $\beps$). The output of the constitutive equation is now a set of *fluxes* (here the heat flux $\bq$ and the stress $\bsig$) and of *internal state variables* (here the entropy). Again, to formulate a monolithic Newton method of this coupled system, various derivatives of outputs (fluxes + internal state variables) with respect to inputs (gradients and external state variables) should be provided by the material library. Finally, the heat and mechanics equations can also be solved in a staggered manner.
 
 For more details on such examples, we refer to the following MFront demos:
-- [Nonlinear heat transfer](/demos/mfront/heat_transfer/nonlinear_heat_transfer.ipynb)
-- [Phase change](/demos/mfront/heat_transfer/phase_change.ipynb)
+- [Nonlinear heat transfer](/demos/mfront/heat_transfer/nonlinear_heat_transfer.md)
+- [Phase change](/demos/mfront/heat_transfer/phase_change.md)
