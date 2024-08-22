@@ -1,0 +1,20 @@
+# Table of contents
+# Learn more at https://jupyterbook.org/customize/toc.html
+
+format: jb-book
+root: index
+title: dolfinx_materials Documentation
+
+
+parts:
+  - caption: User guide
+    chapters:
+      - file: intro.md
+      
+  - caption: Documented demos
+    chapters:
+      - file: demos/mfront/heat_transfer/nonlinear_heat_transfer.md
+      - file: demos/mfront/heat_transfer/phase_change.md
+  - caption: API
+    chapters:
+      - file: api/api.rst
