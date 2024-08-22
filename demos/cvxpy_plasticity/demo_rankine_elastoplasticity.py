@@ -1,5 +1,5 @@
 import numpy as np
-from dolfinx_materials.python_materials.elasticity import (
+from dolfinx_materials.jax_materials.elasticity import (
     PlaneStressLinearElasticIsotropic,
 )
 from rankine import Rankine
