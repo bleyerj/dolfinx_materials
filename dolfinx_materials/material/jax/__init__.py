@@ -4,5 +4,7 @@
 
 @Author  :   Jeremy Bleyer, Ecole des Ponts ParisTech, Navier
 @Contact :   jeremy.bleyer@enpc.fr
-@Time    :   26/08/2024
+@Time    :   08/06/2023
 """
+from .jax_material import JAXMaterial, tangent_AD
+from .jax_newton_solver import JAXNewton

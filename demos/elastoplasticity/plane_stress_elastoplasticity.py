@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 import jax.numpy as jnp
 from mpi4py import MPI
 import ufl
+import basix
 from dolfinx import io, fem
 from dolfinx.cpp.nls.petsc import NewtonSolver
 from dolfinx.common import list_timings, TimingType
@@ -14,6 +15,7 @@ from dolfinx_materials.quadrature_map import QuadratureMap
 from dolfinx_materials.solvers import NonlinearMaterialProblem
 from dolfinx_materials.jax_materials import (
     vonMisesIsotropicHardening,
+    GeneralIsotropicHardening,
     LinearElasticIsotropic,
 )
 from generate_mesh import generate_perforated_plate
@@ -40,6 +42,7 @@ def yield_stress(p):
 
 
 material = vonMisesIsotropicHardening(elastic_model, yield_stress)
+# material = GeneralIsotropicHardening(elastic_model, yield_stress, norm_type="von_Mises")
 
 # %% [markdown]
 # We then generate the mesh of a rectangular plate of dimensions $L_x\times L_y$ perforated by a circular hole of radius R at its center.
@@ -56,22 +59,40 @@ ds = ufl.Measure("ds", subdomain_data=facets)
 order = 2
 deg_quad = 2 * (order - 1)
 shape = (2,)
-
-V = fem.functionspace(domain, ("P", order, shape))
-bottom_dofs = fem.locate_dofs_topological(V, 1, facets.find(1))
-top_dofs = fem.locate_dofs_topological(V, 1, facets.find(2))
-
-uD_b = fem.Function(V)
-uD_t = fem.Function(V)
-bcs = [fem.dirichletbc(uD_t, top_dofs), fem.dirichletbc(uD_b, bottom_dofs)]
+Ue = basix.ufl.element("P", domain.basix_cell(), order, shape=(2,))
+Ee = basix.ufl.element("DG", domain.basix_cell(), order - 1)
+V = fem.functionspace(domain, basix.ufl.mixed_element([Ue, Ee]))
 
 
-def strain(u):
+V_u, mapping = V.sub(0).collapse()
+
+
+def top(x):
+    return np.isclose(x[1], Ly)
+
+
+def bottom(x):
+    return np.isclose(x[1], 0)
+
+
+top_dofs = fem.locate_dofs_geometrical((V.sub(0), V_u), top)
+bottom_dofs = fem.locate_dofs_geometrical((V.sub(0), V_u), bottom)
+
+uD_b = fem.Function(V_u)
+uD_t = fem.Function(V_u)
+bcs = [
+    fem.dirichletbc(uD_t, top_dofs, V.sub(0)),
+    fem.dirichletbc(uD_b, bottom_dofs, V.sub(0)),
+]
+
+
+def strain(v):
+    u, ezz = ufl.split(v)
     return ufl.as_vector(
         [
             u[0].dx(0),
             u[1].dx(1),
-            0.0,
+            ezz,
             1 / np.sqrt(2) * (u[1].dx(0) + u[0].dx(1)),
             0.0,
             0.0,
@@ -106,13 +127,13 @@ newton.max_it = 20
 out_file = "elastoplasticity.pvd"
 vtk = io.VTKFile(domain.comm, out_file, "w")
 
-N = 15
+N = 10
 Eyy = np.linspace(0, 10e-3, N + 1)
 Syy = np.zeros_like(Eyy)
 for i, eyy in enumerate(Eyy[1:]):
     uD_t.vector.array[1::2] = eyy * Ly
 
-    converged, it = problem.solve(newton, print_solution=False)
+    converged, it = problem.solve(newton)
 
     p = qmap.project_on("p", ("DG", 0))
     stress = qmap.project_on("Stress", ("DG", 0))
@@ -121,7 +142,9 @@ for i, eyy in enumerate(Eyy[1:]):
 
     syy = stress.sub(1).collapse()
     syy.name = "Stress"
-    vtk.write_function(u, i + 1)
+    displ = u.sub(0).collapse()
+    displ.name = "Displacement"
+    vtk.write_function(displ, i + 1)
     vtk.write_function(p, i + 1)
     vtk.write_function(syy, i + 1)
 

@@ -10,7 +10,6 @@ from .utils import (
     update_vals,
 )
 from dolfinx.common import Timer
-from .material import Material
 from .quadrature_function import create_quadrature_function, QuadratureExpression
 from mpi4py import MPI
 
@@ -28,7 +27,35 @@ def mpi_print(s):
 
 
 class QuadratureMap:
-    def __init__(self, mesh, deg, material, dim=None, cells=None):
+    """Abstract data structure to handle a user-defined material in a form.
+
+    Attributes
+    ----------
+    gradients: dict
+        dictionary of gradients represented by Quadrature functions
+    fluxes: dict
+        dictionary of fluxes represented by Quadrature functions
+    internal_state_variables: dict
+        dictionary of internal state variables represented by Quadrature functions
+    external_state_variables: dict
+        dictionary of internal state variables represented by Quadrature functions
+    dx: ufl.Measure
+        ufl.Measure defined with consistent quadrature degree
+    """
+
+    def __init__(self, mesh, deg, material, cells=None):
+        """
+        Parameters
+        ----------
+        mesh : dolfinx.mesh
+            The underlying Mesh object
+        deg : int
+            Degree of quadrature space
+        material : dolfinx_materials.Material
+            A user-defined material object
+        cells : list, np.ndarray
+            List of cells affected by the material. If None (default), acts on all cells of the domain.
+        """
         # Define mesh and cells
         self.mesh = mesh
         map_c = mesh.topology.index_map(mesh.topology.dim)
@@ -99,8 +126,9 @@ class QuadratureMap:
 
     def derivative(self, F, u, du):
         """Computes derivative of non-linear form F"""
-        # derivatives of variable u
+        # standard UFL derivatives of variable u
         tangent_form = ufl.derivative(F, u, du)
+        # additional contributions due to tangent blocks
         for dy, dx in self.material.tangent_blocks:
             if dy in self.fluxes:
                 var_y = self.fluxes[dy]
@@ -125,6 +153,7 @@ class QuadratureMap:
         return tangent_form
 
     def update_material_properties(self):
+        """Update material properties from provided values."""
         for name, mat_prop in self.material.material_properties.items():
             if isinstance(mat_prop, (int, float, np.ndarray)):
                 values = mat_prop
@@ -138,14 +167,14 @@ class QuadratureMap:
                 self.material.update_material_property(name, values)
 
     def register_external_state_variable(self, name, ext_state_var):
-        """Registers a dolfinx object as an external state variable.
+        """Registers a UFL expression as an external state variable.
 
         Parameters
         ----------
         name : str
-            Name of the variable
-        ext_state_var : float, np.ndarray, fem.Function
-            External state variable
+            Name of the external state variable field
+        ext_state_var : float, np.ndarray, UFL expression
+            Constant or UFL expression to register, e.g. fem.Function(V, name="Temperature")
         """
         if isinstance(ext_state_var, (int, float, np.ndarray)):
             ext_state_var = fem.Constant(self.mesh, ext_state_var)
@@ -161,6 +190,15 @@ class QuadratureMap:
         self.material.initialize_external_state_variable(name, values)
 
     def register_gradient(self, name, gradient):
+        """Registers a UFL expression as a gradient.
+
+        Parameters
+        ----------
+        name : str
+            Name of the gradient field
+        gradient : UFL expression
+            UFL expression to register, e.g. ufl.grad(u)
+        """
         if name in self.material.gradients:
             grad = QuadratureExpression(
                 name,
@@ -175,12 +213,14 @@ class QuadratureMap:
             )
 
     def update_external_state_variables(self):
+        """Update material external state variables with dolfinx values."""
         for name, esv in self.external_state_variables.items():
             esv.eval(self.cells)
             values = esv.function.vector.array
             self.material.update_external_state_variable(name, values)
 
     def update_material_rotation_matrix(self):
+        """Update material rotation matrix with dolfinx values."""
         self.eval_quadrature(self.material.rotation_matrix, self.rotation_func)
 
     def set_data_manager(self, cells):
@@ -215,6 +255,7 @@ class QuadratureMap:
         ).ravel()
 
     def update_initial_state(self, field_name, value=None):
+        """Update a material field with corresponding dolfinx object."""
         if field_name in self.fluxes:
             field = self.fluxes[field_name]
         elif field_name in self.internal_state_variables:
@@ -248,6 +289,7 @@ class QuadratureMap:
         self._initialized = True
 
     def update(self):
+        """Perform constitutive update call."""
         num_QP = len(self.quadrature_points) * self.num_cells
         if not self._initialized:
             self.initialize_state()
@@ -304,24 +346,38 @@ class QuadratureMap:
             buff += dim
 
     def advance(self):
+        """
+        Advance in time by copying current state dictionary in old state.
+        Must be used only after having converged globally.
+        """
         self.material.data_manager.update()
         final_state = self.material.get_final_state_dict()
         for key in self.variables.keys():
             if key not in self.gradients:  # update flux and isv but not gradients
                 update_vals(self.variables[key], final_state[key], self.cells)
 
-    def project_on(self, key, interp):
-        if key not in self.variables:
+    def project_on(self, name, interp):
+        """
+        Computes a projection onto standard FE space.
+
+        Parameters
+        ----------
+        name : str
+            Name of the field to project
+        interp : tuple
+            Tuple of interpolation space info to project on, e.g. ("DG", 0). Shape is automatically deduced.
+        """
+        if name not in self.variables:
             collected = [
                 v[0]
                 for k, v in self.variables.items()
-                if k.startswith(key) and len(v) == 1
+                if k.startswith(name) and len(v) == 1
             ]
             if len(collected) == 0:
-                raise ValueError(f"Field '{key}' has not been found.")
+                raise ValueError(f"Field '{name}' has not been found.")
             field = ufl.as_vector(collected)
         else:
-            field = self.variables[key]
+            field = self.variables[name]
 
         try:
             shape = ufl.shape(field)
@@ -330,6 +386,6 @@ class QuadratureMap:
             field = field.expression.ufl_expression
 
         V = fem.functionspace(self.mesh, interp + (shape,))
-        projected = fem.Function(V, name=key)
+        projected = fem.Function(V, name=name)
         project(field, projected, self.dx)
         return projected

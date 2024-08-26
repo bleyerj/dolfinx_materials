@@ -31,7 +31,7 @@ mgis_hypothesis = {
 
 class MFrontMaterial:
     """
-    This class handles the loading of a MFront behaviour through MGIS.
+    This class is used to define a material behavior compiled with MFront.
     """
 
     def __init__(
