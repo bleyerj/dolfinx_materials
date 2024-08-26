@@ -15,6 +15,7 @@ parts:
   - caption: JAX demos
     chapters:
       - file: jax_elastoplasticity.md
+      - file: demos/elastoplasticity/Hosford_yield_surface.md
   - caption: MFront demos
     chapters:
       - file: demos/mfront/heat_transfer/nonlinear_heat_transfer.md
