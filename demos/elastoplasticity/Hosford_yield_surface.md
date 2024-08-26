@@ -19,6 +19,7 @@ This short demo shows how to define a perfectly plastic material associated with
 ```{seealso}
 This demo is inspired by the [MFront Hosford tutorial](https://thelfer.github.io/tfel/web/hosford.html).
 ```
+
 The Hosford yield surface is defined by:
 
 $$

@@ -21,25 +21,31 @@ We first consider the case of von Mises elastoplasticity with a general nonlinea
 The state variables consist here of the plastic strain $\bepsp$ and the cumulated equivalent plastic strain $p$ which is such that $\dot{p} = \sqrt{\frac{2}{3}}\|\dot{\beps}^\text{p}\|$.
 
 The elastic behavior is linear isotropic:
+
 ```{math}
 \bsig = \lambda \tr(\beps-\bepsp)\bI + 2\mu(\beps-\bepsp) = \CC:(\beps-\bepsp)
 ```
 
 The yield condition is given by:
-```{math}
 
- f(\bsig;p) = \sqrt{\frac{3}{2}\boldsymbol{s}:\boldsymbol{s}} - R(p) \leq 0
+```{math}
+f(\bsig;p) = \sqrt{\frac{3}{2}\boldsymbol{s}:\boldsymbol{s}} - R(p) \leq 0
 ```
+
 where $\bs = \dev(\bsig)$ is the deviatoric stress and $R(p)$ is the yield strength. We also introduce the von Mises equivalent stress:
+
 ```{math}
 \sigeq =  \sqrt{\frac{3}{2}\boldsymbol{s}:\boldsymbol{s}}
 ```
 
 Plastic evolution is given by the associated flow rule:
+
 ```{math}
 \dot{\beps}^\text{p} = \dot{\lambda}\dfrac{\partial f}{\partial \bsig}
 ```
+
 which gives in the present case:
+
 ```{math}
 :label: flow-rule
 \dot{\beps}^\text{p} = \dot{p}\dfrac{3}{2\sigeq}\bs
@@ -50,6 +56,7 @@ which gives in the present case:
 The return mapping procedure is a predictor-corrector algorithm which consists in finding a new stress $\bsig_{n+1}$ and plastic strain $p_{n+1}$ state verifying the current plasticity condition from a previous stress $\bsig_{n}$ and internal variable $p_n$ state and an increment of total deformation $\Delta \beps$. This step is quite classical in FEM plasticity for a von Mises criterion with isotropic hardening and follows notations from {cite:p}`bonnet2014finite`.
 
 In the case of plastic flow, the flow rule {eq}`flow-rule` is approximated at $t_{n+1}$ using a backward-Euler approximation:
+
 ```{math}
 :label: flow-rule-incr
 \Delta \bepsp = \Delta p \dfrac{3}{2\sigma_{\text{eq},n+1}}\bs_{n+1}
@@ -94,15 +101,14 @@ $$
 \sigeq^\text{elas} - 3\mu\Delta p -R(p_n+\Delta p)=0
 $$
 
-
 ### JAX implementation
 
 To summarize, the JAX implementation will involve the following steps:
 
-- computing an elastic stress predictor
-- checking wether the yield criterion is exceeded or not
-- setting $\Delta p,\Delta_\bepsp=0$ if it is not attained
-- otherwise, solving a nonlinear equation for $\Delta p$ and setting $\Delta \bepsp$ accordingly
+* computing an elastic stress predictor
+* checking wether the yield criterion is exceeded or not
+* setting $\Delta p,\Delta_\bepsp=0$ if it is not attained
+* otherwise, solving a nonlinear equation for $\Delta p$ and setting $\Delta \bepsp$ accordingly
 
 One key challenge here is the use of conditionals to distinguish elastic and plastic evolutions. Moreover, we will use the `tangent_AD` decorator to compute the tangent operator via AutoDiff.
 
@@ -262,6 +268,7 @@ We define a function representing the final stress state as a function of the ye
 
         normal = jax.jacfwd(self.equivalent_stress)
 ```
+
 Now, we set up the system of nonlinear equations to be solved at the material point level. In the plastic evolution regime, the two equations correspond to the plastic flow rule and yield condition i.e.:
 
 $$
