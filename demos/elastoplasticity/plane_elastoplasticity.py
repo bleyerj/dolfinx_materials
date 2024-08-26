@@ -14,7 +14,6 @@ from dolfinx_materials.quadrature_map import QuadratureMap
 from dolfinx_materials.solvers import NonlinearMaterialProblem
 from dolfinx_materials.jax_materials import (
     vonMisesIsotropicHardening,
-    GeneralIsotropicHardening,
     LinearElasticIsotropic,
 )
 from generate_mesh import generate_perforated_plate
@@ -41,7 +40,6 @@ def yield_stress(p):
 
 
 material = vonMisesIsotropicHardening(elastic_model, yield_stress)
-# material = GeneralIsotropicHardening(elastic_model, yield_stress, norm_type="von_Mises")
 
 # %% [markdown]
 # We then generate the mesh of a rectangular plate of dimensions $L_x\times L_y$ perforated by a circular hole of radius R at its center.
@@ -108,13 +106,13 @@ newton.max_it = 20
 out_file = "elastoplasticity.pvd"
 vtk = io.VTKFile(domain.comm, out_file, "w")
 
-N = 10
+N = 15
 Eyy = np.linspace(0, 10e-3, N + 1)
 Syy = np.zeros_like(Eyy)
 for i, eyy in enumerate(Eyy[1:]):
     uD_t.vector.array[1::2] = eyy * Ly
 
-    converged, it = problem.solve(newton)
+    converged, it = problem.solve(newton, print_solution=False)
 
     p = qmap.project_on("p", ("DG", 0))
     stress = qmap.project_on("Stress", ("DG", 0))

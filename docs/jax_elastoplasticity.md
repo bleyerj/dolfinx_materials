@@ -133,6 +133,7 @@ Since we restrict here to isotropic hardening, we do not need to store the histo
 In a second step, we implement the constitutive update, decorated with `tangent_AD`. The function must therefore provide the stress and the state as output and accepts the current strain `eps`, the previous state `state` and the time step as inputs.
 
 First, we retrieve the relevant state variables and we compute the elastic predictor stress `sig_el`.
+
 ```python
     @tangent_AD
     def constitutive_update(self, eps, state, dt):
@@ -172,6 +173,7 @@ We now define the value of the plastic strain increment as a function of the equ
                 dp,
             )
 ```
+
 We now define the nonlinear function $r(\Delta p)=0$ which should be solved to compute $\Delta p$. We still use `jax.lax.cond` and use the trivial function $r(\Delta p)=\Delta p$ for the elastic case, yielding $\Delta p=0$. Then, we solve this nonlinear function using a custom `JAXNewton` solver. The latter implements a local Newton method and uses AD to compute the corresponding jacobian. Finally, it is also fully differentiable.
 
 ```python
@@ -188,6 +190,7 @@ We now define the nonlinear function $r(\Delta p)=0$ which should be solved to c
 ```
 
 Once $\Delta p$ has been solved for, we compute the final stress and update the corresponding state dictionary.
+
 ```python
         sig = sig_el - 2 * mu * deps_p(dp, yield_criterion)
 

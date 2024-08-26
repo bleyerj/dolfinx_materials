@@ -1,12 +1,12 @@
 import gmsh
 from mpi4py import MPI
-from dolfinx.io import XDMFFile
 from dolfinx.io.gmshio import model_to_mesh
 
 
 def generate_perforated_plate(W, H, R, mesh_sizes):
     """Generate a perforated rectangular plate of dimensions W x H and hole radius R."""
     gmsh.initialize()
+    gmsh.option.setNumber("General.Terminal", 0)  # to disable meshing info
 
     gdim = 2
     mesh_comm = MPI.COMM_WORLD
@@ -39,6 +39,7 @@ def generate_perforated_plate(W, H, R, mesh_sizes):
             gmsh.model.mesh.field.setNumber(field_tag, "XMax", W)
             gmsh.model.mesh.field.setNumber(field_tag, "YMin", H / 2 - 1.2 * R)
             gmsh.model.mesh.field.setNumber(field_tag, "YMax", H / 2 + 1.2 * R)
+            gmsh.model.mesh.field.setNumber(field_tag, "Thickness", R)
             gmsh.model.mesh.field.setAsBackgroundMesh(field_tag)
         except:
             gmsh.option.setNumber("Mesh.CharacteristicLengthMin", mesh_sizes)
