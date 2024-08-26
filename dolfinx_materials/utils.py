@@ -107,11 +107,6 @@ def cell_to_dofs(cells, V):
         dofs = fem.locate_dofs_topological(V, V.mesh.geometry.dim, cells)
         block_size = V.dofmap.bs
         return cell_to_dofs_cached(tuple(dofs), block_size)
-        # return np.asarray(
-        #     np.kron(dofs, block_size * np.ones(block_size))
-        #     + np.kron(np.ones(len(dofs)), np.arange(0, block_size)),
-        #     dtype=np.int32,
-        # )
 
 
 def cacheRef(f):

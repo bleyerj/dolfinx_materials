@@ -19,7 +19,31 @@ def mpiprint(s):
 
 
 class CustomNewtonProblem:
+    """
+    Custom implementation of the Newton method for `QuadratureMap` objects.
+    """
+
     def __init__(self, quadrature_map, F, J, u, bcs, max_it=50, rtol=1e-8, atol=1e-8):
+        """
+        Parameters
+        ----------
+        quadrature_map : dolfinx_materials.quadrature_map.QuadratureMap
+            The abstract QuadratureMap object
+        F : Form
+            Nonlinear residual form
+        J : Form
+            Associated Jacobian form
+        u : fem.Function
+            Unknown function representing the solution
+        bcs : list
+            list of fem.dirichletbc
+        max_it : int, optional
+            Maximum number of iterations, by default 50
+        rtol : float, optional
+            Relative tolerance, by default 1e-8
+        atol : float, optional
+            Absolute tolerance, by default 1e-8
+        """
         self.quadrature_map = quadrature_map
         if isinstance(F, list):
             self.L = [form(f) for f in F]
@@ -48,6 +72,24 @@ class CustomNewtonProblem:
         self.atol = atol
 
     def solve(self, solver, print_steps=True, print_solution=True):
+        """Solve method.
+
+        Parameters
+        ----------
+        solver : KSP object
+            PETSc KSP solver for the linear system
+        print_steps : bool, optional
+            Print iteration info, by default True
+        print_solution : bool, optional
+            Print convergence info, by default True
+
+        Returns
+        -------
+        converged: bool
+            Convergence status
+        it: int
+            Number of iterations to convergence
+        """
         i = 0  # number of iterations of the Newton solver
         converged = False
         while i < self.max_it:
@@ -125,11 +167,29 @@ class CustomNewtonProblem:
                     f"No solution found after {i} iterations. Revert to previous solution and adjust solver parameters."
                 )
 
-        return converged, i
+        return converged, it
 
 
 class NonlinearMaterialProblem(NonlinearProblem):
+    """
+    This class handles the definition of a nonlinear problem containing an abstract `QuadratureMap` object compatible with a dolfinx NewtonSolver.
+    """
+
     def __init__(self, qmap, F, J, u, bcs):
+        """
+        Parameters
+        ----------
+        qmap : dolfinx_materials.quadrature_map.QuadratureMap
+            The abstract QuadratureMap object
+        F : Form
+            Nonlinear residual form
+        J : Form
+            Associated Jacobian form
+        u : fem.Function
+            Unknown function representing the solution
+        bcs : list
+            list of fem.dirichletbc
+        """
         super().__init__(F, u, J=J, bcs=bcs)
         self._F = None
         self._J = None
@@ -159,6 +219,22 @@ class NonlinearMaterialProblem(NonlinearProblem):
         return create_vector(self.L)
 
     def solve(self, solver, print_solution=True):
+        """Solve the problem
+
+        Parameters
+        ----------
+        solver :
+            Nonlinear solver object
+        print_solution : bool, optional
+            Print convergence info, by default True
+
+        Returns
+        -------
+        converged: bool
+            Convergence status
+        it: int
+            Number of iterations to convergence
+        """
         solver.setF(self.F, self.vector())
         solver.setJ(self.J, self.matrix())
         solver.set_form(self.form)
@@ -181,6 +257,10 @@ class NonlinearMaterialProblem(NonlinearProblem):
 
 
 class SNESNonlinearMaterialProblem(NonlinearMaterialProblem):
+    """
+    This class handles the definition of a nonlinear problem containing an abstract `QuadratureMap` object compatible with a PETSc SNESSolver.
+    """
+
     def F(self, snes, x, F):
         """Assemble residual vector."""
         x.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
@@ -205,7 +285,23 @@ class SNESNonlinearMaterialProblem(NonlinearMaterialProblem):
         assemble_matrix(J, self.a, bcs=self.bcs)
         J.assemble()
 
-    def solve(self, solver):
+    def solve(self, solver, print_solution=True):
+        """Solve the problem
+
+        Parameters
+        ----------
+        solver :
+            Nonlinear solver object
+        print_solution : bool, optional
+            Print convergence info, by default True
+
+        Returns
+        -------
+        converged: bool
+            Convergence status
+        it: int
+            Number of iterations to convergence
+        """
         solver.setFunction(self.F, self.vector())
         solver.setJacobian(self.J, self.matrix())
 
@@ -214,8 +310,8 @@ class SNESNonlinearMaterialProblem(NonlinearMaterialProblem):
         it = solver.getIterationNumber()
         if converged:
             # (Residual norm {error_norm})")
-            mpiprint(f"Solution reached in {it} iterations.")
-            mpiprint("Constitutive relation update for next time step.")
+            if print_solution:
+                mpiprint(f"Solution reached in {it} iterations.")
             self._constitutive_advance()
         else:
             mpiprint(

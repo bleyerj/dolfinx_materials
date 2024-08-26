@@ -2,4 +2,5 @@
    :maxdepth: 2
    
    material
-   mfront
+   quadrature_map
+   solvers
