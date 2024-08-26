@@ -1,0 +1,72 @@
+Traceback (most recent call last):
+  File "/home/bleyerj/.local/lib/python3.12/site-packages/jupyter_cache/executors/utils.py", line 58, in single_nb_execution
+    executenb(
+  File "/home/bleyerj/.local/lib/python3.12/site-packages/nbclient/client.py", line 1314, in execute
+    return NotebookClient(nb=nb, resources=resources, km=km, **kwargs).execute()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/bleyerj/.local/lib/python3.12/site-packages/jupyter_core/utils/__init__.py", line 165, in wrapped
+    return loop.run_until_complete(inner)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/base_events.py", line 687, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/home/bleyerj/.local/lib/python3.12/site-packages/nbclient/client.py", line 709, in async_execute
+    await self.async_execute_cell(
+  File "/home/bleyerj/.local/lib/python3.12/site-packages/nbclient/client.py", line 1062, in async_execute_cell
+    await self._check_raise_for_error(cell, cell_index, exec_reply)
+  File "/home/bleyerj/.local/lib/python3.12/site-packages/nbclient/client.py", line 918, in _check_raise_for_error
+    raise CellExecutionError.from_cell_and_msg(cell, exec_reply_content)
+nbclient.exceptions.CellExecutionError: An error occurred while executing the following cell:
+------------------
+out_file = "elastoplasticity.pvd"
+vtk = io.VTKFile(domain.comm, out_file, "w")
+
+N = 15
+Eyy = np.linspace(0, 10e-3, N + 1)
+Force = np.zeros_like(Eyy)
+nit = np.zeros_like(Eyy)
+for i, eyy in enumerate(Eyy[1:]):
+    u_imp = eyy*Ly
+    uD_t.vector.array[1::2] = u_imp
+
+    converged, it = problem.solve(newton, print_solution=False)
+
+    p = qmap.project_on("p", ("DG", 0))
+    stress = qmap.project_on("Stress", ("DG", 0))
+
+    Force[i + 1] = fem.assemble_scalar(ufl.action(Res, u)) / u_imp
+
+    syy = stress.sub(1).collapse()
+    syy.name = "Stress"
+    vtk.write_function(u, i + 1)
+    vtk.write_function(p, i + 1)
+    vtk.write_function(syy, i + 1)
+    nit[i+1] = it
+
+vtk.close()
+------------------
+
+
+[0;31m---------------------------------------------------------------------------[0m
+[0;31mAttributeError[0m                            Traceback (most recent call last)
+Cell [0;32mIn[8], line 17[0m
+[1;32m     14[0m p [38;5;241m=[39m qmap[38;5;241m.[39mproject_on([38;5;124m"[39m[38;5;124mp[39m[38;5;124m"[39m, ([38;5;124m"[39m[38;5;124mDG[39m[38;5;124m"[39m, [38;5;241m0[39m))
+[1;32m     15[0m stress [38;5;241m=[39m qmap[38;5;241m.[39mproject_on([38;5;124m"[39m[38;5;124mStress[39m[38;5;124m"[39m, ([38;5;124m"[39m[38;5;124mDG[39m[38;5;124m"[39m, [38;5;241m0[39m))
+[0;32m---> 17[0m Force[i [38;5;241m+[39m [38;5;241m1[39m] [38;5;241m=[39m [43mfem[49m[38;5;241;43m.[39;49m[43massemble_scalar[49m[43m([49m[43mufl[49m[38;5;241;43m.[39;49m[43maction[49m[43m([49m[43mRes[49m[43m,[49m[43m [49m[43mu[49m[43m)[49m[43m)[49m [38;5;241m/[39m u_imp
+[1;32m     19[0m syy [38;5;241m=[39m stress[38;5;241m.[39msub([38;5;241m1[39m)[38;5;241m.[39mcollapse()
+[1;32m     20[0m syy[38;5;241m.[39mname [38;5;241m=[39m [38;5;124m"[39m[38;5;124mStress[39m[38;5;124m"[39m
+
+File [0;32m/usr/lib/petsc/lib/python3/dist-packages/dolfinx/fem/assemble.py:140[0m, in [0;36massemble_scalar[0;34m(M, constants, coeffs)[0m
+[1;32m    117[0m [38;5;28;01mdef[39;00m [38;5;21massemble_scalar[39m(M: Form, constants[38;5;241m=[39m[38;5;28;01mNone[39;00m, coeffs[38;5;241m=[39m[38;5;28;01mNone[39;00m):
+[1;32m    118[0m [38;5;250m    [39m[38;5;124;03m"""Assemble functional. The returned value is local and not[39;00m
+[1;32m    119[0m [38;5;124;03m    accumulated across processes.[39;00m
+[1;32m    120[0m 
+[0;32m   (...)[0m
+[1;32m    138[0m 
+[1;32m    139[0m [38;5;124;03m    """[39;00m
+[0;32m--> 140[0m     constants [38;5;241m=[39m constants [38;5;129;01mor[39;00m _pack_constants([43mM[49m[38;5;241;43m.[39;49m[43m_cpp_object[49m)
+[1;32m    141[0m     coeffs [38;5;241m=[39m coeffs [38;5;129;01mor[39;00m _pack_coefficients(M[38;5;241m.[39m_cpp_object)
+[1;32m    142[0m     [38;5;28;01mreturn[39;00m _cpp[38;5;241m.[39mfem[38;5;241m.[39massemble_scalar(M[38;5;241m.[39m_cpp_object, constants, coeffs)
+
+[0;31mAttributeError[0m: 'Form' object has no attribute '_cpp_object'
+

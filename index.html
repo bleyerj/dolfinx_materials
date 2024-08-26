@@ -1,0 +1,547 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="./" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Documentation &#8212; dolfinx_materials</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="_static/styles/theme.css?digest=8d27b9dea8ad943066ae" rel="stylesheet" />
+<link href="_static/styles/bootstrap.css?digest=8d27b9dea8ad943066ae" rel="stylesheet" />
+<link href="_static/styles/pydata-sphinx-theme.css?digest=8d27b9dea8ad943066ae" rel="stylesheet" />
+
+  
+  <link href="_static/vendor/fontawesome/6.5.1/css/all.min.css?digest=8d27b9dea8ad943066ae" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="_static/vendor/fontawesome/6.5.1/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="_static/vendor/fontawesome/6.5.1/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="_static/vendor/fontawesome/6.5.1/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/sphinx-book-theme.css?v=384b581d" />
+    <link rel="stylesheet" type="text/css" href="_static/togglebutton.css?v=13237357" />
+    <link rel="stylesheet" type="text/css" href="_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css?v=be8a1c11" />
+    <link rel="stylesheet" type="text/css" href="_static/sphinx-thebe.css?v=4fa983c6" />
+    <link rel="stylesheet" type="text/css" href="_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css?v=0a3b3ea7" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="_static/scripts/bootstrap.js?digest=8d27b9dea8ad943066ae" />
+<link rel="preload" as="script" href="_static/scripts/pydata-sphinx-theme.js?digest=8d27b9dea8ad943066ae" />
+  <script src="_static/vendor/fontawesome/6.5.1/js/all.min.js?digest=8d27b9dea8ad943066ae"></script>
+
+    <script src="_static/documentation_options.js?v=9eb32ce0"></script>
+    <script src="_static/doctools.js?v=9a2dae69"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="_static/copybutton.js?v=f281be69"></script>
+    <script src="_static/scripts/sphinx-book-theme.js?v=efea14e4"></script>
+    <script>let toggleHintShow = 'Click to show';</script>
+    <script>let toggleHintHide = 'Click to hide';</script>
+    <script>let toggleOpenOnPrint = 'true';</script>
+    <script src="_static/togglebutton.js?v=4a39c7ea"></script>
+    <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
+    <script src="_static/design-tabs.js?v=36754332"></script>
+    <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"; const thebe_selector = ".thebe,.cell"; const thebe_selector_input = "pre"; const thebe_selector_output = ".output, .cell_output"</script>
+    <script async="async" src="_static/sphinx-thebe.js?v=c100c467"></script>
+    <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
+    <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"; const thebe_selector = ".thebe,.cell"; const thebe_selector_input = "pre"; const thebe_selector_output = ".output, .cell_output"</script>
+    <script>window.MathJax = {"options": {"processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'index';</script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="General framework" href="intro.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <a id="pst-skip-link" class="skip-link" href="#main-content">Skip to main content</a>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>
+    Back to top
+  </button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          name="__primary"
+          id="__primary"/>
+  <label class="overlay overlay-primary" for="__primary"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          name="__secondary"
+          id="__secondary"/>
+  <label class="overlay overlay-secondary" for="__secondary"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search..."
+         aria-label="Search..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar">
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+        
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+  
+
+<a class="navbar-brand logo" href="#">
+  
+  
+  
+  
+  
+  
+    <p class="title logo__title">dolfinx_materials</p>
+  
+</a></div>
+        <div class="sidebar-primary-item">
+
+ <script>
+ document.write(`
+   <button class="btn navbar-btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script></div>
+        <div class="sidebar-primary-item"><nav class="bd-links bd-docs-nav" aria-label="Main">
+    <div class="bd-toc-item navbar-nav active">
+        
+        <ul class="nav bd-sidenav bd-sidenav__home-link">
+            <li class="toctree-l1 current active">
+                <a class="reference internal" href="#">
+                    Documentation
+                </a>
+            </li>
+        </ul>
+        <p aria-level="2" class="caption" role="heading"><span class="caption-text">User guide</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="intro.html">General framework</a></li>
+<li class="toctree-l1"><a class="reference internal" href="jax.html">JAX implementation of material behaviors</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">JAX demos</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="jax_elastoplasticity.html">JAX implementation of elastoplasticity</a></li>
+<li class="toctree-l1"><a class="reference internal" href="demos/elastoplasticity/Hosford_yield_surface.html">Computing the Hosford plane stress yield surface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="demos/elastoplasticity/plane_elastoplasticity.html">Finite-element simulations of JAX elastoplasticity</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">MFront demos</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="demos/mfront/heat_transfer/nonlinear_heat_transfer.html">Stationary nonlinear heat transfer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="demos/mfront/heat_transfer/phase_change.html">Transient heat equation with phase change</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">API</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="api/material.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">material</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/quadrature_map.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">quadrature_map</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/solvers.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">solvers</span></code></a></li>
+</ul>
+
+    </div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main">
+        
+        
+
+<div class="sbt-scroll-pixel-helper"></div>
+
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item"><label class="sidebar-toggle primary-toggle btn btn-sm" for="__primary" title="Toggle primary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <span class="fa-solid fa-bars"></span>
+</label></div>
+      
+    </div>
+  
+  
+    <div class="header-article-items__end">
+      
+        <div class="header-article-item">
+
+<div class="article-header-buttons">
+
+
+
+<button onclick="toggleFullScreen()"
+  class="btn btn-sm btn-fullscreen-button"
+  title="Fullscreen mode"
+  data-bs-placement="bottom" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-expand"></i>
+  </span>
+
+</button>
+
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm navbar-btn theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="theme-switch nav-link" data-mode="light"><i class="fa-solid fa-sun fa-lg"></i></span>
+    <span class="theme-switch nav-link" data-mode="dark"><i class="fa-solid fa-moon fa-lg"></i></span>
+    <span class="theme-switch nav-link" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg"></i></span>
+  </button>
+`);
+</script>
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm navbar-btn search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+  </button>
+`);
+</script>
+<label class="sidebar-toggle secondary-toggle btn btn-sm" for="__secondary"title="Toggle secondary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="fa-solid fa-list"></span>
+</label>
+</div></div>
+      
+    </div>
+  
+</div>
+</div>
+              
+              
+
+<div id="jb-print-docs-body" class="onlyprint">
+    <h1>Documentation</h1>
+    <!-- Table of contents -->
+    <div id="print-main-content">
+        <div id="jb-print-toc">
+            
+            <div>
+                <h2> Contents </h2>
+            </div>
+            <nav aria-label="Page">
+                <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#introduction">Introduction</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#features">Features</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#prerequisites">Prerequisites</a><ul class="visible nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#optional-for-mfront-behaviors">Optional for MFront behaviors</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#installation-and-usage">Installation and usage</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#license">License</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#citing">Citing</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#about-the-author">About the author</a></li>
+</ul>
+            </nav>
+        </div>
+    </div>
+</div>
+
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section class="tex2jax_ignore mathjax_ignore" id="documentation">
+<h1>Documentation<a class="headerlink" href="#documentation" title="Link to this heading">#</a></h1>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>This project extends the <a class="reference external" href="https://thelfer.github.io/mgis/web/mgis_fenics.html"><code class="docutils literal notranslate"><span class="pre">mgis.fenics</span></code> package</a> dedicated to binding MFront with the legacy FEniCS version.</p>
+</div>
+<section id="introduction">
+<h2>Introduction<a class="headerlink" href="#introduction" title="Link to this heading">#</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">dolfinx_materials</span></code> is a Python add-on package to the <code class="docutils literal notranslate"><span class="pre">dolfinx</span></code> interface to the <a class="reference external" href="https://fenicsproject.org/">FEniCSx project</a>.
+It enables the user to define <strong>complex material constitutive behaviors</strong> which are not expressible using classical <a class="reference external" href="https://fenics.readthedocs.io/projects/ufl/en/latest/">UFL</a> operators.</p>
+<ul class="simple">
+<li><p>Github repository: <a class="github reference external" href="https://github.com/bleyerj/dolfinx_materials">bleyerj/dolfinx_materials</a></p></li>
+<li><p>Online documentation: <a class="reference external" href="https://bleyerj.github.io/dolfinx_materials/">https://bleyerj.github.io/dolfinx_materials/</a></p></li>
+</ul>
+</section>
+<section id="features">
+<h2>Features<a class="headerlink" href="#features" title="Link to this heading">#</a></h2>
+<p>The library supports in particular:</p>
+<ul class="simple">
+<li><p><a class="reference external" href="https://jax.readthedocs.io">JAX</a>-based implementations of constitutive relations</p></li>
+<li><p>Python-based constitutive relations, using <code class="docutils literal notranslate"><span class="pre">numpy/scipy</span></code> (<em>slow</em>)</p></li>
+<li><p><a class="reference external" href="https://tfel.sourceforge.net/">MFront</a> constitutive behaviors compiled with the <code class="docutils literal notranslate"><span class="pre">generic</span></code> interface, relying on the <a class="reference external" href="https://github.com/thelfer/MFrontGenericInterfaceSupport">MFrontGenericInterfaceSupport</a> project</p></li>
+<li><p>constitutive relations based on inference of trained Neural Networks</p></li>
+<li><p>constitutive relations solved using external libraries including convex optimization libraries such as <a class="reference external" href="http://cvxpy.org/">cvxpy</a></p></li>
+</ul>
+<p><em>Disclaimer: The following functionalities are not currently available but should in theory be possible to implement relatively easily. Contributions are most welcome!</em></p>
+<p>This library should also help you in:</p>
+<ul class="simple">
+<li><p>writing additional interface to other material libraries such as UMATs of Abaqus for instance</p></li>
+<li><p>performing multi-scale simulations (FE²) where constitutive update is obtained from the solution of a problem formulated on a RVE.</p></li>
+<li><p>implementing data-driven constitutive models</p></li>
+</ul>
+</section>
+<section id="prerequisites">
+<h2>Prerequisites<a class="headerlink" href="#prerequisites" title="Link to this heading">#</a></h2>
+<p><strong>dolfinx_materials</strong> requires:</p>
+<ul class="simple">
+<li><p><strong>FEniCSx</strong> (v.0.8), see <a class="reference external" href="https://fenicsproject.org/download/">installation instructions here</a>.</p></li>
+<li><p><strong>jax</strong> for  JAX-based materials. JAX can be simply installed via <code class="docutils literal notranslate"><span class="pre">pip</span></code>:</p></li>
+</ul>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pip</span> <span class="n">install</span> <span class="n">jax</span> <span class="o">--</span><span class="n">user</span>
+</pre></div>
+</div>
+<p>See <a class="reference external" href="https://jax.readthedocs.io/en/latest/installation.html">JAX installation instructions</a> for more details about GPU acceleration.</p>
+<section id="optional-for-mfront-behaviors">
+<h3>Optional for MFront behaviors<a class="headerlink" href="#optional-for-mfront-behaviors" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>You must install the <a class="reference external" href="https://github.com/thelfer/tfel">TFEL project</a> to be able to compile MFront behaviors (<code class="docutils literal notranslate"><span class="pre">.mfront</span></code> files). In particular, the project requires Boost and Boost-Python libraries.</p></li>
+<li><p>The <a class="reference external" href="https://github.com/thelfer/MFrontGenericInterfaceSupport/">MFrontGenericInterfaceSupport</a> (<code class="docutils literal notranslate"><span class="pre">mgis</span></code>) package with Python binding must then be installed to load such compiled behaviors within <code class="docutils literal notranslate"><span class="pre">dolfinx</span></code>.</p></li>
+</ul>
+</section>
+</section>
+<section id="installation-and-usage">
+<h2>Installation and usage<a class="headerlink" href="#installation-and-usage" title="Link to this heading">#</a></h2>
+<p>Simply clone the <a class="reference external" href="https://github.com/bleyerj/dolfinx_materials"><code class="docutils literal notranslate"><span class="pre">dolfinx_materials</span></code> public repository</a></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">github</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">bleyerj</span><span class="o">/</span><span class="n">dolfinx_materials</span>
+</pre></div>
+</div>
+<p>and install the package by typing</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pip</span> <span class="n">install</span> <span class="n">dolfinx_materials</span><span class="o">/</span> <span class="o">--</span><span class="n">user</span>
+</pre></div>
+</div>
+</section>
+<section id="license">
+<h2>License<a class="headerlink" href="#license" title="Link to this heading">#</a></h2>
+<p>All this work is licensed under the <a class="reference external" href="http://creativecommons.org/licenses/by-sa/4.0/%3E">Creative Commons Attribution-ShareAlike 4.0 International License</a> <img alt="license" src="https://i.creativecommons.org/l/by-sa/4.0/88x31.png" />.</p>
+</section>
+<section id="citing">
+<h2>Citing<a class="headerlink" href="#citing" title="Link to this heading">#</a></h2>
+<p>Papers related to the MFront and MGIS projects can be cited as:</p>
+<p><a class="reference external" href="https://doi.org/10.21105/joss.02003"><img alt="DOI" src="https://joss.theoj.org/papers/10.21105/joss.02003/status.svg" /></a></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="nd">@article</span><span class="p">{</span><span class="n">helfer2020mfrontgenericinterfacesupport</span><span class="p">,</span>
+  <span class="n">title</span><span class="o">=</span><span class="p">{</span><span class="n">The</span> <span class="n">MFrontGenericInterfaceSupport</span> <span class="n">project</span><span class="p">},</span>
+  <span class="n">author</span><span class="o">=</span><span class="p">{</span><span class="n">Helfer</span><span class="p">,</span> <span class="n">Thomas</span> <span class="ow">and</span> <span class="n">Bleyer</span><span class="p">,</span> <span class="n">Jeremy</span> <span class="ow">and</span> <span class="n">Frondelius</span><span class="p">,</span> <span class="n">Tero</span> <span class="ow">and</span> <span class="n">Yashchuk</span><span class="p">,</span> <span class="n">Ivan</span> <span class="ow">and</span> <span class="n">Nagel</span><span class="p">,</span> <span class="n">Thomas</span> <span class="ow">and</span> <span class="n">Naumov</span><span class="p">,</span> <span class="n">Dmitri</span><span class="p">},</span>
+  <span class="n">journal</span><span class="o">=</span><span class="p">{</span><span class="n">Journal</span> <span class="n">of</span> <span class="n">Open</span> <span class="n">Source</span> <span class="n">Software</span><span class="p">},</span>
+  <span class="n">volume</span><span class="o">=</span><span class="p">{</span><span class="mi">5</span><span class="p">},</span>
+  <span class="n">number</span><span class="o">=</span><span class="p">{</span><span class="mi">48</span><span class="p">},</span>
+  <span class="n">pages</span><span class="o">=</span><span class="p">{</span><span class="mi">1</span><span class="o">--</span><span class="mi">8</span><span class="p">},</span>
+  <span class="n">year</span><span class="o">=</span><span class="p">{</span><span class="mi">2020</span><span class="p">},</span>
+  <span class="n">publisher</span><span class="o">=</span><span class="p">{</span><span class="n">Open</span> <span class="n">Journals</span><span class="p">}</span>
+<span class="p">}</span>
+
+<span class="nd">@article</span><span class="p">{</span><span class="n">helfer2015introducing</span><span class="p">,</span>
+  <span class="n">title</span><span class="o">=</span><span class="p">{</span><span class="n">Introducing</span> <span class="n">the</span> <span class="nb">open</span><span class="o">-</span><span class="n">source</span> <span class="n">mfront</span> <span class="n">code</span> <span class="n">generator</span><span class="p">:</span> <span class="n">Application</span> <span class="n">to</span> <span class="n">mechanical</span> <span class="n">behaviours</span> <span class="ow">and</span> <span class="n">material</span> <span class="n">knowledge</span> <span class="n">management</span> <span class="n">within</span> <span class="n">the</span> <span class="n">PLEIADES</span> <span class="n">fuel</span> <span class="n">element</span> <span class="n">modelling</span> <span class="n">platform</span><span class="p">},</span>
+  <span class="n">author</span><span class="o">=</span><span class="p">{</span><span class="n">Helfer</span><span class="p">,</span> <span class="n">Thomas</span> <span class="ow">and</span> <span class="n">Michel</span><span class="p">,</span> <span class="n">Bruno</span> <span class="ow">and</span> <span class="n">Proix</span><span class="p">,</span> <span class="n">Jean</span><span class="o">-</span><span class="n">Michel</span> <span class="ow">and</span> <span class="n">Salvo</span><span class="p">,</span> <span class="n">Maxime</span> <span class="ow">and</span> <span class="n">Sercombe</span><span class="p">,</span> <span class="n">J</span><span class="p">{</span>\<span class="s1">&#39;e}r{\^o}me and Casella, Michel},</span>
+  <span class="n">journal</span><span class="o">=</span><span class="p">{</span><span class="n">Computers</span> \<span class="o">&amp;</span> <span class="n">Mathematics</span> <span class="k">with</span> <span class="n">Applications</span><span class="p">},</span>
+  <span class="n">volume</span><span class="o">=</span><span class="p">{</span><span class="mi">70</span><span class="p">},</span>
+  <span class="n">number</span><span class="o">=</span><span class="p">{</span><span class="mi">5</span><span class="p">},</span>
+  <span class="n">pages</span><span class="o">=</span><span class="p">{</span><span class="mi">994</span><span class="o">--</span><span class="mi">1023</span><span class="p">},</span>
+  <span class="n">year</span><span class="o">=</span><span class="p">{</span><span class="mi">2015</span><span class="p">},</span>
+  <span class="n">publisher</span><span class="o">=</span><span class="p">{</span><span class="n">Elsevier</span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</section>
+<section id="about-the-author">
+<h2>About the author<a class="headerlink" href="#about-the-author" title="Link to this heading">#</a></h2>
+<p><a class="reference external" href="https://bleyerj.github.io/">Jeremy Bleyer</a> is a researcher in Solid and Structural Mechanics at <a class="reference external" href="https://navier-lab.fr">Laboratoire Navier</a>, a joint research  (UMR 8205) of <a class="reference external" href="http://www.enpc.fr">Ecole Nationale des Ponts et Chaussées</a>,
+<a class="reference external" href="https://www.univ-gustave-eiffel.fr/">Université Gustave Eiffel</a> and <a class="reference external" href="http://www.cnrs.fr">CNRS</a>.</p>
+<p><a class="reference external" href="mailto:jeremy&#46;bleyer&#37;&#52;&#48;enpc&#46;fr"><span class="fas fa-at"></span> jeremy<span>&#46;</span>bleyer<span>&#64;</span>enpc<span>&#46;</span>fr</a></p>
+<p><a class="reference external" href="http://www.linkedin.com/in/j%C3%A9r%C3%A9my-bleyer-0aabb531"><span class="fab fa-linkedin"></span> jeremy-bleyer</a></p>
+<a href="https://orcid.org/0000-0001-8212-9921">
+<img alt="ORCID logo" src="https://info.orcid.org/wp-content/uploads/2019/11/orcid_32x32.png" width="16" height="16" />
+ 0000-0001-8212-9921
+</a>
+<a class="bg-primary mb-1 reference internal image-reference" href="_images/banner_tutelles.png"><img alt="_images/banner_tutelles.png" class="bg-primary mb-1 align-center" src="_images/banner_tutelles.png" style="width: 600px;" /></a>
+</section>
+<div class="toctree-wrapper compound">
+</div>
+<div class="toctree-wrapper compound">
+</div>
+<div class="toctree-wrapper compound">
+</div>
+<div class="toctree-wrapper compound">
+</div>
+</section>
+
+    <script type="text/x-thebe-config">
+    {
+        requestKernel: true,
+        binderOptions: {
+            repo: "binder-examples/jupyter-stacks-datascience",
+            ref: "master",
+        },
+        codeMirrorConfig: {
+            theme: "abcdef",
+            mode: "python"
+        },
+        kernelOptions: {
+            name: "python3",
+            path: "./."
+        },
+        predefinedOutput: true
+    }
+    </script>
+    <script>kernelName = 'python3'</script>
+
+                </article>
+              
+
+              
+              
+              
+              
+                <footer class="prev-next-footer">
+                  
+<div class="prev-next-area">
+    <a class="right-next"
+       href="intro.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">General framework</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+  <div class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> Contents
+  </div>
+  <nav class="bd-toc-nav page-toc">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#introduction">Introduction</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#features">Features</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#prerequisites">Prerequisites</a><ul class="visible nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#optional-for-mfront-behaviors">Optional for MFront behaviors</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#installation-and-usage">Installation and usage</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#license">License</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#citing">Citing</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#about-the-author">About the author</a></li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+<div class="bd-footer-content__inner container">
+  
+  <div class="footer-item">
+    
+<p class="component-author">
+By Jeremy Bleyer
+</p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+</div>
+          </footer>
+        
+
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="_static/scripts/bootstrap.js?digest=8d27b9dea8ad943066ae"></script>
+<script src="_static/scripts/pydata-sphinx-theme.js?digest=8d27b9dea8ad943066ae"></script>
+
+  <footer class="bd-footer">
+  </footer>
+  </body>
+</html>

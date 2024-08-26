@@ -1,0 +1,816 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Transient heat equation with phase change &#8212; dolfinx_materials</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../_static/styles/theme.css?digest=8d27b9dea8ad943066ae" rel="stylesheet" />
+<link href="../../../_static/styles/bootstrap.css?digest=8d27b9dea8ad943066ae" rel="stylesheet" />
+<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=8d27b9dea8ad943066ae" rel="stylesheet" />
+
+  
+  <link href="../../../_static/vendor/fontawesome/6.5.1/css/all.min.css?digest=8d27b9dea8ad943066ae" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.5.1/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.5.1/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.5.1/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/styles/sphinx-book-theme.css?v=384b581d" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/togglebutton.css?v=13237357" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-thebe.css?v=4fa983c6" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css?v=0a3b3ea7" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=8d27b9dea8ad943066ae" />
+<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=8d27b9dea8ad943066ae" />
+  <script src="../../../_static/vendor/fontawesome/6.5.1/js/all.min.js?digest=8d27b9dea8ad943066ae"></script>
+
+    <script src="../../../_static/documentation_options.js?v=9eb32ce0"></script>
+    <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../../_static/copybutton.js?v=f281be69"></script>
+    <script src="../../../_static/scripts/sphinx-book-theme.js?v=efea14e4"></script>
+    <script>let toggleHintShow = 'Click to show';</script>
+    <script>let toggleHintHide = 'Click to hide';</script>
+    <script>let toggleOpenOnPrint = 'true';</script>
+    <script src="../../../_static/togglebutton.js?v=4a39c7ea"></script>
+    <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
+    <script src="../../../_static/design-tabs.js?v=36754332"></script>
+    <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"; const thebe_selector = ".thebe,.cell"; const thebe_selector_input = "pre"; const thebe_selector_output = ".output, .cell_output"</script>
+    <script async="async" src="../../../_static/sphinx-thebe.js?v=c100c467"></script>
+    <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
+    <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"; const thebe_selector = ".thebe,.cell"; const thebe_selector_input = "pre"; const thebe_selector_output = ".output, .cell_output"</script>
+    <script>window.MathJax = {"options": {"processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'demos/mfront/heat_transfer/phase_change';</script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link rel="next" title="&lt;no title&gt;" href="../../../api/api.html" />
+    <link rel="prev" title="Stationary nonlinear heat transfer" href="nonlinear_heat_transfer.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <a id="pst-skip-link" class="skip-link" href="#main-content">Skip to main content</a>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>
+    Back to top
+  </button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          name="__primary"
+          id="__primary"/>
+  <label class="overlay overlay-primary" for="__primary"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          name="__secondary"
+          id="__secondary"/>
+  <label class="overlay overlay-secondary" for="__secondary"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search..."
+         aria-label="Search..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar">
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+  
+
+<a class="navbar-brand logo" href="../../../index.html">
+  
+  
+  
+  
+  
+  
+    <p class="title logo__title">dolfinx_materials</p>
+  
+</a></div>
+        <div class="sidebar-primary-item">
+
+ <script>
+ document.write(`
+   <button class="btn navbar-btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script></div>
+        <div class="sidebar-primary-item"><nav class="bd-links bd-docs-nav" aria-label="Main">
+    <div class="bd-toc-item navbar-nav active">
+        
+        <ul class="nav bd-sidenav bd-sidenav__home-link">
+            <li class="toctree-l1">
+                <a class="reference internal" href="../../../index.html">
+                    Documentation
+                </a>
+            </li>
+        </ul>
+        <p aria-level="2" class="caption" role="heading"><span class="caption-text">User guide</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../../../intro.html">General framework</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../jax.html">JAX implementation of material behaviors</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">MFront demos</span></p>
+<ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="nonlinear_heat_transfer.html">Stationary nonlinear heat transfer</a></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">Transient heat equation with phase change</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">API</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../../../api/material.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">material</span></code></a></li>
+</ul>
+
+    </div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main">
+        
+        
+
+<div class="sbt-scroll-pixel-helper"></div>
+
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item"><label class="sidebar-toggle primary-toggle btn btn-sm" for="__primary" title="Toggle primary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <span class="fa-solid fa-bars"></span>
+</label></div>
+      
+    </div>
+  
+  
+    <div class="header-article-items__end">
+      
+        <div class="header-article-item">
+
+<div class="article-header-buttons">
+
+
+
+<button onclick="toggleFullScreen()"
+  class="btn btn-sm btn-fullscreen-button"
+  title="Fullscreen mode"
+  data-bs-placement="bottom" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-expand"></i>
+  </span>
+
+</button>
+
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm navbar-btn theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="theme-switch nav-link" data-mode="light"><i class="fa-solid fa-sun fa-lg"></i></span>
+    <span class="theme-switch nav-link" data-mode="dark"><i class="fa-solid fa-moon fa-lg"></i></span>
+    <span class="theme-switch nav-link" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg"></i></span>
+  </button>
+`);
+</script>
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm navbar-btn search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+  </button>
+`);
+</script>
+<label class="sidebar-toggle secondary-toggle btn btn-sm" for="__secondary"title="Toggle secondary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="fa-solid fa-list"></span>
+</label>
+</div></div>
+      
+    </div>
+  
+</div>
+</div>
+              
+              
+
+<div id="jb-print-docs-body" class="onlyprint">
+    <h1>Transient heat equation with phase change</h1>
+    <!-- Table of contents -->
+    <div id="print-main-content">
+        <div id="jb-print-toc">
+            
+            <div>
+                <h2> Contents </h2>
+            </div>
+            <nav aria-label="Page">
+                <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#transient-heat-equation-using-an-enthalpy-formulation">Transient heat equation using an enthalpy formulation</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#description-of-the-non-linear-heat-transfer-law-with-phase-change">Description of the non-linear heat transfer law with phase change</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#a-smoothed-version">A smoothed version</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#mfront-implementation"><code class="docutils literal notranslate"><span class="pre">MFront</span></code> implementation</a><ul class="visible nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#gradient-flux-and-tangent-operator-blocks">Gradient, flux and tangent operator blocks</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#material-parameters-and-local-variables">Material parameters and local variables</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#integration-of-the-behavior">Integration of the behavior</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#tangent-operator">Tangent operator</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#fenicsx-implementation">FEniCSx implementation</a><ul class="visible nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#geometry-and-material">Geometry and material</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#time-discretization-of-the-heat-equation">Time discretization of the heat equation</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#problem-formulation">Problem formulation</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#time-stepping-loop-and-comparison-with-code-aster-results">Time-stepping loop and comparison with <em>code_Aster</em> results</a></li>
+</ul>
+</li>
+</ul>
+            </nav>
+        </div>
+    </div>
+</div>
+
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section class="tex2jax_ignore mathjax_ignore" id="transient-heat-equation-with-phase-change">
+<h1>Transient heat equation with phase change<a class="headerlink" href="#transient-heat-equation-with-phase-change" title="Link to this heading">#</a></h1>
+<p><span class="math notranslate nohighlight">\(\newcommand{\bj}{\mathbf{j}}
+\renewcommand{\div}{\operatorname{div}}\)</span>
+In this demo, we expand on the <a class="reference internal" href="nonlinear_heat_transfer.html"><span class="std std-doc">stationary nonlinear heat transfer demo</span></a> and consider a transient heat equation with non-linear heat transfer law including solid/liquid phase change. This demo corresponds to the <a class="reference external" href="https://code-aster.org/doc/v12/fr/man_v/v4/v4.22.002.pdf">TTNL02 elementary test case</a> of the <a class="reference external" href="https://www.code-aster.org"><em>Code_Aster</em> finite-element software</a>.</p>
+<a class="reference internal image-reference" href="../../../_images/solidification_front.gif"><img alt="../../../_images/solidification_front.gif" class="align-center" src="../../../_images/solidification_front.gif" style="width: 600px;" /></a>
+<section id="transient-heat-equation-using-an-enthalpy-formulation">
+<h2>Transient heat equation using an enthalpy formulation<a class="headerlink" href="#transient-heat-equation-using-an-enthalpy-formulation" title="Link to this heading">#</a></h2>
+<p>The transient heat equation writes:</p>
+<div class="math notranslate nohighlight">
+\[
+\rho C_p \dfrac{\partial T}{\partial t} = r-\div\bj
+\]</div>
+<p>where <span class="math notranslate nohighlight">\(\rho\)</span> is the material density, <span class="math notranslate nohighlight">\(C_p\)</span> the heat capacity (at constant pressure) per unit of mass, <span class="math notranslate nohighlight">\(r\)</span> represents heat sources and <span class="math notranslate nohighlight">\(\bj\)</span> is the heat flux.</p>
+<p>In the case of phase changes, the heat capacity exhibits large discontinuities near the transition temperature. It is therefore more suitable to work with the enthalpy density defined as:</p>
+<div class="math notranslate nohighlight">
+\[
+h(T) = \int_{T_0}^{T} \rho C_p dT
+\]</div>
+<p>yielding the following heat equation:</p>
+<div class="math notranslate nohighlight">
+\[
+\dfrac{\partial h}{\partial t} = r-\div\bj
+\]</div>
+</section>
+<section id="description-of-the-non-linear-heat-transfer-law-with-phase-change">
+<h2>Description of the non-linear heat transfer law with phase change<a class="headerlink" href="#description-of-the-non-linear-heat-transfer-law-with-phase-change" title="Link to this heading">#</a></h2>
+<p>The thermal material is described by the following non linear Fourier
+Law:</p>
+<div class="math notranslate nohighlight">
+\[
+\mathbf{j}=-k\left(T\right)\,\mathbf{\nabla} T
+\]</div>
+<p>where the thermal conductivity <span class="math notranslate nohighlight">\(k\)</span> is initially assumed to be given by:</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}
+k\left(T\right)=\begin{cases}
+k_s &amp; \text{if }T &lt; T_m \\
+k_l &amp; \text{if }T &gt; T_m 
+\end{cases}
+\end{split}\]</div>
+<p>where <span class="math notranslate nohighlight">\(k_s\)</span> (resp. <span class="math notranslate nohighlight">\(k_l\)</span>) denotes the solid (resp. liquid) phase conductivity and <span class="math notranslate nohighlight">\(T_m\)</span> is the solid/liquid transition temperature.</p>
+<p>The enthalpy is assumed to be given by:</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}
+h\left(T\right)=\begin{cases}
+c_sT &amp; \text{if }T &lt; T_m \\
+c_l(T-T_m)+c_sT_m+\Delta h_{s/l} &amp; \text{if }T &gt; T_m 
+\end{cases}
+\end{split}\]</div>
+<p>where <span class="math notranslate nohighlight">\(c_s=\rho_sC_{p,s}\)</span> (resp. <span class="math notranslate nohighlight">\(c_l=\rho_lC_{p,l}\)</span>) is the volumic heat capacity of the solid (resp. liquid) phase. It can be observed that the enthalpy exhibits a discontinuity at the phase transition equal to <span class="math notranslate nohighlight">\(\Delta h_{s/l}\)</span> which represents the latent heat of fusion per unit volume.</p>
+<a class="reference internal image-reference" href="../../../_images/phase_change_law.svg"><img alt="../../../_images/phase_change_law.svg" class="align-center" src="../../../_images/phase_change_law.svg" width="500px" /></a>
+</section>
+<section id="a-smoothed-version">
+<h2>A smoothed version<a class="headerlink" href="#a-smoothed-version" title="Link to this heading">#</a></h2>
+<p>The enthalpy discontinuity <span class="math notranslate nohighlight">\(\Delta h_{s/l}\)</span> poses convergence difficulties for the Newton resolution. A classical remedy consists in considering a smoothed version of the previous law, such as:</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}
+k\left(T\right)=\begin{cases}
+k_s &amp; \text{if }T &lt; T_s \\
+k_s + (k_l-k_s)\dfrac{T-T_s}{T_\text{smooth}} &amp; \text{if } T_s \leq T \leq T_l\\
+k_l &amp; \text{if }T &gt; T_l 
+\end{cases}
+\end{split}\]</div>
+<p>and</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}
+h\left(T\right)=\begin{cases}
+c_sT &amp; \text{if }T &lt; T_s \\
+c_sT_s+\left(\dfrac{cs+cl}{2}+\dfrac{\Delta h_{s/l}}{T_\text{smooth}}\right)(T-T_s) &amp; \text{if } T_s \leq T \leq T_l \\
+c_l(T-T_l)+c_sT_s+\dfrac{cs+cl}{2}T_\text{smooth}+\Delta h_{s/l} &amp; \text{if }T &gt; T_l 
+\end{cases}
+\end{split}\]</div>
+<p>where <span class="math notranslate nohighlight">\(T_{smooth}=T_l-T_s\)</span> is a small transition temperature interval between <span class="math notranslate nohighlight">\(T_s=T_m-T_\text{smooth}/2\)</span> the solidus temperature and <span class="math notranslate nohighlight">\(T_l=T_m+T_\text{smooth}/2\)</span> the liquidus temperature.</p>
+</section>
+<section id="mfront-implementation">
+<h2><code class="docutils literal notranslate"><span class="pre">MFront</span></code> implementation<a class="headerlink" href="#mfront-implementation" title="Link to this heading">#</a></h2>
+<section id="gradient-flux-and-tangent-operator-blocks">
+<h3>Gradient, flux and tangent operator blocks<a class="headerlink" href="#gradient-flux-and-tangent-operator-blocks" title="Link to this heading">#</a></h3>
+<p>Similarly to the <a class="reference internal" href="nonlinear_heat_transfer.html"><span class="std std-doc">stationary nonlinear heat transfer demo</span></a>, the <code class="docutils literal notranslate"><span class="pre">MFront</span></code> implementation relies on  the <code class="docutils literal notranslate"><span class="pre">DefaultGenericBehaviour</span></code> DSL and declares the pair of temperature gradient and heat flux. In addition, the volumic enthalpy <span class="math notranslate nohighlight">\(h\)</span> is also declared as an internal state variable. In addition to the two tangent operator blocks <code class="docutils literal notranslate"><span class="pre">∂j∕∂Δ∇T</span></code> and <code class="docutils literal notranslate"><span class="pre">∂j∕∂ΔT</span></code> already discussed in the first demo, we also declare the additional block <code class="docutils literal notranslate"><span class="pre">∂h∕∂ΔT</span></code>, referring to the fact that the enthalpy will vary with the temperature and will enter the transient heat equation.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>@DSL DefaultGenericBehaviour;
+@Behaviour HeatTransferPhaseChange;
+@Author Thomas Helfer / Jérémy Bleyer;
+@Date 15 / 02 / 2019;
+
+@Gradient TemperatureGradient ∇T;
+∇T.setGlossaryName(&quot;TemperatureGradient&quot;);
+
+@Flux HeatFlux j;
+j.setGlossaryName(&quot;HeatFlux&quot;);
+
+@StateVariable real h;
+h.setEntryName(&quot;Enthalpy&quot;); //per unit of volume
+
+@AdditionalTangentOperatorBlock ∂j∕∂ΔT;
+@AdditionalTangentOperatorBlock ∂h∕∂ΔT;
+</pre></div>
+</div>
+</section>
+<section id="material-parameters-and-local-variables">
+<h3>Material parameters and local variables<a class="headerlink" href="#material-parameters-and-local-variables" title="Link to this heading">#</a></h3>
+<p>We now declare the various material properties corresponding to those of aluminum. The material parameters are assumed to be uniform for both phases. Finally, we also introduce the smoothing temperature width <span class="math notranslate nohighlight">\(T_\text{smooth}\)</span>.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="nd">@Parameter</span> <span class="n">Tₘ</span> <span class="o">=</span> <span class="mf">933.15</span><span class="p">;</span>        <span class="o">//</span> <span class="p">[</span><span class="n">K</span><span class="p">]</span>
+<span class="n">Tₘ</span><span class="o">.</span><span class="n">setEntryName</span><span class="p">(</span><span class="s2">&quot;MeltingTemperature&quot;</span><span class="p">);</span>
+<span class="nd">@Parameter</span> <span class="n">kₛ</span> <span class="o">=</span> <span class="mi">210</span><span class="p">;</span>           <span class="o">//</span> <span class="p">[</span><span class="n">W</span><span class="o">/</span><span class="n">m</span><span class="o">/</span><span class="n">K</span><span class="p">]</span>
+<span class="n">kₛ</span><span class="o">.</span><span class="n">setEntryName</span><span class="p">(</span><span class="s2">&quot;SolidConductivity&quot;</span><span class="p">);</span>
+<span class="nd">@Parameter</span> <span class="n">cₛ</span> <span class="o">=</span> <span class="mf">3.e6</span><span class="p">;</span>          <span class="o">//</span> <span class="p">[</span><span class="n">J</span><span class="o">/</span><span class="n">m</span><span class="o">^</span><span class="mi">3</span><span class="o">/</span><span class="n">K</span><span class="p">]</span>
+<span class="n">cₛ</span><span class="o">.</span><span class="n">setEntryName</span><span class="p">(</span><span class="s2">&quot;SolidHeatCapacity&quot;</span><span class="p">);</span>
+<span class="nd">@Parameter</span> <span class="n">kₗ</span> <span class="o">=</span> <span class="mi">95</span><span class="p">;</span>            <span class="o">//</span> <span class="p">[</span><span class="n">W</span><span class="o">/</span><span class="n">m</span><span class="o">/</span><span class="n">K</span><span class="p">]</span>
+<span class="n">kₗ</span><span class="o">.</span><span class="n">setEntryName</span><span class="p">(</span><span class="s2">&quot;LiquidConductivity&quot;</span><span class="p">);</span>
+<span class="nd">@Parameter</span> <span class="n">cₗ</span> <span class="o">=</span> <span class="mf">2.58e6</span><span class="p">;</span>        <span class="o">//</span> <span class="p">[</span><span class="n">J</span><span class="o">/</span><span class="n">m</span><span class="o">^</span><span class="mi">3</span><span class="o">/</span><span class="n">K</span><span class="p">]</span>
+<span class="n">cₗ</span><span class="o">.</span><span class="n">setEntryName</span><span class="p">(</span><span class="s2">&quot;LiquidHeatCapacity&quot;</span><span class="p">);</span>
+<span class="nd">@Parameter</span> <span class="n">Δhₛₗ</span> <span class="o">=</span> <span class="mf">1.08048e9</span><span class="p">;</span>   <span class="o">//</span> <span class="p">[</span><span class="n">J</span><span class="o">/</span><span class="n">m</span><span class="o">^</span><span class="mi">3</span><span class="p">]</span>
+<span class="n">Δhₛₗ</span><span class="o">.</span><span class="n">setEntryName</span><span class="p">(</span><span class="s2">&quot;FusionEnthalpy&quot;</span><span class="p">);</span>
+<span class="nd">@Parameter</span> <span class="n">Tₛₘₒₒₜₕ</span> <span class="o">=</span> <span class="mf">0.1</span><span class="p">;</span>      <span class="o">//</span> <span class="n">smoothing</span> <span class="n">temperature</span> <span class="n">width</span> <span class="p">[</span><span class="n">K</span><span class="p">]</span>
+<span class="n">Tₛₘₒₒₜₕ</span><span class="o">.</span><span class="n">setEntryName</span><span class="p">(</span><span class="s2">&quot;Tsmooth&quot;</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>We define some local variables corresponding to the values of the conductivity <span class="math notranslate nohighlight">\(k\)</span>, the volumic heat capacity <span class="math notranslate nohighlight">\(c\)</span> and the derivative of the heat conductivity with respect to the temperature.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>@LocalVariable thermalconductivity k;
+@LocalVariable real c;
+@LocalVariable real ∂k∕∂T;
+</pre></div>
+</div>
+</section>
+<section id="integration-of-the-behavior">
+<h3>Integration of the behavior<a class="headerlink" href="#integration-of-the-behavior" title="Link to this heading">#</a></h3>
+<p>Again, the behavior integration is straightforward: after computing the temperature at the end of the time step <code class="docutils literal notranslate"><span class="pre">T_</span></code>, we compute the thermal
+conductivity, its derivative with respect to the temperature, the volumic enthalpy and the volumic heat capacity depending on whether <code class="docutils literal notranslate"><span class="pre">T_</span></code> belongs to the solid state (<span class="math notranslate nohighlight">\(T\leq T_s\)</span>), the liquid state (<span class="math notranslate nohighlight">\(T\geq T_l\)</span>) or to the transition region (<span class="math notranslate nohighlight">\(T_s \leq T \leq T_l\)</span>). We finish by computing the heat flux.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>@Integrator {
+  const auto T_ = T + ΔT;     // current temperature
+  const auto Tₛ = Tₘ-Tₛₘₒₒₜₕ/2; // solidus temperature
+  const auto Tₗ = Tₘ+Tₛₘₒₒₜₕ/2; // liquidus temperature
+  if(T_&lt;Tₛ){                  // solid state
+    k = kₛ;
+    c = cₛ;
+    h = cₛ*T_;
+    ∂k∕∂T = 0.;
+  } else if (T_ &gt; Tₗ) {        // liquid state
+    k = kₗ;
+    c = cₗ;
+    h = cₗ*(T_-Tₗ)+Δhₛₗ+cₛ*Tₛ+(cₛ+cₗ)*Tₛₘₒₒₜₕ/2;
+    ∂k∕∂T = 0.;
+  } else {                    // solid/liquid smooth transition
+    k = kₛ + (kₗ-kₛ)*(T_-Tₛ)/Tₛₘₒₒₜₕ;
+    h = cₛ*Tₛ+((cₛ+cₗ)/2+Δhₛₗ/Tₛₘₒₒₜₕ)*(T_-Tₛ);
+    c = Δhₛₗ/(Tₗ-Tₛ);
+    ∂k∕∂T = -(kₗ-kₛ)/Tₛₘₒₒₜₕ;
+  }
+  // heat flux
+  j = -k ⋅ (∇T + Δ∇T);
+}  // end of @Integrator
+</pre></div>
+</div>
+</section>
+</section>
+<section id="tangent-operator">
+<h2>Tangent operator<a class="headerlink" href="#tangent-operator" title="Link to this heading">#</a></h2>
+<p>The computation of the tangent operator blocks is then straightforward:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>@TangentOperator {
+  ∂j∕∂Δ∇T = -k * tmatrix&lt;N, N, real&gt;::Id();
+  ∂j∕∂ΔT = ∂k∕∂T * (∇T + Δ∇T);
+  ∂h∕∂ΔT = c;
+}  // end of @TangentOperator
+</pre></div>
+</div>
+</section>
+<section id="fenicsx-implementation">
+<h2>FEniCSx implementation<a class="headerlink" href="#fenicsx-implementation" title="Link to this heading">#</a></h2>
+<section id="geometry-and-material">
+<h3>Geometry and material<a class="headerlink" href="#geometry-and-material" title="Link to this heading">#</a></h3>
+<p>We consider a rectangular domain of length 0.1 with imposed temperatures <code class="docutils literal notranslate"><span class="pre">T0</span></code> (resp. <code class="docutils literal notranslate"><span class="pre">Ti</span></code>) on the left (resp. right) boundaries. We look here for the temperature field <code class="docutils literal notranslate"><span class="pre">T</span></code> using a <span class="math notranslate nohighlight">\(P^2\)</span>-interpolation which is initially at the uniform temperature <code class="docutils literal notranslate"><span class="pre">Ti</span></code>.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="kn">import</span> <span class="nn">ufl</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">from</span> <span class="nn">mpi4py</span> <span class="kn">import</span> <span class="n">MPI</span>
+<span class="kn">from</span> <span class="nn">dolfinx</span> <span class="kn">import</span> <span class="n">fem</span><span class="p">,</span> <span class="n">mesh</span>
+<span class="kn">from</span> <span class="nn">dolfinx.cpp.nls.petsc</span> <span class="kn">import</span> <span class="n">NewtonSolver</span>
+<span class="kn">from</span> <span class="nn">dolfinx_materials.quadrature_map</span> <span class="kn">import</span> <span class="n">QuadratureMap</span>
+<span class="kn">from</span> <span class="nn">dolfinx_materials.solvers</span> <span class="kn">import</span> <span class="n">NonlinearMaterialProblem</span>
+<span class="kn">from</span> <span class="nn">dolfinx_materials.material.mfront</span> <span class="kn">import</span> <span class="n">MFrontMaterial</span>
+
+<span class="n">current_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">()</span>
+
+<span class="n">length</span> <span class="o">=</span> <span class="mf">0.1</span>
+<span class="n">width</span> <span class="o">=</span> <span class="mf">0.01</span>
+<span class="n">Nx</span> <span class="o">=</span> <span class="mi">1000</span>
+<span class="n">Ny</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="n">domain</span> <span class="o">=</span> <span class="n">mesh</span><span class="o">.</span><span class="n">create_rectangle</span><span class="p">(</span>
+    <span class="n">MPI</span><span class="o">.</span><span class="n">COMM_WORLD</span><span class="p">,</span>
+    <span class="p">[(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="n">length</span><span class="p">,</span> <span class="n">width</span><span class="p">)],</span>
+    <span class="p">[</span><span class="n">Nx</span><span class="p">,</span> <span class="n">Ny</span><span class="p">],</span>
+    <span class="n">cell_type</span><span class="o">=</span><span class="n">mesh</span><span class="o">.</span><span class="n">CellType</span><span class="o">.</span><span class="n">quadrilateral</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">V</span> <span class="o">=</span> <span class="n">fem</span><span class="o">.</span><span class="n">functionspace</span><span class="p">(</span><span class="n">domain</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;P&quot;</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+<span class="n">T</span> <span class="o">=</span> <span class="n">fem</span><span class="o">.</span><span class="n">Function</span><span class="p">(</span><span class="n">V</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;Temperature&quot;</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">left</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">isclose</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mf">0.0</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">right</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">isclose</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">length</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">bottom</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">isclose</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="mf">0.0</span><span class="p">)</span>
+
+
+<span class="n">Tl</span> <span class="o">=</span> <span class="mf">853.15</span>
+<span class="n">Tr</span> <span class="o">=</span> <span class="mf">1013.15</span>
+<span class="n">T</span><span class="o">.</span><span class="n">vector</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">Tr</span><span class="p">)</span>
+
+<span class="n">left_dofs</span> <span class="o">=</span> <span class="n">fem</span><span class="o">.</span><span class="n">locate_dofs_geometrical</span><span class="p">(</span><span class="n">V</span><span class="p">,</span> <span class="n">left</span><span class="p">)</span>
+<span class="n">right_dofs</span> <span class="o">=</span> <span class="n">fem</span><span class="o">.</span><span class="n">locate_dofs_geometrical</span><span class="p">(</span><span class="n">V</span><span class="p">,</span> <span class="n">right</span><span class="p">)</span>
+<span class="n">bottom_dofs</span> <span class="o">=</span> <span class="n">fem</span><span class="o">.</span><span class="n">locate_dofs_geometrical</span><span class="p">(</span><span class="n">V</span><span class="p">,</span> <span class="n">bottom</span><span class="p">)</span>  <span class="c1"># used for postprocessing</span>
+
+<span class="n">bcs</span> <span class="o">=</span> <span class="p">[</span><span class="n">fem</span><span class="o">.</span><span class="n">dirichletbc</span><span class="p">(</span><span class="n">Tl</span><span class="p">,</span> <span class="n">left_dofs</span><span class="p">,</span> <span class="n">V</span><span class="p">),</span> <span class="n">fem</span><span class="o">.</span><span class="n">dirichletbc</span><span class="p">(</span><span class="n">Tr</span><span class="p">,</span> <span class="n">right_dofs</span><span class="p">,</span> <span class="n">V</span><span class="p">)]</span>
+</pre></div>
+</div>
+</div>
+</div>
+<p>We now load the material behavior <code class="docutils literal notranslate"><span class="pre">HeatTransferPhaseChange</span></code> and also change the default value of <code class="docutils literal notranslate"><span class="pre">Tsmooth</span></code> to a slightly larger one (but still sufficiently small). Note that the mesh must be sufficiently refined to use a smaller value. Indeed, the spatial resolution must be able to capture with a few elements the sharp transition which will occur during the phase change. We also verify that 3 different tangent blocks have indeed been defined, the last one involving the internal state variable <code class="docutils literal notranslate"><span class="pre">Enthalpy</span></code> with respect to the temperature.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">material</span> <span class="o">=</span> <span class="n">MFrontMaterial</span><span class="p">(</span>
+    <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">current_path</span><span class="p">,</span> <span class="s2">&quot;src/libBehaviour.so&quot;</span><span class="p">),</span>
+    <span class="s2">&quot;HeatTransferPhaseChange&quot;</span><span class="p">,</span>
+    <span class="n">hypothesis</span><span class="o">=</span><span class="s2">&quot;plane_strain&quot;</span><span class="p">,</span>
+    <span class="n">parameters</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;Tsmooth&quot;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">},</span>
+<span class="p">)</span>
+<span class="nb">print</span><span class="p">([</span><span class="s2">&quot;d</span><span class="si">{}</span><span class="s2">_d</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="o">*</span><span class="n">t</span><span class="p">)</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">material</span><span class="o">.</span><span class="n">tangent_blocks</span><span class="p">])</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>[&#39;dHeatFlux_dTemperatureGradient&#39;, &#39;dHeatFlux_dTemperature&#39;, &#39;dEnthalpy_dTemperature&#39;]
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="time-discretization-of-the-heat-equation">
+<h3>Time discretization of the heat equation<a class="headerlink" href="#time-discretization-of-the-heat-equation" title="Link to this heading">#</a></h3>
+<p>The heat equation must also be discretized in time. We use here the <span class="math notranslate nohighlight">\(\theta\)</span>-method and approximate:</p>
+<div class="math notranslate nohighlight">
+\[
+\left.\dfrac{\partial h}{\partial t}\right|_{t=t_{n+\theta}} \approx \dfrac{h_{t=t_{n+1}}-h_{t=t_{n}}}{\Delta t} = r_{t=t_{n+\theta}}-\div\bj_{t=t_{n+\theta}}
+\]</div>
+<p>where <span class="math notranslate nohighlight">\(\star_{t=t_{n+\theta}}= \theta\star_{t=t_{n+1}}+(1-\theta)\star_{t=t_{n}}\)</span>.</p>
+<p>The weak formulation therefore reads (in the absence of source terms): Find <span class="math notranslate nohighlight">\(T\in V\)</span> such that:</p>
+<div class="math notranslate nohighlight">
+\[
+\int_\Omega \left((h_{t=t_{n+1}}(T)-h_{t=t_{n}})\widehat{T} - \Delta t (\theta\mathbf{j}_{t=t_{n+1}}(T, \nabla T)+(1-\theta)\mathbf{j}_{t=t_{n}})\cdot \nabla \widehat{T} \right)\text{ dx} = 0
+\]</div>
+<p>in which, at time <span class="math notranslate nohighlight">\(t_{n+1}\)</span>, both the enthalpy <span class="math notranslate nohighlight">\(h_{t=t_{n+1}}\)</span> and the heat flux <span class="math notranslate nohighlight">\(\mathbf{j}_{t=t_{n+1}}\)</span> are non-linear functions of the unknown temperature.</p>
+</section>
+<section id="problem-formulation">
+<h3>Problem formulation<a class="headerlink" href="#problem-formulation" title="Link to this heading">#</a></h3>
+<p>To write the above non-linear time-dependent weak formulation, we first need to register to the <code class="docutils literal notranslate"><span class="pre">QuadratureMap</span></code> object the corresponding gradient and external state variable. Then we can get the heat flux <code class="docutils literal notranslate"><span class="pre">j</span></code> (as a <em>flux</em>) and the enthalpy <code class="docutils literal notranslate"><span class="pre">h</span></code> (as an <em>internal state variable</em>).</p>
+<p>Note that without explicitly calling the behavior law or setting its value, the enthalpy function <code class="docutils literal notranslate"><span class="pre">h</span></code> will be initially of value 0. To initialize its value, we write <code class="docutils literal notranslate"><span class="pre">qmap.update()</span></code> which calls the behavior integration and updates the internal state variable and flux values.</p>
+<p>To implement the <span class="math notranslate nohighlight">\(\theta\)</span> time discretization scheme, we will also need to keep track of the enthalpy and heat flux values at the previous time step. We can simply define these new functions as copies of <code class="docutils literal notranslate"><span class="pre">h</span></code> and <code class="docutils literal notranslate"><span class="pre">j</span></code>. Doing so, <code class="docutils literal notranslate"><span class="pre">h_old</span></code> and <code class="docutils literal notranslate"><span class="pre">j_old</span></code> will also be Quadrature functions.</p>
+<p>We then compute the corresponding jacobian form with <code class="docutils literal notranslate"><span class="pre">qmap.derivative</span></code>.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">T_</span> <span class="o">=</span> <span class="n">ufl</span><span class="o">.</span><span class="n">TestFunction</span><span class="p">(</span><span class="n">V</span><span class="p">)</span>
+<span class="n">dT</span> <span class="o">=</span> <span class="n">ufl</span><span class="o">.</span><span class="n">TrialFunction</span><span class="p">(</span><span class="n">V</span><span class="p">)</span>
+
+<span class="n">qmap</span> <span class="o">=</span> <span class="n">QuadratureMap</span><span class="p">(</span><span class="n">domain</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">material</span><span class="p">)</span>
+<span class="n">qmap</span><span class="o">.</span><span class="n">register_gradient</span><span class="p">(</span><span class="s2">&quot;TemperatureGradient&quot;</span><span class="p">,</span> <span class="n">ufl</span><span class="o">.</span><span class="n">grad</span><span class="p">(</span><span class="n">T</span><span class="p">))</span>
+<span class="n">qmap</span><span class="o">.</span><span class="n">register_external_state_variable</span><span class="p">(</span><span class="s2">&quot;Temperature&quot;</span><span class="p">,</span> <span class="n">T</span><span class="p">)</span>
+
+<span class="n">j</span> <span class="o">=</span> <span class="n">qmap</span><span class="o">.</span><span class="n">fluxes</span><span class="p">[</span><span class="s2">&quot;HeatFlux&quot;</span><span class="p">]</span>
+<span class="n">h</span> <span class="o">=</span> <span class="n">qmap</span><span class="o">.</span><span class="n">internal_state_variables</span><span class="p">[</span><span class="s2">&quot;Enthalpy&quot;</span><span class="p">]</span>
+
+<span class="n">qmap</span><span class="o">.</span><span class="n">update</span><span class="p">()</span> <span class="c1"># call a first time the behavior law to update the value of the internal state variables</span>
+
+<span class="n">j_old</span> <span class="o">=</span> <span class="n">j</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+<span class="n">h_old</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+
+<span class="n">dt</span> <span class="o">=</span> <span class="n">fem</span><span class="o">.</span><span class="n">Constant</span><span class="p">(</span><span class="n">domain</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
+<span class="n">theta</span> <span class="o">=</span> <span class="n">fem</span><span class="o">.</span><span class="n">Constant</span><span class="p">(</span><span class="n">domain</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>
+
+<span class="n">j_theta</span> <span class="o">=</span> <span class="n">theta</span> <span class="o">*</span> <span class="n">j</span> <span class="o">+</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">theta</span><span class="p">)</span> <span class="o">*</span> <span class="n">j_old</span>
+
+<span class="n">Res</span> <span class="o">=</span> <span class="p">(</span><span class="n">T_</span> <span class="o">*</span> <span class="p">(</span><span class="n">h</span> <span class="o">-</span> <span class="n">h_old</span><span class="p">)</span> <span class="o">-</span> <span class="n">dt</span> <span class="o">*</span> <span class="n">ufl</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">ufl</span><span class="o">.</span><span class="n">grad</span><span class="p">(</span><span class="n">T_</span><span class="p">),</span> <span class="n">j_theta</span><span class="p">))</span> <span class="o">*</span> <span class="n">qmap</span><span class="o">.</span><span class="n">dx</span>
+<span class="n">Jac</span> <span class="o">=</span> <span class="n">qmap</span><span class="o">.</span><span class="n">derivative</span><span class="p">(</span><span class="n">Res</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">dT</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<p>We then set up the corresponding nonlinear problem and solver objects.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">problem</span> <span class="o">=</span> <span class="n">NonlinearMaterialProblem</span><span class="p">(</span><span class="n">qmap</span><span class="p">,</span> <span class="n">Res</span><span class="p">,</span> <span class="n">Jac</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">bcs</span><span class="p">)</span>
+<span class="n">newton</span> <span class="o">=</span> <span class="n">NewtonSolver</span><span class="p">(</span><span class="n">MPI</span><span class="o">.</span><span class="n">COMM_WORLD</span><span class="p">)</span>
+<span class="n">newton</span><span class="o">.</span><span class="n">rtol</span> <span class="o">=</span> <span class="mf">1e-6</span>
+<span class="n">newton</span><span class="o">.</span><span class="n">atol</span> <span class="o">=</span> <span class="mf">1e-6</span>
+<span class="n">newton</span><span class="o">.</span><span class="n">convergence_criterion</span> <span class="o">=</span> <span class="s2">&quot;incremental&quot;</span>
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="time-stepping-loop-and-comparison-with-code-aster-results">
+<h3>Time-stepping loop and comparison with <em>code_Aster</em> results<a class="headerlink" href="#time-stepping-loop-and-comparison-with-code-aster-results" title="Link to this heading">#</a></h3>
+<p>We now implement the time-stepping loop which simply solves the non-linear problem and update the fields corresponding to the values at the previous time step. We also load the values of the one-dimensional temperature field <span class="math notranslate nohighlight">\(T(x, t)\)</span> given in the <em>code_Aster</em> test-case and compare them with what we obtain every second.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">cA_results</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span>
+    <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">current_path</span><span class="p">,</span> <span class="s2">&quot;results_code_Aster.csv&quot;</span><span class="p">),</span> <span class="n">delimiter</span><span class="o">=</span><span class="s2">&quot;,&quot;</span>
+<span class="p">)</span>
+<span class="n">code_Aster_times</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">7</span><span class="p">)</span>
+<span class="n">Nsteps</span> <span class="o">=</span> <span class="mi">60</span>
+<span class="n">times</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mf">6.0</span><span class="p">,</span> <span class="n">Nsteps</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+<span class="n">x</span> <span class="o">=</span> <span class="n">V</span><span class="o">.</span><span class="n">tabulate_dof_coordinates</span><span class="p">()[</span><span class="n">bottom_dofs</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>  <span class="c1"># x position of dofs</span>
+<span class="k">for</span> <span class="n">t</span><span class="p">,</span> <span class="n">delta_t</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">times</span><span class="p">[</span><span class="mi">1</span><span class="p">:],</span> <span class="n">np</span><span class="o">.</span><span class="n">diff</span><span class="p">(</span><span class="n">times</span><span class="p">)):</span>
+    <span class="n">dt</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="n">delta_t</span>
+
+    <span class="n">converged</span><span class="p">,</span> <span class="n">it</span> <span class="o">=</span> <span class="n">problem</span><span class="o">.</span><span class="n">solve</span><span class="p">(</span><span class="n">newton</span><span class="p">,</span> <span class="n">print_solution</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+    <span class="n">h</span><span class="o">.</span><span class="n">vector</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">h_old</span><span class="o">.</span><span class="n">vector</span><span class="p">)</span>  <span class="c1"># update enthalpy</span>
+    <span class="n">j</span><span class="o">.</span><span class="n">vector</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">j_old</span><span class="o">.</span><span class="n">vector</span><span class="p">)</span>  <span class="c1"># update heat flux</span>
+
+    <span class="n">sol_time</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">isclose</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">code_Aster_times</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">sol_time</span><span class="p">):</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">&quot;Time </span><span class="si">{:0.1f}</span><span class="s2">s&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">t</span><span class="p">),</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">16</span><span class="p">)</span>
+        <span class="n">ax1</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">gca</span><span class="p">()</span>
+        <span class="n">ax1</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s2">&quot;$x$ coordinate&quot;</span><span class="p">)</span>
+        <span class="n">ax1</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">&quot;Temperature [°C]&quot;</span><span class="p">)</span>
+        <span class="n">T_val</span> <span class="o">=</span> <span class="n">T</span><span class="o">.</span><span class="n">vector</span><span class="o">.</span><span class="n">array</span><span class="p">[</span><span class="n">bottom_dofs</span><span class="p">]</span>
+        <span class="n">ax1</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span>
+            <span class="n">x</span><span class="p">,</span>
+            <span class="n">T_val</span> <span class="o">-</span> <span class="mf">273.15</span><span class="p">,</span>
+            <span class="s2">&quot;-b&quot;</span><span class="p">,</span>
+            <span class="n">label</span><span class="o">=</span><span class="s2">&quot;FEniCSx/MFront&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">ax1</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span>
+            <span class="n">cA_results</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span>
+            <span class="n">cA_results</span><span class="p">[:,</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">sol_time</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span><span class="p">],</span>
+            <span class="s2">&quot;or&quot;</span><span class="p">,</span>
+            <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Code\_Aster&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">Tm</span> <span class="o">=</span> <span class="n">material</span><span class="o">.</span><span class="n">get_parameter</span><span class="p">(</span><span class="s2">&quot;MeltingTemperature&quot;</span><span class="p">)</span> <span class="o">-</span> <span class="mf">273.15</span>
+        <span class="n">ax1</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">Tm</span> <span class="o">+</span> <span class="mi">0</span> <span class="o">*</span> <span class="n">x</span><span class="p">,</span> <span class="s2">&quot;--k&quot;</span><span class="p">)</span>
+        <span class="n">ax1</span><span class="o">.</span><span class="n">annotate</span><span class="p">(</span><span class="s2">&quot;liquid</span><span class="se">\n</span><span class="s2">solid&quot;</span><span class="p">,</span> <span class="n">xy</span><span class="o">=</span><span class="p">(</span><span class="mf">0.08</span><span class="p">,</span> <span class="n">Tm</span><span class="p">),</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">16</span><span class="p">,</span> <span class="n">va</span><span class="o">=</span><span class="s2">&quot;center&quot;</span><span class="p">)</span>
+        <span class="n">ax1</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">(</span><span class="mi">500</span><span class="p">,</span> <span class="mi">750</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<img alt="../../../_images/681fd885e865fddbea3c806cedac358a6cfe750686a2cbe297f4bbb8eb0debcc.png" src="../../../_images/681fd885e865fddbea3c806cedac358a6cfe750686a2cbe297f4bbb8eb0debcc.png" />
+<img alt="../../../_images/24a825d73c28036ed0c400de3ca95ff8ed8f402761f537877475225e5194bca9.png" src="../../../_images/24a825d73c28036ed0c400de3ca95ff8ed8f402761f537877475225e5194bca9.png" />
+<img alt="../../../_images/9bf0405ecce30459685b01822c2059c24a8eff3c78c7e52c55c72b348eab591f.png" src="../../../_images/9bf0405ecce30459685b01822c2059c24a8eff3c78c7e52c55c72b348eab591f.png" />
+<img alt="../../../_images/322b44bc40a9f2007041544e17a9450a2ddfc30e8fbf3f04e821d7b932b2940e.png" src="../../../_images/322b44bc40a9f2007041544e17a9450a2ddfc30e8fbf3f04e821d7b932b2940e.png" />
+<img alt="../../../_images/a278fce8477875ad54e31d04175873c9fb109a2704ea6d4ae8b5704b7bb493d9.png" src="../../../_images/a278fce8477875ad54e31d04175873c9fb109a2704ea6d4ae8b5704b7bb493d9.png" />
+<img alt="../../../_images/77b8f8c7283fd1eb83026a3543837b60feb573b335134202c64c71671982ac5c.png" src="../../../_images/77b8f8c7283fd1eb83026a3543837b60feb573b335134202c64c71671982ac5c.png" />
+</div>
+</div>
+</section>
+</section>
+</section>
+
+    <script type="text/x-thebe-config">
+    {
+        requestKernel: true,
+        binderOptions: {
+            repo: "binder-examples/jupyter-stacks-datascience",
+            ref: "master",
+        },
+        codeMirrorConfig: {
+            theme: "abcdef",
+            mode: "python"
+        },
+        kernelOptions: {
+            name: "python3",
+            path: "./demos/mfront/heat_transfer"
+        },
+        predefinedOutput: true
+    }
+    </script>
+    <script>kernelName = 'python3'</script>
+
+                </article>
+              
+
+              
+              
+              
+              
+                <footer class="prev-next-footer">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="nonlinear_heat_transfer.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Stationary nonlinear heat transfer</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="../../../api/api.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">&lt;no title&gt;</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+  <div class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> Contents
+  </div>
+  <nav class="bd-toc-nav page-toc">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#transient-heat-equation-using-an-enthalpy-formulation">Transient heat equation using an enthalpy formulation</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#description-of-the-non-linear-heat-transfer-law-with-phase-change">Description of the non-linear heat transfer law with phase change</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#a-smoothed-version">A smoothed version</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#mfront-implementation"><code class="docutils literal notranslate"><span class="pre">MFront</span></code> implementation</a><ul class="visible nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#gradient-flux-and-tangent-operator-blocks">Gradient, flux and tangent operator blocks</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#material-parameters-and-local-variables">Material parameters and local variables</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#integration-of-the-behavior">Integration of the behavior</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#tangent-operator">Tangent operator</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#fenicsx-implementation">FEniCSx implementation</a><ul class="visible nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#geometry-and-material">Geometry and material</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#time-discretization-of-the-heat-equation">Time discretization of the heat equation</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#problem-formulation">Problem formulation</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#time-stepping-loop-and-comparison-with-code-aster-results">Time-stepping loop and comparison with <em>code_Aster</em> results</a></li>
+</ul>
+</li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+<div class="bd-footer-content__inner container">
+  
+  <div class="footer-item">
+    
+<p class="component-author">
+By Jeremy Bleyer
+</p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+</div>
+          </footer>
+        
+
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../../../_static/scripts/bootstrap.js?digest=8d27b9dea8ad943066ae"></script>
+<script src="../../../_static/scripts/pydata-sphinx-theme.js?digest=8d27b9dea8ad943066ae"></script>
+
+  <footer class="bd-footer">
+  </footer>
+  </body>
+</html>

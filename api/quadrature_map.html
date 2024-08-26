@@ -1,0 +1,614 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>quadrature_map &#8212; dolfinx_materials</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=8d27b9dea8ad943066ae" rel="stylesheet" />
+<link href="../_static/styles/bootstrap.css?digest=8d27b9dea8ad943066ae" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=8d27b9dea8ad943066ae" rel="stylesheet" />
+
+  
+  <link href="../_static/vendor/fontawesome/6.5.1/css/all.min.css?digest=8d27b9dea8ad943066ae" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.1/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.1/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.1/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/sphinx-book-theme.css?v=384b581d" />
+    <link rel="stylesheet" type="text/css" href="../_static/togglebutton.css?v=13237357" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css?v=be8a1c11" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-thebe.css?v=4fa983c6" />
+    <link rel="stylesheet" type="text/css" href="../_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css?v=0a3b3ea7" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=8d27b9dea8ad943066ae" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=8d27b9dea8ad943066ae" />
+  <script src="../_static/vendor/fontawesome/6.5.1/js/all.min.js?digest=8d27b9dea8ad943066ae"></script>
+
+    <script src="../_static/documentation_options.js?v=9eb32ce0"></script>
+    <script src="../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../_static/copybutton.js?v=f281be69"></script>
+    <script src="../_static/scripts/sphinx-book-theme.js?v=efea14e4"></script>
+    <script>let toggleHintShow = 'Click to show';</script>
+    <script>let toggleHintHide = 'Click to hide';</script>
+    <script>let toggleOpenOnPrint = 'true';</script>
+    <script src="../_static/togglebutton.js?v=4a39c7ea"></script>
+    <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
+    <script src="../_static/design-tabs.js?v=36754332"></script>
+    <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"; const thebe_selector = ".thebe,.cell"; const thebe_selector_input = "pre"; const thebe_selector_output = ".output, .cell_output"</script>
+    <script async="async" src="../_static/sphinx-thebe.js?v=c100c467"></script>
+    <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
+    <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"; const thebe_selector = ".thebe,.cell"; const thebe_selector_input = "pre"; const thebe_selector_output = ".output, .cell_output"</script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'api/quadrature_map';</script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="prev" title="material" href="material.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <a id="pst-skip-link" class="skip-link" href="#main-content">Skip to main content</a>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>
+    Back to top
+  </button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          name="__primary"
+          id="__primary"/>
+  <label class="overlay overlay-primary" for="__primary"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          name="__secondary"
+          id="__secondary"/>
+  <label class="overlay overlay-secondary" for="__secondary"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search..."
+         aria-label="Search..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar">
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+  
+    <p class="title logo__title">dolfinx_materials</p>
+  
+</a></div>
+        <div class="sidebar-primary-item">
+
+ <script>
+ document.write(`
+   <button class="btn navbar-btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script></div>
+        <div class="sidebar-primary-item"><nav class="bd-links bd-docs-nav" aria-label="Main">
+    <div class="bd-toc-item navbar-nav active">
+        
+        <ul class="nav bd-sidenav bd-sidenav__home-link">
+            <li class="toctree-l1">
+                <a class="reference internal" href="../index.html">
+                    Documentation
+                </a>
+            </li>
+        </ul>
+        <p aria-level="2" class="caption" role="heading"><span class="caption-text">User guide</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../intro.html">General framework</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../jax.html">JAX implementation of material behaviors</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">JAX demos</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../jax_elastoplasticity.html">JAX implementation of elastoplasticity</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../demos/elastoplasticity/Hosford_yield_surface.html">Computing the Hosford plane stress yield surface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../demos/elastoplasticity/plane_elastoplasticity.html">Finite-element simulations of JAX elastoplasticity</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">MFront demos</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../demos/mfront/heat_transfer/nonlinear_heat_transfer.html">Stationary nonlinear heat transfer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../demos/mfront/heat_transfer/phase_change.html">Transient heat equation with phase change</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">API</span></p>
+<ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="material.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">material</span></code></a></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#"><code class="xref py py-mod docutils literal notranslate"><span class="pre">quadrature_map</span></code></a></li>
+</ul>
+
+    </div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main">
+        
+        
+
+<div class="sbt-scroll-pixel-helper"></div>
+
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item"><label class="sidebar-toggle primary-toggle btn btn-sm" for="__primary" title="Toggle primary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <span class="fa-solid fa-bars"></span>
+</label></div>
+      
+    </div>
+  
+  
+    <div class="header-article-items__end">
+      
+        <div class="header-article-item">
+
+<div class="article-header-buttons">
+
+
+
+<button onclick="toggleFullScreen()"
+  class="btn btn-sm btn-fullscreen-button"
+  title="Fullscreen mode"
+  data-bs-placement="bottom" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-expand"></i>
+  </span>
+
+</button>
+
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm navbar-btn theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="theme-switch nav-link" data-mode="light"><i class="fa-solid fa-sun fa-lg"></i></span>
+    <span class="theme-switch nav-link" data-mode="dark"><i class="fa-solid fa-moon fa-lg"></i></span>
+    <span class="theme-switch nav-link" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg"></i></span>
+  </button>
+`);
+</script>
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm navbar-btn search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+  </button>
+`);
+</script>
+<label class="sidebar-toggle secondary-toggle btn btn-sm" for="__secondary"title="Toggle secondary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="fa-solid fa-list"></span>
+</label>
+</div></div>
+      
+    </div>
+  
+</div>
+</div>
+              
+              
+
+<div id="jb-print-docs-body" class="onlyprint">
+    <h1>quadrature_map</h1>
+    <!-- Table of contents -->
+    <div id="print-main-content">
+        <div id="jb-print-toc">
+            
+            <div>
+                <h2> Contents </h2>
+            </div>
+            <nav aria-label="Page">
+                <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#dolfinx_materials.quadrature_map.QuadratureMap"><code class="docutils literal notranslate"><span class="pre">QuadratureMap</span></code></a><ul class="visible nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#dolfinx_materials.quadrature_map.QuadratureMap.gradients"><code class="docutils literal notranslate"><span class="pre">QuadratureMap.gradients</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#dolfinx_materials.quadrature_map.QuadratureMap.fluxes"><code class="docutils literal notranslate"><span class="pre">QuadratureMap.fluxes</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#dolfinx_materials.quadrature_map.QuadratureMap.internal_state_variables"><code class="docutils literal notranslate"><span class="pre">QuadratureMap.internal_state_variables</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#dolfinx_materials.quadrature_map.QuadratureMap.external_state_variables"><code class="docutils literal notranslate"><span class="pre">QuadratureMap.external_state_variables</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#dolfinx_materials.quadrature_map.QuadratureMap.dx"><code class="docutils literal notranslate"><span class="pre">QuadratureMap.dx</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#dolfinx_materials.quadrature_map.QuadratureMap.advance"><code class="docutils literal notranslate"><span class="pre">QuadratureMap.advance()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#dolfinx_materials.quadrature_map.QuadratureMap.derivative"><code class="docutils literal notranslate"><span class="pre">QuadratureMap.derivative()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#dolfinx_materials.quadrature_map.QuadratureMap.eval_quadrature"><code class="docutils literal notranslate"><span class="pre">QuadratureMap.eval_quadrature()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#dolfinx_materials.quadrature_map.QuadratureMap.project_on"><code class="docutils literal notranslate"><span class="pre">QuadratureMap.project_on()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#dolfinx_materials.quadrature_map.QuadratureMap.register_external_state_variable"><code class="docutils literal notranslate"><span class="pre">QuadratureMap.register_external_state_variable()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#dolfinx_materials.quadrature_map.QuadratureMap.register_gradient"><code class="docutils literal notranslate"><span class="pre">QuadratureMap.register_gradient()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#dolfinx_materials.quadrature_map.QuadratureMap.update"><code class="docutils literal notranslate"><span class="pre">QuadratureMap.update()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#dolfinx_materials.quadrature_map.QuadratureMap.update_external_state_variables"><code class="docutils literal notranslate"><span class="pre">QuadratureMap.update_external_state_variables()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#dolfinx_materials.quadrature_map.QuadratureMap.update_initial_state"><code class="docutils literal notranslate"><span class="pre">QuadratureMap.update_initial_state()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#dolfinx_materials.quadrature_map.QuadratureMap.update_material_properties"><code class="docutils literal notranslate"><span class="pre">QuadratureMap.update_material_properties()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#dolfinx_materials.quadrature_map.QuadratureMap.update_material_rotation_matrix"><code class="docutils literal notranslate"><span class="pre">QuadratureMap.update_material_rotation_matrix()</span></code></a></li>
+</ul>
+</li>
+</ul>
+            </nav>
+        </div>
+    </div>
+</div>
+
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="quadrature-map">
+<h1><code class="xref py py-mod docutils literal notranslate"><span class="pre">quadrature_map</span></code><a class="headerlink" href="#quadrature-map" title="Link to this heading">#</a></h1>
+<table class="autosummary longtable table autosummary">
+<tbody>
+</tbody>
+</table>
+<dl class="py class" id="module-dolfinx_materials.quadrature_map">
+<dt class="sig sig-object py" id="dolfinx_materials.quadrature_map.QuadratureMap">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">QuadratureMap</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mesh</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">deg</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">material</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cells</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/dolfinx_materials/quadrature_map.html#QuadratureMap"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dolfinx_materials.quadrature_map.QuadratureMap" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Abstract data structure to handle a user-defined material in a form.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dolfinx_materials.quadrature_map.QuadratureMap.gradients">
+<span class="sig-name descname"><span class="pre">gradients</span></span><a class="headerlink" href="#dolfinx_materials.quadrature_map.QuadratureMap.gradients" title="Link to this definition">#</a></dt>
+<dd><p>dictionary of gradients represented by Quadrature functions</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dolfinx_materials.quadrature_map.QuadratureMap.fluxes">
+<span class="sig-name descname"><span class="pre">fluxes</span></span><a class="headerlink" href="#dolfinx_materials.quadrature_map.QuadratureMap.fluxes" title="Link to this definition">#</a></dt>
+<dd><p>dictionary of fluxes represented by Quadrature functions</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dolfinx_materials.quadrature_map.QuadratureMap.internal_state_variables">
+<span class="sig-name descname"><span class="pre">internal_state_variables</span></span><a class="headerlink" href="#dolfinx_materials.quadrature_map.QuadratureMap.internal_state_variables" title="Link to this definition">#</a></dt>
+<dd><p>dictionary of internal state variables represented by Quadrature functions</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dolfinx_materials.quadrature_map.QuadratureMap.external_state_variables">
+<span class="sig-name descname"><span class="pre">external_state_variables</span></span><a class="headerlink" href="#dolfinx_materials.quadrature_map.QuadratureMap.external_state_variables" title="Link to this definition">#</a></dt>
+<dd><p>dictionary of internal state variables represented by Quadrature functions</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dolfinx_materials.quadrature_map.QuadratureMap.dx">
+<span class="sig-name descname"><span class="pre">dx</span></span><a class="headerlink" href="#dolfinx_materials.quadrature_map.QuadratureMap.dx" title="Link to this definition">#</a></dt>
+<dd><p>ufl.Measure defined with consistent quadrature degree</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>ufl.Measure</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>mesh</strong> (<em>dolfinx.mesh</em>) – The underlying Mesh object</p></li>
+<li><p><strong>deg</strong> (<em>int</em>) – Degree of quadrature space</p></li>
+<li><p><strong>material</strong> (<em>dolfinx_materials.Material</em>) – A user-defined material object</p></li>
+<li><p><strong>cells</strong> (<em>list</em><em>, </em><em>np.ndarray</em>) – List of cells affected by the material. If None (default), acts on all cells of the domain.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="dolfinx_materials.quadrature_map.QuadratureMap.advance">
+<span class="sig-name descname"><span class="pre">advance</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/dolfinx_materials/quadrature_map.html#QuadratureMap.advance"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dolfinx_materials.quadrature_map.QuadratureMap.advance" title="Link to this definition">#</a></dt>
+<dd><p>Advance in time by copying current state dictionary in old state.
+Must be used only after having converged globally.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dolfinx_materials.quadrature_map.QuadratureMap.derivative">
+<span class="sig-name descname"><span class="pre">derivative</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">F</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">u</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">du</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/dolfinx_materials/quadrature_map.html#QuadratureMap.derivative"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dolfinx_materials.quadrature_map.QuadratureMap.derivative" title="Link to this definition">#</a></dt>
+<dd><p>Computes derivative of non-linear form F</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dolfinx_materials.quadrature_map.QuadratureMap.eval_quadrature">
+<span class="sig-name descname"><span class="pre">eval_quadrature</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ufl_expr</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fem_func</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/dolfinx_materials/quadrature_map.html#QuadratureMap.eval_quadrature"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dolfinx_materials.quadrature_map.QuadratureMap.eval_quadrature" title="Link to this definition">#</a></dt>
+<dd><p>Evaluates an expression at quadrature points and updates the corresponding function.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dolfinx_materials.quadrature_map.QuadratureMap.project_on">
+<span class="sig-name descname"><span class="pre">project_on</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">interp</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/dolfinx_materials/quadrature_map.html#QuadratureMap.project_on"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dolfinx_materials.quadrature_map.QuadratureMap.project_on" title="Link to this definition">#</a></dt>
+<dd><p>Computes a projection onto standard FE space.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> (<em>str</em>) – Name of the field to project</p></li>
+<li><p><strong>interp</strong> (<em>tuple</em>) – Tuple of interpolation space info to project on, e.g. (“DG”, 0). Shape is automatically deduced.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dolfinx_materials.quadrature_map.QuadratureMap.register_external_state_variable">
+<span class="sig-name descname"><span class="pre">register_external_state_variable</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ext_state_var</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/dolfinx_materials/quadrature_map.html#QuadratureMap.register_external_state_variable"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dolfinx_materials.quadrature_map.QuadratureMap.register_external_state_variable" title="Link to this definition">#</a></dt>
+<dd><p>Registers a UFL expression as an external state variable.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> (<em>str</em>) – Name of the external state variable field</p></li>
+<li><p><strong>ext_state_var</strong> (<em>float</em><em>, </em><em>np.ndarray</em><em>, </em><em>UFL expression</em>) – Constant or UFL expression to register, e.g. fem.Function(V, name=”Temperature”)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dolfinx_materials.quadrature_map.QuadratureMap.register_gradient">
+<span class="sig-name descname"><span class="pre">register_gradient</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gradient</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/dolfinx_materials/quadrature_map.html#QuadratureMap.register_gradient"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dolfinx_materials.quadrature_map.QuadratureMap.register_gradient" title="Link to this definition">#</a></dt>
+<dd><p>Registers a UFL expression as a gradient.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> (<em>str</em>) – Name of the gradient field</p></li>
+<li><p><strong>gradient</strong> (<em>UFL expression</em>) – UFL expression to register, e.g. ufl.grad(u)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dolfinx_materials.quadrature_map.QuadratureMap.update">
+<span class="sig-name descname"><span class="pre">update</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/dolfinx_materials/quadrature_map.html#QuadratureMap.update"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dolfinx_materials.quadrature_map.QuadratureMap.update" title="Link to this definition">#</a></dt>
+<dd><p>Perform constitutive update call.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dolfinx_materials.quadrature_map.QuadratureMap.update_external_state_variables">
+<span class="sig-name descname"><span class="pre">update_external_state_variables</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/dolfinx_materials/quadrature_map.html#QuadratureMap.update_external_state_variables"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dolfinx_materials.quadrature_map.QuadratureMap.update_external_state_variables" title="Link to this definition">#</a></dt>
+<dd><p>Update material external state variables with dolfinx values.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dolfinx_materials.quadrature_map.QuadratureMap.update_initial_state">
+<span class="sig-name descname"><span class="pre">update_initial_state</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">field_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/dolfinx_materials/quadrature_map.html#QuadratureMap.update_initial_state"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dolfinx_materials.quadrature_map.QuadratureMap.update_initial_state" title="Link to this definition">#</a></dt>
+<dd><p>Update a material field with corresponding dolfinx object.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dolfinx_materials.quadrature_map.QuadratureMap.update_material_properties">
+<span class="sig-name descname"><span class="pre">update_material_properties</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/dolfinx_materials/quadrature_map.html#QuadratureMap.update_material_properties"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dolfinx_materials.quadrature_map.QuadratureMap.update_material_properties" title="Link to this definition">#</a></dt>
+<dd><p>Update material properties from provided values.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dolfinx_materials.quadrature_map.QuadratureMap.update_material_rotation_matrix">
+<span class="sig-name descname"><span class="pre">update_material_rotation_matrix</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/dolfinx_materials/quadrature_map.html#QuadratureMap.update_material_rotation_matrix"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dolfinx_materials.quadrature_map.QuadratureMap.update_material_rotation_matrix" title="Link to this definition">#</a></dt>
+<dd><p>Update material rotation matrix with dolfinx values.</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+
+    <script type="text/x-thebe-config">
+    {
+        requestKernel: true,
+        binderOptions: {
+            repo: "binder-examples/jupyter-stacks-datascience",
+            ref: "master",
+        },
+        codeMirrorConfig: {
+            theme: "abcdef",
+            mode: "python"
+        },
+        kernelOptions: {
+            name: "python3",
+            path: "./api"
+        },
+        predefinedOutput: true
+    }
+    </script>
+    <script>kernelName = 'python3'</script>
+
+                </article>
+              
+
+              
+              
+              
+              
+                <footer class="prev-next-footer">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="material.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title"><code class="xref py py-mod docutils literal notranslate"><span class="pre">material</span></code></p>
+      </div>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+  <div class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> Contents
+  </div>
+  <nav class="bd-toc-nav page-toc">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#dolfinx_materials.quadrature_map.QuadratureMap"><code class="docutils literal notranslate"><span class="pre">QuadratureMap</span></code></a><ul class="visible nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#dolfinx_materials.quadrature_map.QuadratureMap.gradients"><code class="docutils literal notranslate"><span class="pre">QuadratureMap.gradients</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#dolfinx_materials.quadrature_map.QuadratureMap.fluxes"><code class="docutils literal notranslate"><span class="pre">QuadratureMap.fluxes</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#dolfinx_materials.quadrature_map.QuadratureMap.internal_state_variables"><code class="docutils literal notranslate"><span class="pre">QuadratureMap.internal_state_variables</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#dolfinx_materials.quadrature_map.QuadratureMap.external_state_variables"><code class="docutils literal notranslate"><span class="pre">QuadratureMap.external_state_variables</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#dolfinx_materials.quadrature_map.QuadratureMap.dx"><code class="docutils literal notranslate"><span class="pre">QuadratureMap.dx</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#dolfinx_materials.quadrature_map.QuadratureMap.advance"><code class="docutils literal notranslate"><span class="pre">QuadratureMap.advance()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#dolfinx_materials.quadrature_map.QuadratureMap.derivative"><code class="docutils literal notranslate"><span class="pre">QuadratureMap.derivative()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#dolfinx_materials.quadrature_map.QuadratureMap.eval_quadrature"><code class="docutils literal notranslate"><span class="pre">QuadratureMap.eval_quadrature()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#dolfinx_materials.quadrature_map.QuadratureMap.project_on"><code class="docutils literal notranslate"><span class="pre">QuadratureMap.project_on()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#dolfinx_materials.quadrature_map.QuadratureMap.register_external_state_variable"><code class="docutils literal notranslate"><span class="pre">QuadratureMap.register_external_state_variable()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#dolfinx_materials.quadrature_map.QuadratureMap.register_gradient"><code class="docutils literal notranslate"><span class="pre">QuadratureMap.register_gradient()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#dolfinx_materials.quadrature_map.QuadratureMap.update"><code class="docutils literal notranslate"><span class="pre">QuadratureMap.update()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#dolfinx_materials.quadrature_map.QuadratureMap.update_external_state_variables"><code class="docutils literal notranslate"><span class="pre">QuadratureMap.update_external_state_variables()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#dolfinx_materials.quadrature_map.QuadratureMap.update_initial_state"><code class="docutils literal notranslate"><span class="pre">QuadratureMap.update_initial_state()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#dolfinx_materials.quadrature_map.QuadratureMap.update_material_properties"><code class="docutils literal notranslate"><span class="pre">QuadratureMap.update_material_properties()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#dolfinx_materials.quadrature_map.QuadratureMap.update_material_rotation_matrix"><code class="docutils literal notranslate"><span class="pre">QuadratureMap.update_material_rotation_matrix()</span></code></a></li>
+</ul>
+</li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+<div class="bd-footer-content__inner container">
+  
+  <div class="footer-item">
+    
+<p class="component-author">
+By Jeremy Bleyer
+</p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+</div>
+          </footer>
+        
+
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../_static/scripts/bootstrap.js?digest=8d27b9dea8ad943066ae"></script>
+<script src="../_static/scripts/pydata-sphinx-theme.js?digest=8d27b9dea8ad943066ae"></script>
+
+  <footer class="bd-footer">
+  </footer>
+  </body>
+</html>

@@ -1,0 +1,800 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Stationary nonlinear heat transfer &#8212; dolfinx_materials</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../_static/styles/theme.css?digest=8d27b9dea8ad943066ae" rel="stylesheet" />
+<link href="../../../_static/styles/bootstrap.css?digest=8d27b9dea8ad943066ae" rel="stylesheet" />
+<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=8d27b9dea8ad943066ae" rel="stylesheet" />
+
+  
+  <link href="../../../_static/vendor/fontawesome/6.5.1/css/all.min.css?digest=8d27b9dea8ad943066ae" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.5.1/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.5.1/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.5.1/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/styles/sphinx-book-theme.css?v=384b581d" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/togglebutton.css?v=13237357" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css?v=be8a1c11" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-thebe.css?v=4fa983c6" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css?v=0a3b3ea7" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=8d27b9dea8ad943066ae" />
+<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=8d27b9dea8ad943066ae" />
+  <script src="../../../_static/vendor/fontawesome/6.5.1/js/all.min.js?digest=8d27b9dea8ad943066ae"></script>
+
+    <script src="../../../_static/documentation_options.js?v=9eb32ce0"></script>
+    <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../../_static/copybutton.js?v=f281be69"></script>
+    <script src="../../../_static/scripts/sphinx-book-theme.js?v=efea14e4"></script>
+    <script>let toggleHintShow = 'Click to show';</script>
+    <script>let toggleHintHide = 'Click to hide';</script>
+    <script>let toggleOpenOnPrint = 'true';</script>
+    <script src="../../../_static/togglebutton.js?v=4a39c7ea"></script>
+    <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
+    <script src="../../../_static/design-tabs.js?v=36754332"></script>
+    <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"; const thebe_selector = ".thebe,.cell"; const thebe_selector_input = "pre"; const thebe_selector_output = ".output, .cell_output"</script>
+    <script async="async" src="../../../_static/sphinx-thebe.js?v=c100c467"></script>
+    <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
+    <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"; const thebe_selector = ".thebe,.cell"; const thebe_selector_input = "pre"; const thebe_selector_output = ".output, .cell_output"</script>
+    <script>window.MathJax = {"options": {"processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'demos/mfront/heat_transfer/nonlinear_heat_transfer';</script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link rel="next" title="Transient heat equation with phase change" href="phase_change.html" />
+    <link rel="prev" title="Plane elastoplasticity" href="../../elastoplasticity/plane_elastoplasticity.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <a id="pst-skip-link" class="skip-link" href="#main-content">Skip to main content</a>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>
+    Back to top
+  </button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          name="__primary"
+          id="__primary"/>
+  <label class="overlay overlay-primary" for="__primary"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          name="__secondary"
+          id="__secondary"/>
+  <label class="overlay overlay-secondary" for="__secondary"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search..."
+         aria-label="Search..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar">
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+  
+
+<a class="navbar-brand logo" href="../../../index.html">
+  
+  
+  
+  
+  
+  
+    <p class="title logo__title">dolfinx_materials</p>
+  
+</a></div>
+        <div class="sidebar-primary-item">
+
+ <script>
+ document.write(`
+   <button class="btn navbar-btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script></div>
+        <div class="sidebar-primary-item"><nav class="bd-links bd-docs-nav" aria-label="Main">
+    <div class="bd-toc-item navbar-nav active">
+        
+        <ul class="nav bd-sidenav bd-sidenav__home-link">
+            <li class="toctree-l1">
+                <a class="reference internal" href="../../../index.html">
+                    Documentation
+                </a>
+            </li>
+        </ul>
+        <p aria-level="2" class="caption" role="heading"><span class="caption-text">User guide</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../../../intro.html">General framework</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../jax.html">JAX implementation of material behaviors</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">JAX demos</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../../../jax_elastoplasticity.html">JAX implementation of elastoplasticity</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../elastoplasticity/Hosford_yield_surface.html">Computing the Hosford plane stress yield surface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../elastoplasticity/plane_elastoplasticity.html">Plane elastoplasticity</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">MFront demos</span></p>
+<ul class="current nav bd-sidenav">
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">Stationary nonlinear heat transfer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="phase_change.html">Transient heat equation with phase change</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">API</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../../../api/material.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">material</span></code></a></li>
+</ul>
+
+    </div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main">
+        
+        
+
+<div class="sbt-scroll-pixel-helper"></div>
+
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item"><label class="sidebar-toggle primary-toggle btn btn-sm" for="__primary" title="Toggle primary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <span class="fa-solid fa-bars"></span>
+</label></div>
+      
+    </div>
+  
+  
+    <div class="header-article-items__end">
+      
+        <div class="header-article-item">
+
+<div class="article-header-buttons">
+
+
+
+<button onclick="toggleFullScreen()"
+  class="btn btn-sm btn-fullscreen-button"
+  title="Fullscreen mode"
+  data-bs-placement="bottom" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-expand"></i>
+  </span>
+
+</button>
+
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm navbar-btn theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="theme-switch nav-link" data-mode="light"><i class="fa-solid fa-sun fa-lg"></i></span>
+    <span class="theme-switch nav-link" data-mode="dark"><i class="fa-solid fa-moon fa-lg"></i></span>
+    <span class="theme-switch nav-link" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg"></i></span>
+  </button>
+`);
+</script>
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm navbar-btn search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+  </button>
+`);
+</script>
+<label class="sidebar-toggle secondary-toggle btn btn-sm" for="__secondary"title="Toggle secondary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="fa-solid fa-list"></span>
+</label>
+</div></div>
+      
+    </div>
+  
+</div>
+</div>
+              
+              
+
+<div id="jb-print-docs-body" class="onlyprint">
+    <h1>Stationary nonlinear heat transfer</h1>
+    <!-- Table of contents -->
+    <div id="print-main-content">
+        <div id="jb-print-toc">
+            
+            <div>
+                <h2> Contents </h2>
+            </div>
+            <nav aria-label="Page">
+                <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#description-of-the-non-linear-constitutive-heat-transfer-law">Description of the non-linear constitutive heat transfer law</a><ul class="visible nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#expression-of-the-thermal-conductivity">Expression of the thermal conductivity</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#derivatives">Derivatives</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#mfront-implementation"><code class="docutils literal notranslate"><span class="pre">MFront</span></code>’ implementation</a><ul class="visible nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#choice-of-the-the-domain-specific-language">Choice of the the domain specific language</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#some-metadata">Some metadata</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#gradients-and-fluxes">Gradients and fluxes</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#tangent-operator-blocks">Tangent operator blocks</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#parameters">Parameters</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#local-variable">Local variable</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#integration-of-the-behavior">Integration of the behavior</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#tangent-operator">Tangent operator</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#fenicsx-implementation"><code class="docutils literal notranslate"><span class="pre">FEniCSx</span></code> implementation</a><ul class="visible nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#loading-the-material-behavior">Loading the material behavior</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#non-linear-problem-definition">Non-linear problem definition</a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#variable-registration">Variable registration</a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#nonlinear-variational-formulation">Nonlinear variational formulation</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+            </nav>
+        </div>
+    </div>
+</div>
+
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section class="tex2jax_ignore mathjax_ignore" id="stationary-nonlinear-heat-transfer">
+<h1>Stationary nonlinear heat transfer<a class="headerlink" href="#stationary-nonlinear-heat-transfer" title="Link to this heading">#</a></h1>
+<p>This demo shows how to use a simple <code class="docutils literal notranslate"><span class="pre">MFront</span></code> behavior to solve a non-linear stationary heat transfer equation with <code class="docutils literal notranslate"><span class="pre">dolfinx_materials</span></code>.</p>
+<section id="description-of-the-non-linear-constitutive-heat-transfer-law">
+<h2>Description of the non-linear constitutive heat transfer law<a class="headerlink" href="#description-of-the-non-linear-constitutive-heat-transfer-law" title="Link to this heading">#</a></h2>
+<p>The thermal material is described by the following non linear Fourier
+Law:</p>
+<div class="math notranslate nohighlight">
+\[
+\mathbf{j}=-k\left(T\right)\,\mathbf{\nabla} T
+\]</div>
+<p>where <span class="math notranslate nohighlight">\(\mathbf{j}\)</span> is the heat flux and <span class="math notranslate nohighlight">\(\mathbf{\nabla} T\)</span> is the
+temperature gradient.</p>
+<section id="expression-of-the-thermal-conductivity">
+<h3>Expression of the thermal conductivity<a class="headerlink" href="#expression-of-the-thermal-conductivity" title="Link to this heading">#</a></h3>
+<p>The thermal conductivity is assumed to be given by:</p>
+<div class="math notranslate nohighlight">
+\[
+k\left(T\right)={\displaystyle \frac{\displaystyle 1}{\displaystyle A+B\,T}}
+\]</div>
+<p>This expression accounts for the phononic contribution to the thermal
+conductivity.</p>
+</section>
+<section id="derivatives">
+<h3>Derivatives<a class="headerlink" href="#derivatives" title="Link to this heading">#</a></h3>
+<p>As discussed below, the consistent linearisation of the heat transfer
+equilibrium requires to compute:</p>
+<ul class="simple">
+<li><p>the derivative
+<span class="math notranslate nohighlight">\({\displaystyle \frac{\displaystyle \partial \mathbf{j}}{\displaystyle \partial \mathbf{\nabla} T}}\)</span>
+of the heat flux with respect to the temperature gradient.
+<span class="math notranslate nohighlight">\({\displaystyle \frac{\displaystyle \partial \mathbf{j}}{\displaystyle \partial \mathbf{\nabla} T}}\)</span>
+is given by: $<span class="math notranslate nohighlight">\(
+  {\displaystyle \frac{\displaystyle \partial \mathbf{j}}{\displaystyle \partial \mathbf{\nabla} T}}=-k\left(T\right)\,\matrix{I}
+\)</span>$</p></li>
+<li><p>the derivative
+<span class="math notranslate nohighlight">\({\displaystyle \frac{\displaystyle \partial \mathbf{j}}{\displaystyle \partial T}}\)</span>
+of the heat flux with respect to the temperature.
+<span class="math notranslate nohighlight">\({\displaystyle \frac{\displaystyle \partial \mathbf{j}}{\displaystyle \partial T}}\)</span>
+is given by: $<span class="math notranslate nohighlight">\(
+  {\displaystyle \frac{\displaystyle \partial \mathbf{j}}{\displaystyle \partial T}}=-{\displaystyle \frac{\displaystyle \partial k\left(T\right)}{\displaystyle \partial T}}\,\mathbf{\nabla} T=B\,k^{2}\,\mathbf{\nabla} T
+\)</span>$</p></li>
+</ul>
+</section>
+</section>
+<section id="mfront-implementation">
+<h2><code class="docutils literal notranslate"><span class="pre">MFront</span></code>’ implementation<a class="headerlink" href="#mfront-implementation" title="Link to this heading">#</a></h2>
+<section id="choice-of-the-the-domain-specific-language">
+<h3>Choice of the the domain specific language<a class="headerlink" href="#choice-of-the-the-domain-specific-language" title="Link to this heading">#</a></h3>
+<p>Every <code class="docutils literal notranslate"><span class="pre">MFront</span></code> file is handled by a domain specific language (DSL), which
+aims at providing the most suitable abstraction for a particular choice
+of behavior and integration algorithm. See <code class="docutils literal notranslate"><span class="pre">mfront</span> <span class="pre">mfront</span> <span class="pre">--list-dsl</span></code>
+for a list of the available DSLs.</p>
+<p>The name of DSL’s handling generic behaviors ends with
+<code class="docutils literal notranslate"><span class="pre">GenericBehaviour</span></code>. The first part of a DSL’s name is related to the
+integration algorithm used.</p>
+<p>In the case of this non linear transfer behavior, the heat flux is
+explicitly computed from the temperature and the temperature gradient.
+The <code class="docutils literal notranslate"><span class="pre">DefaultGenericBehaviour</span></code> is the most suitable choice:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="nd">@DSL</span> <span class="n">DefaultGenericBehaviour</span><span class="p">;</span>
+</pre></div>
+</div>
+</section>
+<section id="some-metadata">
+<h3>Some metadata<a class="headerlink" href="#some-metadata" title="Link to this heading">#</a></h3>
+<p>The following lines define the name of the behavior, the name of the
+author and the date of its writing:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="nd">@Behaviour</span> <span class="n">StationaryHeatTransfer</span><span class="p">;</span>
+<span class="nd">@Author</span> <span class="n">Thomas</span> <span class="n">Helfer</span><span class="p">;</span>
+<span class="nd">@Date</span> <span class="mi">15</span><span class="o">/</span><span class="mi">02</span><span class="o">/</span><span class="mi">2019</span><span class="p">;</span>
+</pre></div>
+</div>
+</section>
+<section id="gradients-and-fluxes">
+<h3>Gradients and fluxes<a class="headerlink" href="#gradients-and-fluxes" title="Link to this heading">#</a></h3>
+<p>Generic behaviors relate pairs of gradients and fluxes. Gradients and
+fluxes are declared independently but the first declared gradient is
+assumed to be conjugated with the first declared fluxes and so on…</p>
+<p>The temperature gradient is declared as follows (note that Unicode characters are supported):</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>@Gradient TemperatureGradient ∇T;
+∇T.setGlossaryName(&quot;TemperatureGradient&quot;);
+</pre></div>
+</div>
+<p>Note that we associated to <code class="docutils literal notranslate"><span class="pre">∇T</span></code> the glossary name <code class="docutils literal notranslate"><span class="pre">TemperatureGradient</span></code>.
+This is helpful for the calling code.</p>
+<p>After this declaration, the following variables will be defined:</p>
+<ul class="simple">
+<li><p>The temperature gradient <code class="docutils literal notranslate"><span class="pre">∇T</span></code> at the beginning of the time step.</p></li>
+<li><p>The increment of the temperature gradient <code class="docutils literal notranslate"><span class="pre">Δ∇T</span></code> over the time step.</p></li>
+</ul>
+<p>The heat flux is then declared as follows:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="nd">@Flux</span> <span class="n">HeatFlux</span> <span class="n">j</span><span class="p">;</span>
+<span class="n">j</span><span class="o">.</span><span class="n">setGlossaryName</span><span class="p">(</span><span class="s2">&quot;HeatFlux&quot;</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>In the following code blocks, <code class="docutils literal notranslate"><span class="pre">j</span></code> will be the heat flux at the end of
+the time step.</p>
+</section>
+<section id="tangent-operator-blocks">
+<h3>Tangent operator blocks<a class="headerlink" href="#tangent-operator-blocks" title="Link to this heading">#</a></h3>
+<p>By default, the derivatives of the gradients with respect to the fluxes
+are declared. Thus the variable <code class="docutils literal notranslate"><span class="pre">∂j∕∂Δ∇T</span></code> is automatically declared.</p>
+<p>However, as discussed in the next section, the consistent linearisation
+of the thermal equilibrium requires to return the derivate of the heat
+flux with respect to the increment of the temperature (or equivalently
+with respect to the temperature at the end of the time step).</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>@AdditionalTangentOperatorBlock ∂j∕∂ΔT;
+</pre></div>
+</div>
+</section>
+<section id="parameters">
+<h3>Parameters<a class="headerlink" href="#parameters" title="Link to this heading">#</a></h3>
+<p>The <code class="docutils literal notranslate"><span class="pre">A</span></code> and <code class="docutils literal notranslate"><span class="pre">B</span></code> coefficients that appears in the definition of the
+thermal conductivity are declared as parameters:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="nd">@Parameter</span> <span class="n">real</span> <span class="n">A</span> <span class="o">=</span> <span class="mf">0.0375</span><span class="p">;</span>
+<span class="nd">@Parameter</span> <span class="n">real</span> <span class="n">B</span> <span class="o">=</span> <span class="mf">2.165e-4</span><span class="p">;</span>
+</pre></div>
+</div>
+<p>Parameters are stored globally and can be modified from the calling
+solver or from <code class="docutils literal notranslate"><span class="pre">python</span></code> in the case of the coupling with <code class="docutils literal notranslate"><span class="pre">FEniCS</span></code>
+discussed below.</p>
+</section>
+<section id="local-variable">
+<h3>Local variable<a class="headerlink" href="#local-variable" title="Link to this heading">#</a></h3>
+<p>A local variable is accessible in each code blocks.</p>
+<p>Here, we declare the thermal conductivity <code class="docutils literal notranslate"><span class="pre">k</span></code> as a local variable in
+order to be able to compute its value during the behavior integration
+and to reuse this value when computing the tangent operator.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="nd">@LocalVariable</span> <span class="n">thermalconductivity</span> <span class="n">k</span><span class="p">;</span>
+</pre></div>
+</div>
+</section>
+<section id="integration-of-the-behavior">
+<h3>Integration of the behavior<a class="headerlink" href="#integration-of-the-behavior" title="Link to this heading">#</a></h3>
+<p>The behavior integration is straightforward: one starts to compute the
+temperature at the end of the time step, then we compute the thermal
+conductivity (at the end of the time step) and the heat flux using the
+temperature gradient (at the end of the time step).</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>@Integrator{
+  // temperature at the end of the time step
+  const auto T_ = T + ΔT;
+  // thermal conductivity
+  k = 1 / (A + B ⋅ T_);
+  // heat flux
+  j = -k ⋅ (∇T + Δ∇T);
+} // end of @Integrator
+</pre></div>
+</div>
+</section>
+<section id="tangent-operator">
+<h3>Tangent operator<a class="headerlink" href="#tangent-operator" title="Link to this heading">#</a></h3>
+<p>The computation of the tangent operator blocks is equally simple:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>@TangentOperator {
+  ∂j∕∂Δ∇T = -k ⋅ tmatrix&lt;N, N, real&gt;::Id();
+  ∂j∕∂ΔT  =  B ⋅ k ⋅ k ⋅ (∇T + Δ∇T);
+} // end of @TangentOperator 
+</pre></div>
+</div>
+</section>
+</section>
+<section id="fenicsx-implementation">
+<h2><code class="docutils literal notranslate"><span class="pre">FEniCSx</span></code> implementation<a class="headerlink" href="#fenicsx-implementation" title="Link to this heading">#</a></h2>
+<p>We consider a rectanglar domain with imposed temperatures <code class="docutils literal notranslate"><span class="pre">Tl</span></code> (resp. <code class="docutils literal notranslate"><span class="pre">Tr</span></code>) on the left (resp. right) boundaries. We want to solve for the temperature field <code class="docutils literal notranslate"><span class="pre">T</span></code> inside the domain using a <span class="math notranslate nohighlight">\(P^1\)</span>-interpolation. We initialize the temperature at value <code class="docutils literal notranslate"><span class="pre">Tl</span></code> throughout the domain.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="kn">import</span> <span class="nn">ufl</span>
+<span class="kn">from</span> <span class="nn">mpi4py</span> <span class="kn">import</span> <span class="n">MPI</span>
+<span class="kn">from</span> <span class="nn">dolfinx</span> <span class="kn">import</span> <span class="n">fem</span><span class="p">,</span> <span class="n">mesh</span>
+<span class="kn">from</span> <span class="nn">dolfinx.cpp.nls.petsc</span> <span class="kn">import</span> <span class="n">NewtonSolver</span>
+<span class="kn">from</span> <span class="nn">dolfinx_materials.quadrature_map</span> <span class="kn">import</span> <span class="n">QuadratureMap</span>
+<span class="kn">from</span> <span class="nn">dolfinx_materials.solvers</span> <span class="kn">import</span> <span class="n">NonlinearMaterialProblem</span>
+<span class="kn">from</span> <span class="nn">dolfinx_materials.material.mfront</span> <span class="kn">import</span> <span class="n">MFrontMaterial</span>
+<span class="kn">import</span> <span class="nn">os</span>
+
+
+<span class="n">current_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">()</span>
+
+<span class="n">length</span> <span class="o">=</span> <span class="mf">30e-3</span>
+<span class="n">width</span> <span class="o">=</span> <span class="mf">5.4e-3</span>
+<span class="n">domain</span> <span class="o">=</span> <span class="n">mesh</span><span class="o">.</span><span class="n">create_rectangle</span><span class="p">(</span><span class="n">MPI</span><span class="o">.</span><span class="n">COMM_WORLD</span><span class="p">,</span> <span class="p">[(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">),</span> <span class="p">(</span><span class="n">length</span><span class="p">,</span> <span class="n">width</span><span class="p">)],</span> <span class="p">[</span><span class="mi">100</span><span class="p">,</span> <span class="mi">10</span><span class="p">])</span>
+
+<span class="n">V</span> <span class="o">=</span> <span class="n">fem</span><span class="o">.</span><span class="n">functionspace</span><span class="p">(</span><span class="n">domain</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;CG&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+<span class="n">T</span> <span class="o">=</span> <span class="n">fem</span><span class="o">.</span><span class="n">Function</span><span class="p">(</span><span class="n">V</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;Temperature&quot;</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">left</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">isclose</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">0</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">right</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">isclose</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">length</span><span class="p">)</span>
+
+
+<span class="n">Tl</span> <span class="o">=</span> <span class="mf">300.0</span>
+<span class="n">Tr</span> <span class="o">=</span> <span class="mf">800.0</span>
+<span class="n">T</span><span class="o">.</span><span class="n">vector</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">Tl</span><span class="p">)</span>
+
+<span class="n">left_dofs</span> <span class="o">=</span> <span class="n">fem</span><span class="o">.</span><span class="n">locate_dofs_geometrical</span><span class="p">(</span><span class="n">V</span><span class="p">,</span> <span class="n">left</span><span class="p">)</span>
+<span class="n">right_dofs</span> <span class="o">=</span> <span class="n">fem</span><span class="o">.</span><span class="n">locate_dofs_geometrical</span><span class="p">(</span><span class="n">V</span><span class="p">,</span> <span class="n">right</span><span class="p">)</span>
+
+<span class="n">bcs</span> <span class="o">=</span> <span class="p">[</span><span class="n">fem</span><span class="o">.</span><span class="n">dirichletbc</span><span class="p">(</span><span class="n">Tl</span><span class="p">,</span> <span class="n">left_dofs</span><span class="p">,</span> <span class="n">V</span><span class="p">),</span> <span class="n">fem</span><span class="o">.</span><span class="n">dirichletbc</span><span class="p">(</span><span class="n">Tr</span><span class="p">,</span> <span class="n">right_dofs</span><span class="p">,</span> <span class="n">V</span><span class="p">)]</span>
+</pre></div>
+</div>
+</div>
+</div>
+<section id="loading-the-material-behavior">
+<h3>Loading the material behavior<a class="headerlink" href="#loading-the-material-behavior" title="Link to this heading">#</a></h3>
+<p>We use the <code class="docutils literal notranslate"><span class="pre">MFrontMaterial</span></code> class for describing the material behavior. The first argument corresponds to the path where material libraries have been compiled, the second correspond to the name of the behavior (declared with <code class="docutils literal notranslate"><span class="pre">&#64;Behaviour</span></code>). Finally, the modelling hypothesis is specified (default behavior is <code class="docutils literal notranslate"><span class="pre">&quot;3d&quot;</span></code>).</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">material</span> <span class="o">=</span> <span class="n">MFrontMaterial</span><span class="p">(</span>
+    <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">current_path</span><span class="p">,</span> <span class="s2">&quot;src/libBehaviour.so&quot;</span><span class="p">),</span>
+    <span class="s2">&quot;StationaryHeatTransfer&quot;</span><span class="p">,</span>
+    <span class="n">hypothesis</span><span class="o">=</span><span class="s2">&quot;plane_strain&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<p>The <code class="docutils literal notranslate"><span class="pre">MFront</span></code> behavior declares the field <code class="docutils literal notranslate"><span class="pre">&quot;TemperatureGradient&quot;</span></code> as a Gradient variable, with its associated Flux called <code class="docutils literal notranslate"><span class="pre">&quot;HeatFlux&quot;</span></code>. We can check that the <code class="docutils literal notranslate"><span class="pre">material</span></code> object retrieves <code class="docutils literal notranslate"><span class="pre">MFront</span></code>’s gradient and flux names, as well as the different tangent operator blocks which have been defined, namely <code class="docutils literal notranslate"><span class="pre">dj_ddgT</span></code> and <code class="docutils literal notranslate"><span class="pre">dj_ddT</span></code> in the present case:</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="n">material</span><span class="o">.</span><span class="n">gradients</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">material</span><span class="o">.</span><span class="n">fluxes</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">([</span><span class="s2">&quot;d</span><span class="si">{}</span><span class="s2">_d</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="o">*</span><span class="n">t</span><span class="p">)</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">material</span><span class="o">.</span><span class="n">tangent_blocks</span><span class="p">])</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>{&#39;TemperatureGradient&#39;: 2}
+{&#39;HeatFlux&#39;: 2}
+[&#39;dHeatFlux_dTemperatureGradient&#39;, &#39;dHeatFlux_dTemperature&#39;]
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="non-linear-problem-definition">
+<h3>Non-linear problem definition<a class="headerlink" href="#non-linear-problem-definition" title="Link to this heading">#</a></h3>
+<p>We now define the non-linear residual form that we want to solve. After defining test and trial functions, we instantiate the <code class="docutils literal notranslate"><span class="pre">QuadratureMap</span></code> object which will handle the <em>black-box</em> constitutive equation based on the <code class="docutils literal notranslate"><span class="pre">material</span></code> object. We must provide the requested quadrature degree which will control the number of quadrature points used in each cell to compute the non-linear constitutive law. Here, we specify a quadrature of degree 2 (i.e. 3 Gauss points for a triangular element).</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">T_</span> <span class="o">=</span> <span class="n">ufl</span><span class="o">.</span><span class="n">TestFunction</span><span class="p">(</span><span class="n">V</span><span class="p">)</span>
+<span class="n">dT</span> <span class="o">=</span> <span class="n">ufl</span><span class="o">.</span><span class="n">TrialFunction</span><span class="p">(</span><span class="n">V</span><span class="p">)</span>
+
+<span class="n">deg_quad</span> <span class="o">=</span> <span class="mi">2</span>
+<span class="n">qmap</span> <span class="o">=</span> <span class="n">QuadratureMap</span><span class="p">(</span><span class="n">domain</span><span class="p">,</span> <span class="n">deg_quad</span><span class="p">,</span> <span class="n">material</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<section id="variable-registration">
+<h4>Variable registration<a class="headerlink" href="#variable-registration" title="Link to this heading">#</a></h4>
+<p>The <code class="docutils literal notranslate"><span class="pre">MFront</span></code> behavior implicitly declares the temperature as an external state variable called <code class="docutils literal notranslate"><span class="pre">&quot;Temperature&quot;</span></code>. We must therefore associate this external state variable to a known mechanical field. This can be achieved explicitly using the <code class="docutils literal notranslate"><span class="pre">register_external_state_variable</span></code> method.</p>
+<p>For problems in which the temperature only acts as a parameter (no jacobian blocks with respect to the temperature), the temperature can be automatically registered as a constant value (<span class="math notranslate nohighlight">\(293.15 \text{ K}\)</span> by default) or to any other (<code class="docutils literal notranslate"><span class="pre">dolfin.Constant</span></code>, <code class="docutils literal notranslate"><span class="pre">float</span></code> or <code class="docutils literal notranslate"><span class="pre">dolfin.Function</span></code>) value using the <code class="docutils literal notranslate"><span class="pre">register_external_state_variable</span></code> method.</p>
+<p>Finally, we need to associate to <code class="docutils literal notranslate"><span class="pre">MFront</span></code> gradient object the corresponding UFL expression as a function of the unknown field <code class="docutils literal notranslate"><span class="pre">T</span></code>. To do so, we use the <code class="docutils literal notranslate"><span class="pre">register_gradient</span></code> method linking <code class="docutils literal notranslate"><span class="pre">MFront</span></code> <code class="docutils literal notranslate"><span class="pre">&quot;TemperatureGradient&quot;</span></code> object to the UFL expression <code class="docutils literal notranslate"><span class="pre">grad(T)</span></code>.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">qmap</span><span class="o">.</span><span class="n">register_external_state_variable</span><span class="p">(</span><span class="s2">&quot;Temperature&quot;</span><span class="p">,</span> <span class="n">T</span><span class="p">)</span>
+<span class="n">qmap</span><span class="o">.</span><span class="n">register_gradient</span><span class="p">(</span><span class="s2">&quot;TemperatureGradient&quot;</span><span class="p">,</span> <span class="n">ufl</span><span class="o">.</span><span class="n">grad</span><span class="p">(</span><span class="n">T</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="nonlinear-variational-formulation">
+<h4>Nonlinear variational formulation<a class="headerlink" href="#nonlinear-variational-formulation" title="Link to this heading">#</a></h4>
+<p>We are now in position of defining the nonlinear variational formulation corresponding to the stationary nonlinear heat transfer. Without any external loading, the nonlinear residual reads as:</p>
+<div class="amsmath math notranslate nohighlight" id="equation-9648be89-6642-4453-a2da-7f839f339c79">
+<span class="eqno">(8)<a class="headerlink" href="#equation-9648be89-6642-4453-a2da-7f839f339c79" title="Permalink to this equation">#</a></span>\[\begin{equation}
+F(\widehat{T}) = \int_\Omega \mathbf{j}\cdot \nabla \widehat{T} \text{dx} = 0 \quad \forall \widehat{T}
+\end{equation}\]</div>
+<p>where the heat flux <span class="math notranslate nohighlight">\(\mathbf{j}\)</span> is provided by the <code class="docutils literal notranslate"><span class="pre">QuadratureMap</span></code> as a flux. The latter is a <code class="docutils literal notranslate"><span class="pre">dolfinx</span></code> function defined on <code class="docutils literal notranslate"><span class="pre">Quadrature</span></code> function space (no interpolation is possible). Note that the integration measure must match the chosen quadrature scheme and quadrature degree. It is provided here as <code class="docutils literal notranslate"><span class="pre">qmap.dx</span></code>.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">qmap.derivative</span></code> function works similarly to the standard <code class="docutils literal notranslate"><span class="pre">ufl.derivative</span></code> function except that it will also differentiate the heat flux. From the two tangent operator blocks <code class="docutils literal notranslate"><span class="pre">dj_ddgT</span></code> and <code class="docutils literal notranslate"><span class="pre">dj_ddT</span></code>, it will automatically be deduced that the heat flux <span class="math notranslate nohighlight">\(\mathbf{j}\)</span> is a function of both the temperature gradient <span class="math notranslate nohighlight">\(\mathbf{g}=\nabla T\)</span> and the temperature itself i.e. <span class="math notranslate nohighlight">\(\mathbf{j}=\mathbf{j}(\mathbf{g}, T)\)</span>. Hence, the computed Jacobian form will be:</p>
+<div class="amsmath math notranslate nohighlight" id="equation-430241ad-9881-4cd4-9eb9-e3225d7cc5c6">
+<span class="eqno">(9)<a class="headerlink" href="#equation-430241ad-9881-4cd4-9eb9-e3225d7cc5c6" title="Permalink to this equation">#</a></span>\[\begin{equation}
+J(\widehat{T},T^*) = \int_{\Omega} \nabla \widehat{T}\cdot\left(\dfrac{\partial \mathbf{j}}{\partial \mathbf{g}}\cdot \nabla T^*+\dfrac{\partial \mathbf{j}}{\partial T}\cdot T^*\right) \text{dx}
+\end{equation}\]</div>
+<p>The resulting nonlinear problem is managed by the <code class="docutils literal notranslate"><span class="pre">NonlinearMaterialProblem</span></code> class. It is solved using a Newton non-linear solver. The <code class="docutils literal notranslate"><span class="pre">solve</span></code> method returns the converged status and the number of Newton iterations.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">j</span> <span class="o">=</span> <span class="n">qmap</span><span class="o">.</span><span class="n">fluxes</span><span class="p">[</span><span class="s2">&quot;HeatFlux&quot;</span><span class="p">]</span>
+
+<span class="n">F</span> <span class="o">=</span> <span class="n">ufl</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">j</span><span class="p">,</span> <span class="n">ufl</span><span class="o">.</span><span class="n">grad</span><span class="p">(</span><span class="n">T_</span><span class="p">))</span> <span class="o">*</span> <span class="n">qmap</span><span class="o">.</span><span class="n">dx</span>
+<span class="n">Jac</span> <span class="o">=</span> <span class="n">qmap</span><span class="o">.</span><span class="n">derivative</span><span class="p">(</span><span class="n">F</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">dT</span><span class="p">)</span>
+
+<span class="n">problem</span> <span class="o">=</span> <span class="n">NonlinearMaterialProblem</span><span class="p">(</span><span class="n">qmap</span><span class="p">,</span> <span class="n">F</span><span class="p">,</span> <span class="n">Jac</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">bcs</span><span class="p">)</span>
+
+<span class="n">newton</span> <span class="o">=</span> <span class="n">NewtonSolver</span><span class="p">(</span><span class="n">MPI</span><span class="o">.</span><span class="n">COMM_WORLD</span><span class="p">)</span>
+
+<span class="n">converged</span><span class="p">,</span> <span class="n">it</span> <span class="o">=</span> <span class="n">problem</span><span class="o">.</span><span class="n">solve</span><span class="p">(</span><span class="n">newton</span><span class="p">)</span>
+
+<span class="c1"># Problem is weakly nonlinear, it should converge in a few iterations</span>
+<span class="k">assert</span> <span class="n">converged</span> <span class="ow">and</span> <span class="n">it</span> <span class="o">&lt;</span> <span class="mi">10</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Solution reached in 4 iterations.
+</pre></div>
+</div>
+</div>
+</div>
+<p>We finally check that the thermal conductivity coefficient <span class="math notranslate nohighlight">\(k\)</span>, computed from the ratio between the horizontal heat flux and temperature gradient matches the temperature-dependent expressions implemented in the <code class="docutils literal notranslate"><span class="pre">MFront</span></code> behavior.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">j_vals</span> <span class="o">=</span> <span class="n">j</span><span class="o">.</span><span class="n">vector</span><span class="o">.</span><span class="n">array</span>
+<span class="n">g_vals</span> <span class="o">=</span> <span class="n">qmap</span><span class="o">.</span><span class="n">gradients</span><span class="p">[</span><span class="s2">&quot;TemperatureGradient&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">function</span><span class="o">.</span><span class="n">vector</span><span class="o">.</span><span class="n">array</span>
+<span class="n">k_gauss</span> <span class="o">=</span> <span class="o">-</span><span class="n">j_vals</span><span class="p">[::</span><span class="mi">2</span><span class="p">]</span> <span class="o">/</span> <span class="n">g_vals</span><span class="p">[::</span><span class="mi">2</span><span class="p">]</span>
+<span class="n">T_gauss</span> <span class="o">=</span> <span class="n">qmap</span><span class="o">.</span><span class="n">external_state_variables</span><span class="p">[</span><span class="s2">&quot;Temperature&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">function</span><span class="o">.</span><span class="n">vector</span><span class="o">.</span><span class="n">array</span>
+<span class="n">A</span> <span class="o">=</span> <span class="n">material</span><span class="o">.</span><span class="n">get_parameter</span><span class="p">(</span><span class="s2">&quot;A&quot;</span><span class="p">)</span>
+<span class="n">B</span> <span class="o">=</span> <span class="n">material</span><span class="o">.</span><span class="n">get_parameter</span><span class="p">(</span><span class="s2">&quot;B&quot;</span><span class="p">)</span>
+<span class="n">k_ref</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">/</span> <span class="p">(</span><span class="n">A</span> <span class="o">+</span> <span class="n">B</span> <span class="o">*</span> <span class="n">T_gauss</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">T_gauss</span><span class="p">,</span> <span class="n">k_gauss</span><span class="p">,</span> <span class="s2">&quot;o&quot;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;FE&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">T_gauss</span><span class="p">,</span> <span class="n">k_ref</span><span class="p">,</span> <span class="s2">&quot;.&quot;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;ref&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;Temperature $T\: (K)$&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;Thermal conductivity $k\: (W.m^{-1}.K^{-1})$&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<img alt="../../../_images/2e188871a47fd8584d45484ad05eeab64e1a25d955097ba6afa7217284ef7a25.png" src="../../../_images/2e188871a47fd8584d45484ad05eeab64e1a25d955097ba6afa7217284ef7a25.png" />
+</div>
+</div>
+</section>
+</section>
+</section>
+</section>
+
+    <script type="text/x-thebe-config">
+    {
+        requestKernel: true,
+        binderOptions: {
+            repo: "binder-examples/jupyter-stacks-datascience",
+            ref: "master",
+        },
+        codeMirrorConfig: {
+            theme: "abcdef",
+            mode: "python"
+        },
+        kernelOptions: {
+            name: "python3",
+            path: "./demos/mfront/heat_transfer"
+        },
+        predefinedOutput: true
+    }
+    </script>
+    <script>kernelName = 'python3'</script>
+
+                </article>
+              
+
+              
+              
+              
+              
+                <footer class="prev-next-footer">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="../../elastoplasticity/plane_elastoplasticity.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Plane elastoplasticity</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="phase_change.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Transient heat equation with phase change</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+  <div class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> Contents
+  </div>
+  <nav class="bd-toc-nav page-toc">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#description-of-the-non-linear-constitutive-heat-transfer-law">Description of the non-linear constitutive heat transfer law</a><ul class="visible nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#expression-of-the-thermal-conductivity">Expression of the thermal conductivity</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#derivatives">Derivatives</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#mfront-implementation"><code class="docutils literal notranslate"><span class="pre">MFront</span></code>’ implementation</a><ul class="visible nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#choice-of-the-the-domain-specific-language">Choice of the the domain specific language</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#some-metadata">Some metadata</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#gradients-and-fluxes">Gradients and fluxes</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#tangent-operator-blocks">Tangent operator blocks</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#parameters">Parameters</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#local-variable">Local variable</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#integration-of-the-behavior">Integration of the behavior</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#tangent-operator">Tangent operator</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#fenicsx-implementation"><code class="docutils literal notranslate"><span class="pre">FEniCSx</span></code> implementation</a><ul class="visible nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#loading-the-material-behavior">Loading the material behavior</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#non-linear-problem-definition">Non-linear problem definition</a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#variable-registration">Variable registration</a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#nonlinear-variational-formulation">Nonlinear variational formulation</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+<div class="bd-footer-content__inner container">
+  
+  <div class="footer-item">
+    
+<p class="component-author">
+By Jeremy Bleyer
+</p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+</div>
+          </footer>
+        
+
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../../../_static/scripts/bootstrap.js?digest=8d27b9dea8ad943066ae"></script>
+<script src="../../../_static/scripts/pydata-sphinx-theme.js?digest=8d27b9dea8ad943066ae"></script>
+
+  <footer class="bd-footer">
+  </footer>
+  </body>
+</html>
