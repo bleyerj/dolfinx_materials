@@ -4,6 +4,10 @@ from dolfinx_materials.material.jax import JAXMaterial, tangent_AD, JAXNewton
 from .tensors import dev, to_mat
 
 
+def von_Mises_stress(sig):
+    return jnp.sqrt(3 / 2.0) * jnp.linalg.norm(dev(sig))
+
+
 def Hosford_stress(sig, a=10):
     sI = jnp.linalg.eigh(to_mat(sig))[0]
     return (
@@ -17,18 +21,12 @@ def Hosford_stress(sig, a=10):
     ) ** (1 / a)
 
 
-equivalent_norms = {
-    "von_Mises": lambda sig: jnp.sqrt(3 / 2.0) * jnp.linalg.norm(dev(sig)),
-    "Hosford": Hosford_stress,
-}
-
-
 class vonMisesIsotropicHardening(JAXMaterial):
     def __init__(self, elastic_model, yield_stress):
         super().__init__()
         self.elastic_model = elastic_model
         self.yield_stress = yield_stress
-        self.equivalent_norm = equivalent_norms["von_Mises"]
+        self.equivalent_stress = von_Mises_stress
 
     @property
     def internal_state_variables(self):
@@ -45,7 +43,7 @@ class vonMisesIsotropicHardening(JAXMaterial):
         C = self.elastic_model.C
         sig_el = sig_old + C @ deps
         sig_Y_old = self.yield_stress(p_old)
-        sig_eq_el = jnp.clip(self.equivalent_norm(sig_el), a_min=1e-8)
+        sig_eq_el = jnp.clip(self.equivalent_stress(sig_el), a_min=1e-8)
         n_el = dev(sig_el) / sig_eq_el
         yield_criterion = sig_eq_el - sig_Y_old
 
@@ -83,18 +81,15 @@ class vonMisesIsotropicHardening(JAXMaterial):
 
 class GeneralIsotropicHardening(JAXMaterial):
 
-    def __init__(self, elastic_model, yield_stress, norm_type="vonMises"):
+    def __init__(self, elastic_model, yield_stress, equivalent_stress):
         super().__init__()
         self.elastic_model = elastic_model
         self.yield_stress = yield_stress
-        self.equivalent_norm = equivalent_norms[norm_type]
+        self.equivalent_stress = equivalent_stress
 
     @property
     def internal_state_variables(self):
-        return {
-            "p": 1,
-            "eps_p": 6,
-        }
+        return {"p": 1}
 
     @tangent_AD
     def constitutive_update(self, eps, state, dt):
@@ -107,22 +102,18 @@ class GeneralIsotropicHardening(JAXMaterial):
         C = self.elastic_model.C
         sig_el = sig_old + C @ deps
         sig_Y_old = self.yield_stress(p_old)
-        sig_eq_el = jnp.clip(self.equivalent_norm(sig_el), a_min=1e-8)
-
+        sig_eq_el = jnp.clip(self.equivalent_stress(sig_el), a_min=1e-8)
         yield_criterion = sig_eq_el - sig_Y_old
 
         def stress(deps_p):
             return sig_old + C @ (deps - dev(deps_p))
 
-        # normal = jax.jacfwd(self.equivalent_norm)
-        def normal(sig):
-            sig_eq = jnp.clip(self.equivalent_norm(sig), a_min=1e-8)
-            return 3 / 2 * dev(sig) / sig_eq
+        normal = jax.jacfwd(self.equivalent_stress)
 
         def r_p(dx):
             deps_p = dx[:-1]
             dp = dx[-1]
-            sig_eq = self.equivalent_norm(stress(deps_p))
+            sig_eq = self.equivalent_stress(stress(deps_p))
             r_elastic = lambda dp: dp
             r_plastic = lambda dp: sig_eq - self.yield_stress(p_old + dp)
             return jax.lax.cond(yield_criterion < 0.0, r_elastic, r_plastic, dp)
@@ -150,5 +141,4 @@ class GeneralIsotropicHardening(JAXMaterial):
         state["Strain"] += deps
         state["p"] += dp
         state["Stress"] = sig
-        # state["eps_p"] += deps_p
         return sig, state

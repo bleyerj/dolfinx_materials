@@ -31,20 +31,21 @@ def test_elastoplastic(Nbatch):
 
     plt.figure()
     for t in np.linspace(0, 1.0, 50):
-        # print(t)
-        G = 2 * mu
-        GH = H / np.sqrt(3)
-        sig_th = G * eps * t
-        k0 = sig0 / np.sqrt(3)
-        if abs(sig_th) > k0:
-            sig_th = k0 + G * GH / (G + GH) * (eps * t - k0 / G)
         with Timer("Integration"):
             sig, isv, Ct = material.integrate(t * Eps)
-            print(isv)
         material.data_manager.update()
         plt.scatter(eps * t, sig[0, 3] / np.sqrt(2), color="b")
-        # plt.scatter(eps * t, sig_th, color="r")
-
+    while sig[0, 3] > 0:
+        t -= 1 / 50.0
+        sig, isv, Ct = material.integrate(t * Eps)
+        material.data_manager.update()
+        if sig[0, 3] < 0:
+            break
+        else:
+            plt.scatter(eps * t, sig[0, 3] / np.sqrt(2), color="b")
+    plt.xlabel(r"Shear strain $\varepsilon_{xy}$")
+    plt.ylabel(r"Shear stress $\sigma_{xy}$ [MPa]")
+    plt.savefig("elastoplastic_shear_1d.svg")
     plt.show()
 
 
@@ -108,6 +109,6 @@ def test_viscoelastic(Nbatch):
     plt.show()
 
 
-# test_elastoplastic(1)
+test_elastoplastic(1)
 
-test_elastic(10)
+# test_elastic(10)

@@ -3,6 +3,7 @@
 To go further in the implementation of complex behaviors using JAX, we now describe the implementation of elastoplastic behaviors. $\newcommand{\bsig}{\boldsymbol{\sigma}}
 \newcommand{\beps}{\boldsymbol{\varepsilon}}
 \newcommand{\bI}{\boldsymbol{I}}
+\newcommand{\bn}{\boldsymbol{n}}
 \newcommand{\CC}{\mathbb{C}}
 \newcommand{\bepsp}{\boldsymbol{\varepsilon}^\text{p}}
 \newcommand{\dev}{\operatorname{dev}}
@@ -13,7 +14,7 @@ To go further in the implementation of complex behaviors using JAX, we now descr
 
 ## von Mises plasticity with isotropic hardening
 
-We first consider the case of von Mises elastoplasticity with a general nonlinear isotropic hardening.
+We first consider the case of von Mises elastoplasticity with a general nonlinear isotropic hardening. The corresponding evolution equations are recalled here.
 
 ### Elastoplastic evolution equations
 
@@ -27,7 +28,7 @@ The elastic behavior is linear isotropic:
 The yield condition is given by:
 ```{math}
 
- f(\bsig) = \sqrt{\frac{3}{2}\boldsymbol{s}:\boldsymbol{s}} - R(p) \leq 0
+ f(\bsig;p) = \sqrt{\frac{3}{2}\boldsymbol{s}:\boldsymbol{s}} - R(p) \leq 0
 ```
 where $\bs = \dev(\bsig)$ is the deviatoric stress and $R(p)$ is the yield strength. We also introduce the von Mises equivalent stress:
 ```{math}
@@ -97,6 +98,7 @@ $$
 ### JAX implementation
 
 To summarize, the JAX implementation will involve the following steps:
+
 - computing an elastic stress predictor
 - checking wether the yield criterion is exceeded or not
 - setting $\Delta p,\Delta_\bepsp=0$ if it is not attained
@@ -104,7 +106,7 @@ To summarize, the JAX implementation will involve the following steps:
 
 One key challenge here is the use of conditionals to distinguish elastic and plastic evolutions. Moreover, we will use the `tangent_AD` decorator to compute the tangent operator via AutoDiff.
 
-First, we load the necessary modules and functions. The `vonMisesIsotropicMaterial` takes as input a `LinearElasticModel` for the elastic part and a function `yield_stress` representing $R(p)$. We use the `dev` function from `tensors` to compute the deviatoric part of a 2nd-rank symmetric tensor. Finally, we declare the scalar equivalent strain $p$ as an internal state variables for this behavior. 
+First, we load the necessary modules and functions. The `vonMisesIsotropicMaterial` takes as input a `LinearElasticModel` for the elastic part and a function `yield_stress` representing $R(p)$. We use the `dev` function from `tensors` to compute the deviatoric part of a 2nd-rank symmetric tensor. Finally, we declare the scalar equivalent strain $p$ as an internal state variables for this behavior.
 
 ```python
 import jax
@@ -127,6 +129,7 @@ class vonMisesIsotropicHardening(JAXMaterial):
 ```{note}
 Since we restrict here to isotropic hardening, we do not need to store the history of $\bepsp$ in the state variables.
 ```
+
 In a second step, we implement the constitutive update, decorated with `tangent_AD`. The function must therefore provide the stress and the state as output and accepts the current strain `eps`, the previous state `state` and the time step as inputs.
 
 First, we retrieve the relevant state variables and we compute the elastic predictor stress `sig_el`.
@@ -193,4 +196,119 @@ Once $\Delta p$ has been solved for, we compute the final stress and update the 
         state["Stress"] = sig
         return sig, state
 ```
-% TODO: JAXNewton
+
+Simulating this behavior for a loading/unloading shear strain with an exponential harding law results in the following stress/strain curve.
+
+```{image} images/elastoplastic_shear_1d.svg
+:align: center
+:width: 500px
+```
+
+## Generic elastoplasticity with isotropic hardening
+
+In this section, we expand upon the previous section by considering a generic yield surface $f(\bsig;p) = \bar{\sigma}(\bsig) - R(p)$ instead of the specific von Mises surface. Here $\bar{\sigma}$ represents a chosen equivalent stress. For simplicity, we still consider a generic isotropic hardening function $R(p)$ and associated (normal) plastic flow rule. In discretized form, the latter reads:
+
+$$
+\Delta \bepsp = \Delta p \dfrac{\partial \bsig}{\partial \bsig} = \Delta p \bn
+$$
+where $\bn$ denotes the normal vector to the yield surface. This vector depends on the final stress state $\bsig$. This is the main difference with the von Mises case. As a consequence, the return mapping can no longer be written explicitly in terms of the elastic predictor. We must formulate a nonlinear system of equations involving both the cumulated plastic strain $p$ and the plastic strain tensor $\bepsp$.
+
+The `GeneralIsotropicHardening` class now depends on an elastic model, a yield stress function and a function implementing the chosen equivalent stress $\bar{\sigma}(\bsig)$.
+
+```python
+import jax
+import jax.numpy as jnp
+from dolfinx_materials.material.jax import JAXMaterial, tangent_AD, JAXNewton
+
+class GeneralIsotropicHardening(JAXMaterial):
+
+    def __init__(self, elastic_model, yield_stress, equivalent_stress):
+        super().__init__()
+        self.elastic_model = elastic_model
+        self.yield_stress = yield_stress
+        self.equivalent_stress = equivalent_stress
+
+    @property
+    def internal_state_variables(self):
+        return {"p": 1}
+```
+
+As before, we implement the constitutive update, decorated with `tangent_AD`. We first retrieve the relevant state variables and we compute the elastic predictor stress `sig_el`, the elastic equivalent stress $\bar(\bsig_\text{elas})$ and yield criterion predictor.
+
+```python
+    @tangent_AD
+    def constitutive_update(self, eps, state, dt):
+        eps_old = state["Strain"]
+
+        deps = eps - eps_old
+        p_old = state["p"][0]  # convert to scalar
+        sig_old = state["Stress"]
+
+        C = self.elastic_model.C
+        sig_el = sig_old + C @ deps
+        sig_Y_old = self.yield_stress(p_old)
+        sig_eq_el = jnp.clip(self.equivalent_stress(sig_el), a_min=1e-8)
+        yield_criterion = sig_eq_el - sig_Y_old
+```
+
+We define a function representing the final stress state as a function of the yet unknown plastic strain increment. To express the normality rule, we use JAX AD to compute the yield stress normal $\bn$ using `jax.jacfwd`.
+
+```python
+        def stress(deps_p):
+            return sig_old + C @ (deps - dev(deps_p))
+
+        normal = jax.jacfwd(self.equivalent_stress)
+```
+Now, we set up the system of nonlinear equations to be solved at the material point level. In the plastic evolution regime, the two equations correspond to the plastic flow rule and yield condition i.e.:
+
+$$
+\begin{align}
+r_p ( \Delta \bepsp, \Delta p) &= \bar{\sigma}(\bsig) - R(p_n+\Delta p) = 0\\
+r_{\Delta\bepsp}(\Delta\bepsp, \Delta p) &= \Delta\beps_p - \bn\Delta p = 0
+\end{align}
+$$
+
+ As before, we use `jax.lax.cond` to distinguish the plastic and elastic regimes and use trivial equations $r_p=\Delta p=0$ and $r_{\Delta\bepsp} = \Delta \bepsp = 0$ in the elastic regime.
+
+ The `JAXNewton` solver accepts a tuple of residual functions to define the system, each equation depending on the variable $x=(\Delta\bepsp, \Delta p)$.
+
+ ```python
+         def r_p(dx):
+            deps_p = dx[:-1]
+            dp = dx[-1]
+            sig_eq = self.equivalent_stress(stress(deps_p))
+            r_elastic = lambda dp: dp
+            r_plastic = lambda dp: sig_eq - self.yield_stress(p_old + dp)
+            return jax.lax.cond(yield_criterion < 0.0, r_elastic, r_plastic, dp)
+
+        def r_eps_p(dx):
+            deps_p = dx[:-1]
+            dp = dx[-1]
+
+            sig = stress(deps_p)
+            n = normal(sig)
+            r_elastic = lambda deps_p, dp: deps_p
+            r_plastic = lambda deps_p, dp: deps_p - n * dp
+            return jax.lax.cond(yield_criterion < 0.0, r_elastic, r_plastic, deps_p, dp)
+
+        newton = JAXNewton((r_eps_p, r_p))
+```
+
+Finally, the local Newton system is solved (the corresponding jacobian is computed via AD) and we update the stress and internal state variables.
+
+```python
+        x0 = jnp.zeros((7,))
+        x, res = newton.solve(x0)
+
+        depsp = x[:-1]
+        dp = x[-1]
+
+        sig = stress(depsp)
+
+        state["Strain"] += deps
+        state["p"] += dp
+        state["Stress"] = sig
+        return sig, state
+```
+
+For an illustrative application of this behavior, see [](/demos/elastoplasticity/Hosford_yield_surface.md).
