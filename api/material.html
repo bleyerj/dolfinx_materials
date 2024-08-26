@@ -32,7 +32,7 @@
     <link rel="stylesheet" type="text/css" href="../_static/styles/sphinx-book-theme.css?v=384b581d" />
     <link rel="stylesheet" type="text/css" href="../_static/togglebutton.css?v=13237357" />
     <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
-    <link rel="stylesheet" type="text/css" href="../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css?v=be8a1c11" />
     <link rel="stylesheet" type="text/css" href="../_static/sphinx-thebe.css?v=4fa983c6" />
     <link rel="stylesheet" type="text/css" href="../_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css?v=0a3b3ea7" />
   
@@ -60,6 +60,7 @@
     <script>DOCUMENTATION_OPTIONS.pagename = 'api/material';</script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="quadrature_map" href="quadrature_map.html" />
     <link rel="prev" title="&lt;no title&gt;" href="api.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
@@ -174,6 +175,12 @@
 <li class="toctree-l1"><a class="reference internal" href="../intro.html">General framework</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../jax.html">JAX implementation of material behaviors</a></li>
 </ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">JAX demos</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../jax_elastoplasticity.html">JAX implementation of elastoplasticity</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../demos/elastoplasticity/Hosford_yield_surface.html">Computing the Hosford plane stress yield surface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../demos/elastoplasticity/plane_elastoplasticity.html">Finite-element simulations of JAX elastoplasticity</a></li>
+</ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">MFront demos</span></p>
 <ul class="nav bd-sidenav">
 <li class="toctree-l1"><a class="reference internal" href="../demos/mfront/heat_transfer/nonlinear_heat_transfer.html">Stationary nonlinear heat transfer</a></li>
@@ -182,6 +189,8 @@
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">API</span></p>
 <ul class="current nav bd-sidenav">
 <li class="toctree-l1 current active"><a class="current reference internal" href="#"><code class="xref py py-mod docutils literal notranslate"><span class="pre">material</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="quadrature_map.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">quadrature_map</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="solvers.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">solvers</span></code></a></li>
 </ul>
 
     </div>
@@ -373,6 +382,15 @@ frame to the material frame. The matrix can be spatially variable
         <p class="prev-next-subtitle">previous</p>
         <p class="prev-next-title">&lt;no title&gt;</p>
       </div>
+    </a>
+    <a class="right-next"
+       href="quadrature_map.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title"><code class="xref py py-mod docutils literal notranslate"><span class="pre">quadrature_map</span></code></p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
     </a>
 </div>
                 </footer>

@@ -63,7 +63,7 @@
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
     <link rel="next" title="Transient heat equation with phase change" href="phase_change.html" />
-    <link rel="prev" title="Plane elastoplasticity" href="../../elastoplasticity/plane_elastoplasticity.html" />
+    <link rel="prev" title="Finite-element simulations of JAX elastoplasticity" href="../../elastoplasticity/plane_elastoplasticity.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   </head>
@@ -181,7 +181,7 @@
 <ul class="nav bd-sidenav">
 <li class="toctree-l1"><a class="reference internal" href="../../../jax_elastoplasticity.html">JAX implementation of elastoplasticity</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../elastoplasticity/Hosford_yield_surface.html">Computing the Hosford plane stress yield surface</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../elastoplasticity/plane_elastoplasticity.html">Plane elastoplasticity</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../elastoplasticity/plane_elastoplasticity.html">Finite-element simulations of JAX elastoplasticity</a></li>
 </ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">MFront demos</span></p>
 <ul class="current nav bd-sidenav">
@@ -191,6 +191,8 @@
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">API</span></p>
 <ul class="nav bd-sidenav">
 <li class="toctree-l1"><a class="reference internal" href="../../../api/material.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">material</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/quadrature_map.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">quadrature_map</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/solvers.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">solvers</span></code></a></li>
 </ul>
 
     </div>
@@ -598,14 +600,14 @@ temperature gradient (at the end of the time step).</p>
 <section id="nonlinear-variational-formulation">
 <h4>Nonlinear variational formulation<a class="headerlink" href="#nonlinear-variational-formulation" title="Link to this heading">#</a></h4>
 <p>We are now in position of defining the nonlinear variational formulation corresponding to the stationary nonlinear heat transfer. Without any external loading, the nonlinear residual reads as:</p>
-<div class="amsmath math notranslate nohighlight" id="equation-9648be89-6642-4453-a2da-7f839f339c79">
-<span class="eqno">(8)<a class="headerlink" href="#equation-9648be89-6642-4453-a2da-7f839f339c79" title="Permalink to this equation">#</a></span>\[\begin{equation}
+<div class="amsmath math notranslate nohighlight" id="equation-c843be91-6117-441c-be57-1395db1d3085">
+<span class="eqno">(8)<a class="headerlink" href="#equation-c843be91-6117-441c-be57-1395db1d3085" title="Permalink to this equation">#</a></span>\[\begin{equation}
 F(\widehat{T}) = \int_\Omega \mathbf{j}\cdot \nabla \widehat{T} \text{dx} = 0 \quad \forall \widehat{T}
 \end{equation}\]</div>
 <p>where the heat flux <span class="math notranslate nohighlight">\(\mathbf{j}\)</span> is provided by the <code class="docutils literal notranslate"><span class="pre">QuadratureMap</span></code> as a flux. The latter is a <code class="docutils literal notranslate"><span class="pre">dolfinx</span></code> function defined on <code class="docutils literal notranslate"><span class="pre">Quadrature</span></code> function space (no interpolation is possible). Note that the integration measure must match the chosen quadrature scheme and quadrature degree. It is provided here as <code class="docutils literal notranslate"><span class="pre">qmap.dx</span></code>.</p>
 <p>The <code class="docutils literal notranslate"><span class="pre">qmap.derivative</span></code> function works similarly to the standard <code class="docutils literal notranslate"><span class="pre">ufl.derivative</span></code> function except that it will also differentiate the heat flux. From the two tangent operator blocks <code class="docutils literal notranslate"><span class="pre">dj_ddgT</span></code> and <code class="docutils literal notranslate"><span class="pre">dj_ddT</span></code>, it will automatically be deduced that the heat flux <span class="math notranslate nohighlight">\(\mathbf{j}\)</span> is a function of both the temperature gradient <span class="math notranslate nohighlight">\(\mathbf{g}=\nabla T\)</span> and the temperature itself i.e. <span class="math notranslate nohighlight">\(\mathbf{j}=\mathbf{j}(\mathbf{g}, T)\)</span>. Hence, the computed Jacobian form will be:</p>
-<div class="amsmath math notranslate nohighlight" id="equation-430241ad-9881-4cd4-9eb9-e3225d7cc5c6">
-<span class="eqno">(9)<a class="headerlink" href="#equation-430241ad-9881-4cd4-9eb9-e3225d7cc5c6" title="Permalink to this equation">#</a></span>\[\begin{equation}
+<div class="amsmath math notranslate nohighlight" id="equation-2d86cb8f-c815-45d9-8176-ac483e7188aa">
+<span class="eqno">(9)<a class="headerlink" href="#equation-2d86cb8f-c815-45d9-8176-ac483e7188aa" title="Permalink to this equation">#</a></span>\[\begin{equation}
 J(\widehat{T},T^*) = \int_{\Omega} \nabla \widehat{T}\cdot\left(\dfrac{\partial \mathbf{j}}{\partial \mathbf{g}}\cdot \nabla T^*+\dfrac{\partial \mathbf{j}}{\partial T}\cdot T^*\right) \text{dx}
 \end{equation}\]</div>
 <p>The resulting nonlinear problem is managed by the <code class="docutils literal notranslate"><span class="pre">NonlinearMaterialProblem</span></code> class. It is solved using a Newton non-linear solver. The <code class="docutils literal notranslate"><span class="pre">solve</span></code> method returns the converged status and the number of Newton iterations.</p>
@@ -697,7 +699,7 @@ J(\widehat{T},T^*) = \int_{\Omega} \nabla \widehat{T}\cdot\left(\dfrac{\partial 
       <i class="fa-solid fa-angle-left"></i>
       <div class="prev-next-info">
         <p class="prev-next-subtitle">previous</p>
-        <p class="prev-next-title">Plane elastoplasticity</p>
+        <p class="prev-next-title">Finite-element simulations of JAX elastoplasticity</p>
       </div>
     </a>
     <a class="right-next"
