@@ -106,7 +106,6 @@ class LinearElasticIsotropic(JAXMaterial):
 
 For more details on the use of AD on JAX behaviors, see [](jax_elastoplasticity.md) and the [](demos/elastoplasticity/plane_elastoplasticity.md) demo.
 
-
 ## References
 
 ```{bibliography}
