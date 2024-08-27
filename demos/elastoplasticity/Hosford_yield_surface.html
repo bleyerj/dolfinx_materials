@@ -188,6 +188,11 @@
 <li class="toctree-l1"><a class="reference internal" href="../mfront/heat_transfer/nonlinear_heat_transfer.html">Stationary nonlinear heat transfer</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../mfront/heat_transfer/phase_change.html">Transient heat equation with phase change</a></li>
 </ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">CVXPY demos</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../../cvxpy.html">Convex optimization-based constitutive update</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../cvxpy/cvxpy_return_mapping.html">Computing yield surfaces</a></li>
+</ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">API</span></p>
 <ul class="nav bd-sidenav">
 <li class="toctree-l1"><a class="reference internal" href="../../api/material.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">material</span></code></a></li>
@@ -305,7 +310,7 @@ document.write(`
 <p>The Hosford yield surface is defined by:</p>
 <div class="math notranslate nohighlight">
 \[
-f(\bsig) = \sigma_\text{eq}^\text{H} - \sigma_0 = \left(|\sigma_I-\sigma_{II}|^a+|\sigma_I-\sigma_{III}|^a+|\sigma_{II}-\sigma_{III}|^a\right)^{1/a} - \sigma_0
+f(\bsig) = \sigma_\text{eq}^\text{H} - \sigma_0 = \left(\dfrac{1}{2}\left(|\sigma_I-\sigma_{II}|^a+|\sigma_I-\sigma_{III}|^a+|\sigma_{II}-\sigma_{III}|^a\right)\right)^{1/a} - \sigma_0
 \]</div>
 <p>where <span class="math notranslate nohighlight">\(\sigma_\text{eq}^\text{H}\)</span> is the Hosford equivalent stress associated with the shape parameter <span class="math notranslate nohighlight">\(a\)</span>. For <span class="math notranslate nohighlight">\(a=2\)</span>, this reduces to the von Mises norm and, for <span class="math notranslate nohighlight">\(a\to\infty\)</span>, we obtain the Tresca norm.</p>
 <p>We first define a <code class="docutils literal notranslate"><span class="pre">GeneralIsotropicHardening</span></code> JAX material without any hardening.</p>

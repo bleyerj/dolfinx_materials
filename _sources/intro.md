@@ -3,7 +3,7 @@
 The `dolfinx_materials` library aims at providing a general framework for using custom material behaviors within the `FEniCSx` PDE library.
 In particular, `ufl` and `dolfinx` limitations make it difficult to formulate complex material behaviors such as viscoelasticity, plasticity, damage or even some complex hyperelastic behaviors.
 
-The library expands upon previous implementations of user-defined constitutive models by providing a more general and extensible setting, targetting advanced implementation of material models including:
+The library expands upon previous implementations of user-defined constitutive models by providing a more general and extensible setting, targeting advanced implementation of material models including:
 
 - materials defined by internal state variables and a system of implicit equations
 - multi-physics behaviors not limited to mechanics e.g. thermo-hydro-mechanics models
@@ -46,7 +46,7 @@ $\newcommand{\bsig}{\boldsymbol{\sigma}}
 \newcommand{\Neumann}{{\partial \Omega_\text{N}}}
 \newcommand{\Dirichlet}{{\partial \Omega_\text{D}}}$
 
-In the following, we aim at solving a small-strain solid mechanics problem involving a general nonlinear constitutive behavior. Such a constitutive behavior will be see as generic black-box function. It expresses the stress $\bsig$ as a function of the total strain $\beps$, yielding the following nonlinear variational problem:
+In the following, we aim at solving a small-strain solid mechanics problem involving a general nonlinear constitutive behavior. Such a constitutive behavior will be seen as generic black-box function. It expresses the stress $\bsig$ as a function of the total strain $\beps$, yielding the following nonlinear variational problem:
 
 ```{math}
 :label: nonlinear-variational-model
@@ -71,10 +71,11 @@ where $\bsig_{n+1},\balpha_{n+1}$ are obtained by solving the following problem:
 ```{math}
 \bsig_{n+1}=\bsig(\beps_n+\Delta\beps,\balpha_{n+1}) \quad \text{s.t.}\quad F_n(\beps_n+\Delta\beps,\balpha_{n+1})=0
 ```
-given $\Delta\beps, \beps_n, \balpha_n$ and where $F_n$ denotes a time-discretized version of $F$ i.e. depending on $\balpha_n$ for instance. In the library, such an evolution will be managed by a concrete implementation of a `Material` object using, for instance, a third-party library. This constitutive update is therefore fully decoupled from the finite-element library which sees only $\bsig(\beps)$ as an abstract non-linear function.
+given $\Delta\beps, \beps_n, \balpha_n$ and where $F_n$ denotes a time-discretized version of $F$ i.e. depending on $\balpha_n$ for instance. For more details on the various discretization strategies and solving schemes, we refer to {cite:p}`simo2006computational`. In the `dolfinx_materials` library, such an evolution will be managed by a concrete implementation of a `Material` object using, for instance, a third-party library. This constitutive update is therefore fully decoupled from the finite-element library which sees only $\bsig(\beps)$ as an abstract non-linear function.
 
 
 ## Consistent tangent operator
+
 However, when solving the *global* variational problem {eq}`nonlinear-variational-model`, we generally use a *global* Newton-Raphson solver. The jacobian of this nonlinear problem involves the following tangent bilinear form:
 
 ```{math}
@@ -117,6 +118,20 @@ where $T_0$ is a reference temperature, $s$ the entropy per unit of mass and $\b
 
 In a fully coupled setting, $s,\bq$ and $\bsig$ are typically functions of the temperature $T$, the temperature gradient $\nabla T$ and the strain $\beps$. The same abstract constitutive mapping as in {eq}`constitutive-black-box` can therefore be considered by replacing the input with a set of *external state variables* (here the temperature $T$) and of *gradients* (here the temperature gradient $\nabla T$ and the strain $\beps$). The output of the constitutive equation is now a set of *fluxes* (here the heat flux $\bq$ and the stress $\bsig$) and of *internal state variables* (here the entropy). Again, to formulate a monolithic Newton method of this coupled system, various derivatives of outputs (fluxes + internal state variables) with respect to inputs (gradients and external state variables) should be provided by the material library. Finally, the heat and mechanics equations can also be solved in a staggered manner.
 
+```{seealso}
 For more details on such examples, we refer to the following MFront demos:
 - [Nonlinear heat transfer](/demos/mfront/heat_transfer/nonlinear_heat_transfer.md)
 - [Phase change](/demos/mfront/heat_transfer/phase_change.md)
+```
+
+## Computational aspects and Automatic Differentiation
+
+The constitutive update process involves solving a small, local system of nonlinear evolution equations at each integration point to update the material state. This process, even for complex models like crystal plasticity with hundreds of state variables, is highly parallelizable and computationally efficient compared to solving the global system of equations governing the entire structure. Since the constitutive update takes up only a small fraction of the total computational time, there is flexibility to use more complex and expressive material models without significantly impacting overall performance. This context presents a promising opportunity for the application of automatic differentiation. AD can streamline the development and implementation of these complex constitutive models by automatically generating the necessary derivatives for the nonlinear equations and the associated consistent tangent operators, improving accuracy and reducing the manual effort required for coding, debugging, and optimizing these models. Consequently, modern AD tools can further enhance the expressiveness and ease of implementation of advanced material models without sacrificing computational efficiency.
+
+However, attention should be paid as how to use AD in the context of constitutive modeling. For instance, performing AD on an unrolled version of the constitutive update program will not be efficient. The JAX section discusses various strategies, including custom differentiation using the implicit theorem to seamlessly perform AD on the constitutive update implementation.
+
+## References
+
+```{bibliography}
+:filter: docname in docnames
+```

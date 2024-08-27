@@ -188,6 +188,11 @@
 <li class="toctree-l1"><a class="reference internal" href="demos/mfront/heat_transfer/nonlinear_heat_transfer.html">Stationary nonlinear heat transfer</a></li>
 <li class="toctree-l1"><a class="reference internal" href="demos/mfront/heat_transfer/phase_change.html">Transient heat equation with phase change</a></li>
 </ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">CVXPY demos</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="cvxpy.html">Convex optimization-based constitutive update</a></li>
+<li class="toctree-l1"><a class="reference internal" href="demos/cvxpy/cvxpy_return_mapping.html">Computing yield surfaces</a></li>
+</ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">API</span></p>
 <ul class="nav bd-sidenav">
 <li class="toctree-l1"><a class="reference internal" href="api/material.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">material</span></code></a></li>
@@ -297,6 +302,8 @@ document.write(`
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#consistent-tangent-operator">Consistent tangent operator</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#finite-strain-setting">Finite-strain setting</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#generalized-behaviors">Generalized behaviors</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#computational-aspects-and-automatic-differentiation">Computational aspects and Automatic Differentiation</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#references">References</a></li>
 </ul>
             </nav>
         </div>
@@ -312,7 +319,7 @@ document.write(`
 <h1>General framework<a class="headerlink" href="#general-framework" title="Link to this heading">#</a></h1>
 <p>The <code class="docutils literal notranslate"><span class="pre">dolfinx_materials</span></code> library aims at providing a general framework for using custom material behaviors within the <code class="docutils literal notranslate"><span class="pre">FEniCSx</span></code> PDE library.
 In particular, <code class="docutils literal notranslate"><span class="pre">ufl</span></code> and <code class="docutils literal notranslate"><span class="pre">dolfinx</span></code> limitations make it difficult to formulate complex material behaviors such as viscoelasticity, plasticity, damage or even some complex hyperelastic behaviors.</p>
-<p>The library expands upon previous implementations of user-defined constitutive models by providing a more general and extensible setting, targetting advanced implementation of material models including:</p>
+<p>The library expands upon previous implementations of user-defined constitutive models by providing a more general and extensible setting, targeting advanced implementation of material models including:</p>
 <ul class="simple">
 <li><p>materials defined by internal state variables and a system of implicit equations</p></li>
 <li><p>multi-physics behaviors not limited to mechanics e.g. thermo-hydro-mechanics models</p></li>
@@ -353,7 +360,7 @@ In particular, <code class="docutils literal notranslate"><span class="pre">ufl<
 \newcommand{\dt}{\,\text{d}t}
 \newcommand{\Neumann}{{\partial \Omega_\text{N}}}
 \newcommand{\Dirichlet}{{\partial \Omega_\text{D}}}\)</span></p>
-<p>In the following, we aim at solving a small-strain solid mechanics problem involving a general nonlinear constitutive behavior. Such a constitutive behavior will be see as generic black-box function. It expresses the stress <span class="math notranslate nohighlight">\(\bsig\)</span> as a function of the total strain <span class="math notranslate nohighlight">\(\beps\)</span>, yielding the following nonlinear variational problem:</p>
+<p>In the following, we aim at solving a small-strain solid mechanics problem involving a general nonlinear constitutive behavior. Such a constitutive behavior will be seen as generic black-box function. It expresses the stress <span class="math notranslate nohighlight">\(\bsig\)</span> as a function of the total strain <span class="math notranslate nohighlight">\(\beps\)</span>, yielding the following nonlinear variational problem:</p>
 <div class="math notranslate nohighlight" id="equation-nonlinear-variational-model">
 <span class="eqno">(1)<a class="headerlink" href="#equation-nonlinear-variational-model" title="Link to this equation">#</a></span>\[\int_{\Omega} \bsig(\beps):\nabla^s \bv \dOm = \int_\Omega \boldsymbol{f}\cdot\bv \dOm + \int_{\partial \Omega_\text{N}} \bT\cdot\bv \dS \quad \forall\bv \in V\]</div>
 <p>In practice, the nonlinear function <span class="math notranslate nohighlight">\(\bsig(\beps)\)</span> is parameterized by material parameters and can also depend upon a set of variables which reflects the state and past history of the material. Such <strong>state</strong> consists of so-called <em>internal state variables</em> which may be plastic strains, viscous strains/stresses, damage, porosity, etc. We collect them in the global notation <span class="math notranslate nohighlight">\(\balpha\)</span>.</p>
@@ -366,7 +373,7 @@ In particular, <code class="docutils literal notranslate"><span class="pre">ufl<
 <p>where <span class="math notranslate nohighlight">\(\bsig_{n+1},\balpha_{n+1}\)</span> are obtained by solving the following problem:</p>
 <div class="math notranslate nohighlight">
 \[\bsig_{n+1}=\bsig(\beps_n+\Delta\beps,\balpha_{n+1}) \quad \text{s.t.}\quad F_n(\beps_n+\Delta\beps,\balpha_{n+1})=0\]</div>
-<p>given <span class="math notranslate nohighlight">\(\Delta\beps, \beps_n, \balpha_n\)</span> and where <span class="math notranslate nohighlight">\(F_n\)</span> denotes a time-discretized version of <span class="math notranslate nohighlight">\(F\)</span> i.e. depending on <span class="math notranslate nohighlight">\(\balpha_n\)</span> for instance. In the library, such an evolution will be managed by a concrete implementation of a <code class="docutils literal notranslate"><span class="pre">Material</span></code> object using, for instance, a third-party library. This constitutive update is therefore fully decoupled from the finite-element library which sees only <span class="math notranslate nohighlight">\(\bsig(\beps)\)</span> as an abstract non-linear function.</p>
+<p>given <span class="math notranslate nohighlight">\(\Delta\beps, \beps_n, \balpha_n\)</span> and where <span class="math notranslate nohighlight">\(F_n\)</span> denotes a time-discretized version of <span class="math notranslate nohighlight">\(F\)</span> i.e. depending on <span class="math notranslate nohighlight">\(\balpha_n\)</span> for instance. For more details on the various discretization strategies and solving schemes, we refer to <span id="id1">[<a class="reference internal" href="#id3" title="Juan C Simo and Thomas JR Hughes. Computational inelasticity. Volume 7. Springer Science &amp; Business Media, 2006.">Simo and Hughes, 2006</a>]</span>. In the <code class="docutils literal notranslate"><span class="pre">dolfinx_materials</span></code> library, such an evolution will be managed by a concrete implementation of a <code class="docutils literal notranslate"><span class="pre">Material</span></code> object using, for instance, a third-party library. This constitutive update is therefore fully decoupled from the finite-element library which sees only <span class="math notranslate nohighlight">\(\bsig(\beps)\)</span> as an abstract non-linear function.</p>
 </section>
 <section id="consistent-tangent-operator">
 <h2>Consistent tangent operator<a class="headerlink" href="#consistent-tangent-operator" title="Link to this heading">#</a></h2>
@@ -399,11 +406,30 @@ In particular, <code class="docutils literal notranslate"><span class="pre">ufl<
 \end{split}\]</div>
 <p>where <span class="math notranslate nohighlight">\(T_0\)</span> is a reference temperature, <span class="math notranslate nohighlight">\(s\)</span> the entropy per unit of mass and <span class="math notranslate nohighlight">\(\boldsymbol{q}\)</span> the heat flux.</p>
 <p>In a fully coupled setting, <span class="math notranslate nohighlight">\(s,\bq\)</span> and <span class="math notranslate nohighlight">\(\bsig\)</span> are typically functions of the temperature <span class="math notranslate nohighlight">\(T\)</span>, the temperature gradient <span class="math notranslate nohighlight">\(\nabla T\)</span> and the strain <span class="math notranslate nohighlight">\(\beps\)</span>. The same abstract constitutive mapping as in <a class="reference internal" href="#equation-constitutive-black-box">(2)</a> can therefore be considered by replacing the input with a set of <em>external state variables</em> (here the temperature <span class="math notranslate nohighlight">\(T\)</span>) and of <em>gradients</em> (here the temperature gradient <span class="math notranslate nohighlight">\(\nabla T\)</span> and the strain <span class="math notranslate nohighlight">\(\beps\)</span>). The output of the constitutive equation is now a set of <em>fluxes</em> (here the heat flux <span class="math notranslate nohighlight">\(\bq\)</span> and the stress <span class="math notranslate nohighlight">\(\bsig\)</span>) and of <em>internal state variables</em> (here the entropy). Again, to formulate a monolithic Newton method of this coupled system, various derivatives of outputs (fluxes + internal state variables) with respect to inputs (gradients and external state variables) should be provided by the material library. Finally, the heat and mechanics equations can also be solved in a staggered manner.</p>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
 <p>For more details on such examples, we refer to the following MFront demos:</p>
 <ul class="simple">
 <li><p><a class="reference internal" href="demos/mfront/heat_transfer/nonlinear_heat_transfer.html"><span class="std std-doc">Nonlinear heat transfer</span></a></p></li>
 <li><p><a class="reference internal" href="demos/mfront/heat_transfer/phase_change.html"><span class="std std-doc">Phase change</span></a></p></li>
 </ul>
+</div>
+</section>
+<section id="computational-aspects-and-automatic-differentiation">
+<h2>Computational aspects and Automatic Differentiation<a class="headerlink" href="#computational-aspects-and-automatic-differentiation" title="Link to this heading">#</a></h2>
+<p>The constitutive update process involves solving a small, local system of nonlinear evolution equations at each integration point to update the material state. This process, even for complex models like crystal plasticity with hundreds of state variables, is highly parallelizable and computationally efficient compared to solving the global system of equations governing the entire structure. Since the constitutive update takes up only a small fraction of the total computational time, there is flexibility to use more complex and expressive material models without significantly impacting overall performance. This context presents a promising opportunity for the application of automatic differentiation. AD can streamline the development and implementation of these complex constitutive models by automatically generating the necessary derivatives for the nonlinear equations and the associated consistent tangent operators, improving accuracy and reducing the manual effort required for coding, debugging, and optimizing these models. Consequently, modern AD tools can further enhance the expressiveness and ease of implementation of advanced material models without sacrificing computational efficiency.</p>
+<p>However, attention should be paid as how to use AD in the context of constitutive modeling. For instance, performing AD on an unrolled version of the constitutive update program will not be efficient. The JAX section discusses various strategies, including custom differentiation using the implicit theorem to seamlessly perform AD on the constitutive update implementation.</p>
+</section>
+<section id="references">
+<h2>References<a class="headerlink" href="#references" title="Link to this heading">#</a></h2>
+<div class="docutils container" id="id2">
+<div role="list" class="citation-list">
+<div class="citation" id="id3" role="doc-biblioentry">
+<span class="label"><span class="fn-bracket">[</span><a role="doc-backlink" href="#id1">SH06</a><span class="fn-bracket">]</span></span>
+<p>Juan C Simo and Thomas JR Hughes. <em>Computational inelasticity</em>. Volume 7. Springer Science &amp; Business Media, 2006.</p>
+</div>
+</div>
+</div>
 </section>
 </section>
 
@@ -475,6 +501,8 @@ In particular, <code class="docutils literal notranslate"><span class="pre">ufl<
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#consistent-tangent-operator">Consistent tangent operator</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#finite-strain-setting">Finite-strain setting</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#generalized-behaviors">Generalized behaviors</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#computational-aspects-and-automatic-differentiation">Computational aspects and Automatic Differentiation</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#references">References</a></li>
 </ul>
   </nav></div>
 

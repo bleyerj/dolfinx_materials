@@ -23,7 +23,7 @@ This demo is inspired by the [MFront Hosford tutorial](https://thelfer.github.io
 The Hosford yield surface is defined by:
 
 $$
-f(\bsig) = \sigma_\text{eq}^\text{H} - \sigma_0 = \left(|\sigma_I-\sigma_{II}|^a+|\sigma_I-\sigma_{III}|^a+|\sigma_{II}-\sigma_{III}|^a\right)^{1/a} - \sigma_0
+f(\bsig) = \sigma_\text{eq}^\text{H} - \sigma_0 = \left(\dfrac{1}{2}\left(|\sigma_I-\sigma_{II}|^a+|\sigma_I-\sigma_{III}|^a+|\sigma_{II}-\sigma_{III}|^a\right)\right)^{1/a} - \sigma_0
 $$
 where $\sigma_\text{eq}^\text{H}$ is the Hosford equivalent stress associated with the shape parameter $a$. For $a=2$, this reduces to the von Mises norm and, for $a\to\infty$, we obtain the Tresca norm.
 
