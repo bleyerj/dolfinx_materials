@@ -46,7 +46,7 @@ $\newcommand{\bsig}{\boldsymbol{\sigma}}
 \newcommand{\Neumann}{{\partial \Omega_\text{N}}}
 \newcommand{\Dirichlet}{{\partial \Omega_\text{D}}}$
 
-In the following, we aim at solving a small-strain solid mechanics problem involving a general nonlinear constitutive behavior. Such a constitutive behavior will be see as generic black-box function. It expresses the stress $\bsig$ as a function of the total strain $\beps$, yielding the following nonlinear variational problem:
+In the following, we aim at solving a small-strain solid mechanics problem involving a general nonlinear constitutive behavior. Such a constitutive behavior will be seen as generic black-box function. It expresses the stress $\bsig$ as a function of the total strain $\beps$, yielding the following nonlinear variational problem:
 
 ```{math}
 :label: nonlinear-variational-model
@@ -71,10 +71,11 @@ where $\bsig_{n+1},\balpha_{n+1}$ are obtained by solving the following problem:
 ```{math}
 \bsig_{n+1}=\bsig(\beps_n+\Delta\beps,\balpha_{n+1}) \quad \text{s.t.}\quad F_n(\beps_n+\Delta\beps,\balpha_{n+1})=0
 ```
-given $\Delta\beps, \beps_n, \balpha_n$ and where $F_n$ denotes a time-discretized version of $F$ i.e. depending on $\balpha_n$ for instance. In the library, such an evolution will be managed by a concrete implementation of a `Material` object using, for instance, a third-party library. This constitutive update is therefore fully decoupled from the finite-element library which sees only $\bsig(\beps)$ as an abstract non-linear function.
+given $\Delta\beps, \beps_n, \balpha_n$ and where $F_n$ denotes a time-discretized version of $F$ i.e. depending on $\balpha_n$ for instance. For more details on the various discretization strategies and solving schemes, we refer to {cite:p}`simo2006computational`. In the `dolfinx_materials` library, such an evolution will be managed by a concrete implementation of a `Material` object using, for instance, a third-party library. This constitutive update is therefore fully decoupled from the finite-element library which sees only $\bsig(\beps)$ as an abstract non-linear function.
 
 
 ## Consistent tangent operator
+
 However, when solving the *global* variational problem {eq}`nonlinear-variational-model`, we generally use a *global* Newton-Raphson solver. The jacobian of this nonlinear problem involves the following tangent bilinear form:
 
 ```{math}
@@ -128,3 +129,9 @@ For more details on such examples, we refer to the following MFront demos:
 The constitutive update process involves solving a small, local system of nonlinear evolution equations at each integration point to update the material state. This process, even for complex models like crystal plasticity with hundreds of state variables, is highly parallelizable and computationally efficient compared to solving the global system of equations governing the entire structure. Since the constitutive update takes up only a small fraction of the total computational time, there is flexibility to use more complex and expressive material models without significantly impacting overall performance. This context presents a promising opportunity for the application of automatic differentiation. AD can streamline the development and implementation of these complex constitutive models by automatically generating the necessary derivatives for the nonlinear equations and the associated consistent tangent operators, improving accuracy and reducing the manual effort required for coding, debugging, and optimizing these models. Consequently, modern AD tools can further enhance the expressiveness and ease of implementation of advanced material models without sacrificing computational efficiency.
 
 However, attention should be paid as how to use AD in the context of constitutive modeling. For instance, performing AD on an unrolled version of the constitutive update program will not be efficient. The JAX section discusses various strategies, including custom differentiation using the implicit theorem to seamlessly perform AD on the constitutive update implementation.
+
+## References
+
+```{bibliography}
+:filter: docname in docnames
+```

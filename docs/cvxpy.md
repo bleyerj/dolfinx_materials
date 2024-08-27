@@ -2,7 +2,7 @@
 
 ## Elastoplastic return mapping via convex optimization
 
-For a specific class of materials, constitutive update can be also formulated as solving a convex optimization problem. In the case of associated plasticity, this amounts to projecting the elastic trial state onto the yield surface. Ignoring hardening for the sake of simplicity, such a projection can be formulated as follows:
+For a specific class of materials, constitutive update can be also formulated as solving a convex optimization problem. In the case of associated plasticity, this amounts to projecting the elastic trial state onto the yield surface, {cite:p}`krabbenhoft2007formulation,bruno2020return`. Ignoring hardening for the sake of simplicity, such a projection can be formulated as follows:
 
 ```{math}
 :label: stress-projection
@@ -19,11 +19,11 @@ where $\bsig_\text{el} = \bsig_\text{old} + \mathbb{C}:\Delta\beps$ is the elast
 
 Writing the optimality conditions of {eq}`stress-projection` results in the system of nonlinear equations arising in the elastoplastic return mapping procedure. However, when considering non-smooth yield surfaces or yield conditions formed by the intersection of many yield surfaces, such local Newton procedures may encounter difficulties of convergence, due to the lack of differentiability of the yield surface.
 
-In such cases, it may become interesting to consider using dedicated tools to solve the optimization problem {eq}`stress-projection` directly. At first sight, this problem is a quadratic optimization problem with nonlinear constraints. However, the yield function $f(\bsig)$ can very often be reformulated using standard cones such as the positive orthant, the second-order Lorentz cone, the cone of positive-definite matrices, etc. In this case, we can leverage more efficient convex optimization solvers such as primal-dual interior point solvers.
+In such cases, it may become interesting to consider using dedicated tools to solve the optimization problem {eq}`stress-projection` directly. At first sight, this problem is a quadratic optimization problem with nonlinear constraints. However, the yield function $f(\bsig)$ can very often be reformulated using standard cones such as the positive orthant, the second-order Lorentz cone, the cone of positive-definite matrices, etc {cite:p}`bisbos2007second`. In this case, we can leverage more efficient convex optimization solvers such as primal-dual interior point solvers {cite:p}`andersen2003implementing`.
 
 ## CVXPY
 
-[`cvxpy`](https://www.cvxpy.org) is an open source Python-embedded modeling language for convex optimization problems, enabling to express such problems in a natural way using predefined atomic functions. It offers a wide range of open-source and commercial solvers. Some of them are also capable of computing sensitivities of the optimization problem to derive the underlying tangent operator. This is however not explored here at the moment.
+[`cvxpy`](https://www.cvxpy.org) is an open source Python-embedded modeling language for convex optimization problems, enabling to express such problems in a natural way using predefined atomic functions {cite:p}`diamond2016cvxpy,agrawal2018rewriting`. It offers a wide range of open-source and commercial solvers. Some of them are also capable of computing sensitivities of the optimization problem to derive the underlying tangent operator {cite:p}`agrawal2019differentiable`. This is however not explored here at the moment.
 
 ```{seealso}
 For more details, see also Andrey's Latyshev work at https://github.com/a-latyshev/convex-plasticity.
@@ -90,3 +90,10 @@ Finally, the constitutive update rule is defined by computing the elastic predic
         state["Stress"] = self.sig.value
         return self.C, state
  ```
+
+
+## References
+
+```{bibliography}
+:filter: docname in docnames
+```
