@@ -1,6 +1,10 @@
 import numpy as np
 from dolfinx.common import Timer
 import warnings
+from dolfinx_materials import PerformanceWarning
+
+# FIXME: Warnings do not seem to be working at the moment
+warnings.simplefilter("once", PerformanceWarning)
 
 
 def _vmap(fn, in_axes=0, out_axes=0):
@@ -66,7 +70,10 @@ def _vmap(fn, in_axes=0, out_axes=0):
         )
 
         # Apply the function to each slice of the inputs along the first axis
-        print("Looping over all quadrature points. This might be long...")
+        warnings.warn(
+            "Looping over all quadrature points. This might be long...",
+            PerformanceWarning,
+        )
         results = [
             fn(*[slice_data(arg, i) for arg in moved_inputs]) for i in range(loop_size)
         ]

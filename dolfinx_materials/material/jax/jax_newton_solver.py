@@ -36,7 +36,6 @@ def _solve_linear_system(x, J, b):
     if jnp.isscalar(x):
         return b / J
     else:
-        # dx, info = jax.scipy.sparse.linalg.cg(J, b)
         dx = jnp.linalg.solve(J, b)
     return dx
 

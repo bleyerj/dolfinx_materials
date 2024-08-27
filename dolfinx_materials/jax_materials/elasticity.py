@@ -48,6 +48,7 @@ class LinearElasticIsotropic(JAXMaterial):
         self.kappa = kappa
         self.mu = mu
         self.C = 3 * self.kappa * J + 2 * self.mu * K
+        self.S = 1 / (3 * self.kappa) * J + 1 / (2 * self.mu) * K
 
     def get_Lame_parameters(self, E, nu):
         return E * nu / (1 + nu) / (1 - 2 * nu), E / 2 / (1 + nu)
@@ -56,6 +57,21 @@ class LinearElasticIsotropic(JAXMaterial):
         lmbda, mu = self.get_Lame_parameters(E, nu)
         kappa = lmbda + 2 / 3 * mu
         return 3 * kappa * J + 2 * mu * K
+
+    def get_C_plane(self):
+        idx = jnp.array([0, 1, 3])
+        return self.C[jnp.ix_(idx, idx)]
+
+    def compute_C_plane_stress(self):
+        """Compute the stiffness matrix for plane stress conditions."""
+        E = self.E
+        nu = self.nu
+        factor = E / (1 - nu**2)
+        C11 = C22 = factor
+        C12 = factor * nu
+        C33 = E / (2 * (1 + nu))
+        C_plane_stress = jnp.array([[C11, C12, 0], [C12, C22, 0], [0, 0, C33]])
+        return C_plane_stress
 
     def constitutive_update(self, eps, state, dt):
         sig = jnp.dot(self.C, eps)

@@ -8,6 +8,7 @@ Laboratoire Navier (ENPC,IFSTTAR,CNRS UMR 8205)
 @email: jeremy.bleyer@enpc.fr
 """
 import mgis.behaviour as mgis_bv
+from dolfinx_materials import PerformanceWarning
 import subprocess
 import os
 import warnings
@@ -251,7 +252,9 @@ class MFrontMaterial:
             self.data_manager, self.integration_type, self.dt, 0, self.data_manager.n
         )
         if integrate_status < 1:
-            warnings.warn("Integration of constitutive law has failed.")
+            warnings.warn(
+                "Integration of constitutive law has failed.", PerformanceWarning
+            )
         K = self.data_manager.K
 
         if self.has_internal_state_variables:
