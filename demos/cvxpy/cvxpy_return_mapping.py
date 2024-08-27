@@ -1,13 +1,37 @@
+# ---
+# jupyter:
+#   jupytext:
+#     formats: md:myst,py
+#     text_representation:
+#       extension: .py
+#       format_name: light
+#       format_version: '1.5'
+#       jupytext_version: 1.16.1
+#   kernelspec:
+#     display_name: Python 3 (ipykernel)
+#     language: python
+#     name: python3
+# ---
+
+# # Computing yield surfaces
+#
+# In this demo, we show how to implement various yield functions of elastoplastic materials using `cvxpy`.
+#
+# ## Problem position
+#
+# We first set the problem by defining an elastic material and a function which takes a `CvxPyMaterial` as an input, defines radial load paths in the $(\varepsilon_{xx},\varepsilon_{yy})$ space and integrate the material behavior for each load path. The results are then plotted in the $(\sigma_{xx},\sigma_{yy})$ stress space.
+
+# +
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.collections import LineCollection
 from dolfinx_materials.jax_materials import LinearElasticIsotropic
-from cvxpy_materials import Rankine, PlaneStressvonMises, PlaneStressHosford
+from cvxpy_materials import CvxPyMaterial
+import cvxpy as cp
 
 
 E, nu = 70e3, 0.2
 elastic_model = LinearElasticIsotropic(E, nu)
-
 
 def plot_stress_paths(material, ax):
     eps = 1e-3
@@ -28,7 +52,6 @@ def plot_stress_paths(material, ax):
 
         material.data_manager.update()
 
-    # Create a colormap
     cmap = plt.get_cmap("inferno")
     for j in range(Nbatch):
         points = Stress[:, [j], :2]
@@ -40,17 +63,78 @@ def plot_stress_paths(material, ax):
     return Stress
 
 
+# -
+
+# ## von Mises material
+#
+# We start with the plane stress von Mises yield function which is defined as:
+#
+# $$
+# \newcommand{\bsig}{\boldsymbol{\sigma}}
+# f(\bsig)=\sqrt{\sigma_{xx}^2+\sigma_{yy}^2-\sigma_{xx}\sigma_{yy}+\sigma_{xy}^2} - \sigma_0 \leq 0
+# $$
+#
+# For the `cvxpy` implementation, the yield function is first reexpressed as:
+#
+# $$
+# \begin{align}
+# \sqrt{\{\sigma\}^\text{T}\mathbf{Q}\{\sigma\}} &\leq \sigma_0 \\
+# \text{where } \{\sigma\} &= \begin{Bmatrix} \sigma_{xx} \\ \sigma_{yy} \\ \sigma_{xy} \end{Bmatrix} \\
+# \mathbf{Q} &= \begin{bmatrix} 1 & -1/2 & 0 \\ -1/2 & 1 & 0\\ 0 & 0 & 1\end{bmatrix}
+# \end{align}
+# $$
+#
+# To follow Disciplined Convex Programming rules of `cvxpy`, we finally write $\{\sigma\}^\text{T}\mathbf{Q}\{\sigma\} \leq \sigma_0**2$ which reads:
+
+class PlaneStressvonMises(CvxPyMaterial):
+    def yield_constraints(self, sig):
+        Q = np.array([[1, -1 / 2, 0], [-1 / 2, 1, 0], [0, 0, 1]])
+        sig_eq2 = cp.quad_form(sig, Q)
+        return [sig_eq2 <= self.sig0**2]
+
+
+# Plotting the result, we obtain:
+
 fig, ax = plt.subplots()
 sig0 = 30
-material = PlaneStressHosford(elastic_model, sig0=sig0, a=10)
+material = PlaneStressvonMises(elastic_model, sig0=sig0)
 plot_stress_paths(material, ax)
+sig = np.array([[np.cos(t), np.sin(t)] for t in np.linspace(0, 2 * np.pi, 100)])
+sig_eq = np.sqrt(sig[:, 0] ** 2 + sig[:, 1] ** 2 - sig[:, 0] * sig[:, 1])
+yield_surface = sig * sig0 / np.repeat(sig_eq[:, np.newaxis], 2, axis=1)
+ax.plot(yield_surface[:, 0], yield_surface[:, 1], "-k", linewidth=0.5)
 plt.xlabel(r"Stress $\sigma_{xx}$")
 plt.ylabel(r"Stress $\sigma_{yy}$")
 plt.xlim(-1.2 * sig0, 1.2 * sig0)
 plt.ylim(-1.2 * sig0, 1.2 * sig0)
-plt.gca().set_aspect("equal")
+ax.set_aspect("equal")
 plt.show()
 
+
+# ## Rankine material
+#
+# We consider here a Rankine material characterized by uniaxial tensile and compressive strengths $f_t$ and $f_c$ respectively. The yield condition is expressed as:
+#
+# $$
+# f(\bsig) \leq 0 \quad \Leftrightarrow -f_c \leq \sigma_I,\sigma_{II} \leq f_t
+# $$
+# where $\sigma_I$ and $\sigma_{II}$ denote the principal values. Equivalently, this can be expressed using the minimum and maximum eigenvalues $\sigma_\text{max} \leq f_t$ and $\sigma_\text{min} \geq -f_c$. The maximum and minimum principal value are obtained with `cvxpy.lambda_max` and `cvxpy.lambda_min` respectively, resulting in the following implementation:
+
+class Rankine(CvxPyMaterial):
+    def yield_constraints(self, sig):
+        Sig = cp.bmat(
+            [
+                [sig[0], sig[2] / np.sqrt(2)],
+                [sig[2] / np.sqrt(2), sig[1]],
+            ]
+        )
+        return [
+            cp.lambda_max(Sig) <= self.ft,
+            cp.lambda_min(Sig) >= -self.fc,
+        ]
+
+
+# In the plane stress space $(\sigma_{xx},\sigma_{yy},\sigma_{xy}=0)$, the Rankine criterion is a square delimited by $-f_c$ in compression and $+f_t$ in tension.
 
 fig, ax = plt.subplots()
 fc, ft = 30.0, 10.0
@@ -62,17 +146,62 @@ plt.xlabel(r"Stress $\sigma_{xx}$")
 plt.ylabel(r"Stress $\sigma_{yy}$")
 plt.xlim(-1.2 * fc, 1.2 * ft)
 plt.ylim(-1.2 * fc, 1.2 * ft)
-plt.gca().set_aspect("equal")
+ax.set_aspect("equal")
 plt.show()
 
 
+# ## Hosford material
+#
+# ```{seealso}
+# For more details on the Hosford yield surface, see also [](/demos/elastoplasticity/Hosford_yield_surface.md).
+# ```
+#
+# The Hosford yield surface in plane stress conditions is defined by:
+#
+# $$
+# f(\bsig) = \left(\dfrac{1}{2}\left(|\sigma_I|^a+|\sigma_{II}|^a+|\sigma_{I}-\sigma_{II}|^a\right)\right)^{1/a} - \sigma_0 \leq 0
+# $$
+#
+# We again use `cp.lambda_max` and `cp.lambda_min` as in the Rankine model. We further introduce additional auxiliary optimization variables $\boldsymbol{z}=(z_1,z_2,z_3)$ to reformulate the condition as follows:
+#
+# $$
+# \begin{align}
+# \sigma_\text{max} &\leq z_1\\
+# -\sigma_\text{min} &\leq z_2\\
+# \sigma_\text{max}-\sigma_\text{min} &\leq z_3\\
+# \left(\dfrac{1}{2}\left(|z_1|^a+|z_2|^a+|z_3|^a\right)\right)^{1/a} &\leq \sigma_0
+# \end{align}
+# $$
+# in which the last condition can be expressed as a $p$-norm on the vector $\boldsymbol{z}$ with here $p=a$. The implementation reads:
+
+class PlaneStressHosford(CvxPyMaterial):
+    def yield_constraints(self, sig):
+        Sig = cp.bmat(
+            [
+                [sig[0], sig[2] / np.sqrt(2)],
+                [sig[2] / np.sqrt(2), sig[1]],
+            ]
+        )
+        z = cp.Variable(3)
+        return [
+            cp.lambda_max(Sig) <= z[0],
+            -cp.lambda_min(Sig) <= z[1],
+            cp.lambda_max(Sig) - cp.lambda_min(Sig) <= z[2],
+            cp.norm(z, p=self.a) <= 2 ** (1 / self.a) * self.sig0,
+        ]
+
+
+# We obtain the final Hosford yield surface.
+
 fig, ax = plt.subplots()
 sig0 = 30
-material = PlaneStressvonMises(elastic_model, sig0=sig0)
+material = PlaneStressHosford(elastic_model, sig0=sig0, a=10)
 plot_stress_paths(material, ax)
 plt.xlabel(r"Stress $\sigma_{xx}$")
 plt.ylabel(r"Stress $\sigma_{yy}$")
 plt.xlim(-1.2 * sig0, 1.2 * sig0)
 plt.ylim(-1.2 * sig0, 1.2 * sig0)
-plt.gca().set_aspect("equal")
+ax.set_aspect("equal")
 plt.show()
+
+# Interestingly, the `cvxpy` implementation is able to handle very large values of $a$, contrary to a simple Newton implementation as in [](/demos/elastoplasticity/Hosford_yield_surface.md).

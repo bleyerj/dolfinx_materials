@@ -21,6 +21,10 @@ parts:
     chapters:
       - file: demos/mfront/heat_transfer/nonlinear_heat_transfer.md
       - file: demos/mfront/heat_transfer/phase_change.md
+  - caption: CVXPY demos
+    chapters:
+      - file: cvxpy.md
+      - file: demos/cvxpy/cvxpy_return_mapping.md
   - caption: API
     chapters:
       - file: api/api.rst

@@ -3,7 +3,7 @@
 The `dolfinx_materials` library aims at providing a general framework for using custom material behaviors within the `FEniCSx` PDE library.
 In particular, `ufl` and `dolfinx` limitations make it difficult to formulate complex material behaviors such as viscoelasticity, plasticity, damage or even some complex hyperelastic behaviors.
 
-The library expands upon previous implementations of user-defined constitutive models by providing a more general and extensible setting, targetting advanced implementation of material models including:
+The library expands upon previous implementations of user-defined constitutive models by providing a more general and extensible setting, targeting advanced implementation of material models including:
 
 - materials defined by internal state variables and a system of implicit equations
 - multi-physics behaviors not limited to mechanics e.g. thermo-hydro-mechanics models
@@ -117,6 +117,14 @@ where $T_0$ is a reference temperature, $s$ the entropy per unit of mass and $\b
 
 In a fully coupled setting, $s,\bq$ and $\bsig$ are typically functions of the temperature $T$, the temperature gradient $\nabla T$ and the strain $\beps$. The same abstract constitutive mapping as in {eq}`constitutive-black-box` can therefore be considered by replacing the input with a set of *external state variables* (here the temperature $T$) and of *gradients* (here the temperature gradient $\nabla T$ and the strain $\beps$). The output of the constitutive equation is now a set of *fluxes* (here the heat flux $\bq$ and the stress $\bsig$) and of *internal state variables* (here the entropy). Again, to formulate a monolithic Newton method of this coupled system, various derivatives of outputs (fluxes + internal state variables) with respect to inputs (gradients and external state variables) should be provided by the material library. Finally, the heat and mechanics equations can also be solved in a staggered manner.
 
+```{seealso}
 For more details on such examples, we refer to the following MFront demos:
 - [Nonlinear heat transfer](/demos/mfront/heat_transfer/nonlinear_heat_transfer.md)
 - [Phase change](/demos/mfront/heat_transfer/phase_change.md)
+```
+
+## Computational aspects and Automatic Differentiation
+
+The constitutive update process involves solving a small, local system of nonlinear evolution equations at each integration point to update the material state. This process, even for complex models like crystal plasticity with hundreds of state variables, is highly parallelizable and computationally efficient compared to solving the global system of equations governing the entire structure. Since the constitutive update takes up only a small fraction of the total computational time, there is flexibility to use more complex and expressive material models without significantly impacting overall performance. This context presents a promising opportunity for the application of automatic differentiation. AD can streamline the development and implementation of these complex constitutive models by automatically generating the necessary derivatives for the nonlinear equations and the associated consistent tangent operators, improving accuracy and reducing the manual effort required for coding, debugging, and optimizing these models. Consequently, modern AD tools can further enhance the expressiveness and ease of implementation of advanced material models without sacrificing computational efficiency.
+
+However, attention should be paid as how to use AD in the context of constitutive modeling. For instance, performing AD on an unrolled version of the constitutive update program will not be efficient. The JAX section discusses various strategies, including custom differentiation using the implicit theorem to seamlessly perform AD on the constitutive update implementation.

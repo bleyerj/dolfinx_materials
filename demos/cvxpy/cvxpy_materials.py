@@ -100,8 +100,8 @@ class PlaneStressHosford(CvxPyMaterial):
         )
         z = cp.Variable(3)
         return [
-            cp.lambda_max(Sig) <= z[0],
-            -cp.lambda_min(Sig) <= z[1],
+            cp.trace(Sig) == z[0] - z[1],
             cp.lambda_max(Sig) - cp.lambda_min(Sig) <= z[2],
+            z[2] == z[0] + z[1],
             cp.norm(z, p=self.a) <= 2 ** (1 / self.a) * self.sig0,
         ]

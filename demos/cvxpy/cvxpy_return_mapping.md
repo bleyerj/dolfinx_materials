@@ -29,7 +29,7 @@ from cvxpy_materials import CvxPyMaterial
 import cvxpy as cp
 
 
-E, nu = 70e3, 0.2
+E, nu = 70e3, 0.
 elastic_model = LinearElasticIsotropic(E, nu)
 
 def plot_stress_paths(material, ax):
@@ -50,7 +50,7 @@ def plot_stress_paths(material, ax):
         Stress[i + 1, :, :] = sig
 
         material.data_manager.update()
-
+        
     cmap = plt.get_cmap("inferno")
     for j in range(Nbatch):
         points = Stress[:, [j], :2]
@@ -98,6 +98,10 @@ fig, ax = plt.subplots()
 sig0 = 30
 material = PlaneStressvonMises(elastic_model, sig0=sig0)
 plot_stress_paths(material, ax)
+sig = np.array([[np.cos(t), np.sin(t)] for t in np.linspace(0, 2 * np.pi, 100)])
+sig_eq = np.sqrt(sig[:, 0] ** 2 + sig[:, 1] ** 2 - sig[:, 0] * sig[:, 1])
+yield_surface = sig * sig0 / np.repeat(sig_eq[:, np.newaxis], 2, axis=1)
+ax.plot(yield_surface[:, 0], yield_surface[:, 1], "-k", linewidth=0.5)
 plt.xlabel(r"Stress $\sigma_{xx}$")
 plt.ylabel(r"Stress $\sigma_{yy}$")
 plt.xlim(-1.2 * sig0, 1.2 * sig0)
@@ -159,15 +163,28 @@ $$
 f(\bsig) = \left(\dfrac{1}{2}\left(|\sigma_I|^a+|\sigma_{II}|^a+|\sigma_{I}-\sigma_{II}|^a\right)\right)^{1/a} - \sigma_0 \leq 0
 $$
 
-We again use `cp.lambda_max` and `cp.lambda_min` as in the Rankine model. We further introduce additional auxiliary optimization variables $\boldsymbol{z}=(z_1,z_2,z_3)$ to reformulate the condition as follows:
+We again use `cp.lambda_max` and `cp.lambda_min` as in the Rankine model. We further introduce additional auxiliary optimization variables $\boldsymbol{z}=(z_0,z_1,z_2)$ such that:
 
 $$
 \begin{align}
-\sigma_\text{max} &\leq z_1\\
--\sigma_\text{min} &\leq z_2\\
-\sigma_\text{max}-\sigma_\text{min} &\leq z_3\\
-\left(\dfrac{1}{2}\left(|z_1|^a+|z_2|^a+|z_3|^a\right)\right)^{1/a} &\leq \sigma_0
+\text{tr}(\bsig)=\sigma_I+\sigma_{II} &= z_0-z_1\\
+\sigma_\text{max}-\sigma_{\text{min}} = |\sigma_I-\sigma_{II}| & \leq z_2\\
+z_0+z_1&=z_2
 \end{align}
+$$
+
+Then we easily see that this implies:
+
+$$\begin{align}
+\dfrac{1}{2}\left(\sigma_I+\sigma_{II}+|\sigma_I-\sigma_{II}|\right)=\sigma_\text{max} &\leq z_0\\
+\dfrac{1}{2}\left(|\sigma_{I}-\sigma_{II}|-\sigma_I-\sigma_{II}\right)=-\sigma_{\min} & \leq z_1
+\end{align}
+$$
+
+As a result, the yield condition is equivalent to:
+
+$$
+\left(\dfrac{1}{2}\left(|z_0|^a+|z_1|^a+|z_2|^a\right)\right)^{1/a} \leq \sigma_0
 $$
 in which the last condition can be expressed as a $p$-norm on the vector $\boldsymbol{z}$ with here $p=a$. The implementation reads:
 
@@ -182,9 +199,9 @@ class PlaneStressHosford(CvxPyMaterial):
         )
         z = cp.Variable(3)
         return [
-            cp.lambda_max(Sig) <= z[0],
-            -cp.lambda_min(Sig) <= z[1],
+            cp.trace(Sig) == z[0] - z[1],
             cp.lambda_max(Sig) - cp.lambda_min(Sig) <= z[2],
+            z[2] == z[0] + z[1],
             cp.norm(z, p=self.a) <= 2 ** (1 / self.a) * self.sig0,
         ]
 ```
@@ -194,8 +211,13 @@ We obtain the final Hosford yield surface.
 ```{code-cell} ipython3
 fig, ax = plt.subplots()
 sig0 = 30
-material = PlaneStressHosford(elastic_model, sig0=sig0, a=10)
+a = 10
+material = PlaneStressHosford(elastic_model, sig0=sig0, a=a)
 plot_stress_paths(material, ax)
+sig = np.array([[np.cos(t), np.sin(t)] for t in np.linspace(0, 2 * np.pi, 100)])
+sig_eq = ((np.abs(sig[:, 0]) ** a + np.abs(sig[:, 1]) ** a + np.abs(sig[:, 0] - sig[:, 1])**a)/2)**(1/a)
+yield_surface = sig * sig0 / np.repeat(sig_eq[:, np.newaxis], 2, axis=1)
+ax.plot(yield_surface[:, 0], yield_surface[:, 1], "-k", linewidth=0.5)
 plt.xlabel(r"Stress $\sigma_{xx}$")
 plt.ylabel(r"Stress $\sigma_{yy}$")
 plt.xlim(-1.2 * sig0, 1.2 * sig0)
