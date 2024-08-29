@@ -19,6 +19,7 @@ parts:
       - file: demos/elastoplasticity/plane_elastoplasticity.md
   - caption: MFront demos
     chapters:
+      - file: demos/mfront/hyperelasticity/hyperelasticity.md
       - file: demos/mfront/heat_transfer/nonlinear_heat_transfer.md
       - file: demos/mfront/heat_transfer/phase_change.md
   - caption: CVXPY demos

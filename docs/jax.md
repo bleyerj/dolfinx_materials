@@ -51,11 +51,9 @@ class LinearElasticIsotropic(JAXMaterial):
 
 By default, the `state` dictionary contains two fields: `"Stress"` and `"Strain"` of dimension 6. For the sake of generality and simplicity, JAX behaviors are always written in a 3D setting, dimension `dim=6` corresponding to the 6 components of symmetric tensors.
 
-We import the spherical and deviatoric projector tensors `J` and `K` from the `tensors` helper module and define the elastic stiffness operator `C`. The `constitutive_update` method simply computes $\boldsymbol{\sig}=\mathbb{C}:\boldsymbol{\varepsilon}$. It then updates the state `"Stress"` with the computed values and outputs the tangent operator which is here simply `C` and the state containing the new stress.
+We import the spherical and deviatoric projector tensors `J` and `K` from the `tensors` helper module and define the elastic stiffness operator `C`, see also [](tensors_conventions). The `constitutive_update` method simply computes $\boldsymbol{\sigma}=\mathbb{C}:\boldsymbol{\varepsilon}$. It then updates the state `"Stress"` with the computed values and outputs the tangent operator which is here simply `C` and the state containing the new stress.
 
 Note that we explicitly use `jnp.dot` to perform the operation.
-
-% TODO: Add tensor conventions
 
 ## JIT and automatic vectorization
 

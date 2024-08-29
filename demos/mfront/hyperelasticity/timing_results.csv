@@ -1,0 +1,6 @@
+,Mesh coarse,,Mesh fine,
+rank,Constitutive update,Linear solve,Constitutive update,Linear solve
+1,0.6,17.9,1.36,86.94
+2,0.29,9.76,0.75,56.97
+4,0.17,5.94,0.43,36.59
+8,0.21,5.25,0.4,19.6
