@@ -188,6 +188,11 @@
 <li class="toctree-l1"><a class="reference internal" href="demos/mfront/heat_transfer/nonlinear_heat_transfer.html">Stationary nonlinear heat transfer</a></li>
 <li class="toctree-l1"><a class="reference internal" href="demos/mfront/heat_transfer/phase_change.html">Transient heat equation with phase change</a></li>
 </ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">CVXPY demos</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="cvxpy.html">Convex optimization-based constitutive update</a></li>
+<li class="toctree-l1"><a class="reference internal" href="demos/cvxpy/cvxpy_return_mapping.html">Computing yield surfaces</a></li>
+</ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">API</span></p>
 <ul class="nav bd-sidenav">
 <li class="toctree-l1"><a class="reference internal" href="api/material.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">material</span></code></a></li>
@@ -296,6 +301,7 @@ document.write(`
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#a-simple-example">A simple example</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#jit-and-automatic-vectorization">JIT and automatic vectorization</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#automatic-differentiation">Automatic differentiation</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#references">References</a></li>
 </ul>
             </nav>
         </div>
@@ -318,7 +324,7 @@ document.write(`
 <li><p>computing the corresponding consistent tangent operator</p></li>
 </ul>
 <p>A pure Python implementation generally prove extremely inefficient due to the loop over all quadrature points. To solve this issue, we will rely on the <a class="reference external" href="https://jax.readthedocs.io">JAX library</a>.</p>
-<p>JAX is a Python library for accelerated (GPU) array computation and program transformation, designed for high-performance numerical computing and large-scale machine learning. Its key features of interest here involve:</p>
+<p>JAX is a Python library for accelerated (GPU) array computation and program transformation, designed for high-performance numerical computing and large-scale machine learning <span id="id1">[<a class="reference internal" href="#id13" title="James Bradbury, Roy Frostig, Peter Hawkins, Matthew James Johnson, Chris Leary, Dougal Maclaurin, George Necula, Adam Paszke, Jake VanderPlas, Skye Wanderman-Milne, and Qiao Zhang. JAX: composable transformations of Python+NumPy programs. 2018. URL: http://github.com/google/jax.">Bradbury <em>et al.</em>, 2018</a>]</span>. Its key features of interest here involve:</p>
 <ul class="simple">
 <li><p><a class="reference external" href="https://jax.readthedocs.io/en/latest/jax-101/01-jax-basics.html">Accelerated <code class="docutils literal notranslate"><span class="pre">numpy</span></code>/<code class="docutils literal notranslate"><span class="pre">scipy</span></code> functions</a></p></li>
 <li><p><a class="reference external" href="https://jax.readthedocs.io/en/latest/jax-101/04-advanced-autodiff.html">Automatic Differentiation</a>, see also the <a class="reference external" href="https://jax.readthedocs.io/en/latest/notebooks/autodiff_cookbook.html">AutoDiff Cookbook</a></p></li>
@@ -350,7 +356,7 @@ document.write(`
 </pre></div>
 </div>
 <p>By default, the <code class="docutils literal notranslate"><span class="pre">state</span></code> dictionary contains two fields: <code class="docutils literal notranslate"><span class="pre">&quot;Stress&quot;</span></code> and <code class="docutils literal notranslate"><span class="pre">&quot;Strain&quot;</span></code> of dimension 6. For the sake of generality and simplicity, JAX behaviors are always written in a 3D setting, dimension <code class="docutils literal notranslate"><span class="pre">dim=6</span></code> corresponding to the 6 components of symmetric tensors.</p>
-<p>We import the spherical and deviatoric projector tensors <code class="docutils literal notranslate"><span class="pre">J</span></code> and <code class="docutils literal notranslate"><span class="pre">K</span></code> from the <code class="docutils literal notranslate"><span class="pre">tensors</span></code> helper module and define the elastic stiffness operator <code class="docutils literal notranslate"><span class="pre">C</span></code>. The <code class="docutils literal notranslate"><span class="pre">constitutive_update</span></code> method simply computes <span class="math notranslate nohighlight">\(\boldsymbol{\sig}=\mathbb{C}:\boldsymbol{\varepsilon}\)</span>. It then updates the state <code class="docutils literal notranslate"><span class="pre">&quot;Stress&quot;</span></code> with the computed values and outputs the tangent operator which is here simply <code class="docutils literal notranslate"><span class="pre">C</span></code> and the state containing the new stress.</p>
+<p>We import the spherical and deviatoric projector tensors <code class="docutils literal notranslate"><span class="pre">J</span></code> and <code class="docutils literal notranslate"><span class="pre">K</span></code> from the <code class="docutils literal notranslate"><span class="pre">tensors</span></code> helper module and define the elastic stiffness operator <code class="docutils literal notranslate"><span class="pre">C</span></code>, see also <a class="reference internal" href="intro.html#tensors-conventions"><span class="std std-ref">Conventions for representing tensors</span></a>. The <code class="docutils literal notranslate"><span class="pre">constitutive_update</span></code> method simply computes <span class="math notranslate nohighlight">\(\boldsymbol{\sigma}=\mathbb{C}:\boldsymbol{\varepsilon}\)</span>. It then updates the state <code class="docutils literal notranslate"><span class="pre">&quot;Stress&quot;</span></code> with the computed values and outputs the tangent operator which is here simply <code class="docutils literal notranslate"><span class="pre">C</span></code> and the state containing the new stress.</p>
 <p>Note that we explicitly use <code class="docutils literal notranslate"><span class="pre">jnp.dot</span></code> to perform the operation.</p>
 </section>
 <section id="jit-and-automatic-vectorization">
@@ -392,6 +398,17 @@ In <code class="docutils literal notranslate"><span class="pre">JAXMaterial</spa
 </pre></div>
 </div>
 <p>For more details on the use of AD on JAX behaviors, see <a class="reference internal" href="jax_elastoplasticity.html"><span class="std std-doc">JAX implementation of elastoplasticity</span></a> and the <a class="reference internal" href="demos/elastoplasticity/plane_elastoplasticity.html"><span class="std std-doc">Finite-element simulations of JAX elastoplasticity</span></a> demo.</p>
+</section>
+<section id="references">
+<h2>References<a class="headerlink" href="#references" title="Link to this heading">#</a></h2>
+<div class="docutils container" id="id2">
+<div role="list" class="citation-list">
+<div class="citation" id="id13" role="doc-biblioentry">
+<span class="label"><span class="fn-bracket">[</span><a role="doc-backlink" href="#id1">BFH+18</a><span class="fn-bracket">]</span></span>
+<p>James Bradbury, Roy Frostig, Peter Hawkins, Matthew James Johnson, Chris Leary, Dougal Maclaurin, George Necula, Adam Paszke, Jake VanderPlas, Skye Wanderman-Milne, and Qiao Zhang. JAX: composable transformations of Python+NumPy programs. 2018. URL: <a class="github reference external" href="http://github.com/google/jax">google/jax</a>.</p>
+</div>
+</div>
+</div>
 </section>
 </section>
 
@@ -462,6 +479,7 @@ In <code class="docutils literal notranslate"><span class="pre">JAXMaterial</spa
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#a-simple-example">A simple example</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#jit-and-automatic-vectorization">JIT and automatic vectorization</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#automatic-differentiation">Automatic differentiation</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#references">References</a></li>
 </ul>
   </nav></div>
 

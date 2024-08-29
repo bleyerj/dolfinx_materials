@@ -302,6 +302,7 @@ document.write(`
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#von-mises-material">von Mises material</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#rankine-material">Rankine material</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#hosford-material">Hosford material</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#references">References</a></li>
 </ul>
             </nav>
         </div>
@@ -479,7 +480,7 @@ f(\bsig) \leq 0 \quad \Leftrightarrow -f_c \leq \sigma_I,\sigma_{II} \leq f_t
 <p class="admonition-title">See also</p>
 <p>For more details on the Hosford yield surface, see also <a class="reference internal" href="../elastoplasticity/Hosford_yield_surface.html"><span class="std std-doc">Computing the Hosford plane stress yield surface</span></a>.</p>
 </div>
-<p>The Hosford yield surface in plane stress conditions is defined by:</p>
+<p>The Hosford yield surface in plane stress conditions is defined by (see also <span id="id1">[<a class="reference internal" href="#id9" title="Jeremy Bleyer and Ghazi Hassen. Automated formulation and resolution of limit analysis problems. Computers &amp; Structures, 243:106341, 2021.">Bleyer and Hassen, 2021</a>]</span>):</p>
 <div class="math notranslate nohighlight">
 \[
 f(\bsig) = \left(\dfrac{1}{2}\left(|\sigma_I|^a+|\sigma_{II}|^a+|\sigma_{I}-\sigma_{II}|^a\right)\right)^{1/a} - \sigma_0 \leq 0
@@ -554,6 +555,17 @@ z_0+z_1&amp;=z_2
 </div>
 <p>Interestingly, the <code class="docutils literal notranslate"><span class="pre">cvxpy</span></code> implementation is able to handle very large values of <span class="math notranslate nohighlight">\(a\)</span>, contrary to a simple Newton implementation as in <a class="reference internal" href="../elastoplasticity/Hosford_yield_surface.html"><span class="std std-doc">Computing the Hosford plane stress yield surface</span></a>.</p>
 </section>
+<section id="references">
+<h2>References<a class="headerlink" href="#references" title="Link to this heading">#</a></h2>
+<div class="docutils container" id="id2">
+<div role="list" class="citation-list">
+<div class="citation" id="id9" role="doc-biblioentry">
+<span class="label"><span class="fn-bracket">[</span><a role="doc-backlink" href="#id1">BH21</a><span class="fn-bracket">]</span></span>
+<p>Jeremy Bleyer and Ghazi Hassen. Automated formulation and resolution of limit analysis problems. <em>Computers &amp; Structures</em>, 243:106341, 2021.</p>
+</div>
+</div>
+</div>
+</section>
 </section>
 
     <script type="text/x-thebe-config">
@@ -624,6 +636,7 @@ z_0+z_1&amp;=z_2
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#von-mises-material">von Mises material</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#rankine-material">Rankine material</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#hosford-material">Hosford material</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#references">References</a></li>
 </ul>
   </nav></div>
 

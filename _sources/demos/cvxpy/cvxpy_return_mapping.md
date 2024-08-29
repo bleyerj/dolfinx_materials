@@ -157,7 +157,7 @@ plt.show()
 For more details on the Hosford yield surface, see also [](/demos/elastoplasticity/Hosford_yield_surface.md).
 ```
 
-The Hosford yield surface in plane stress conditions is defined by:
+The Hosford yield surface in plane stress conditions is defined by (see also {cite:p}`bleyer2021automated`):
 
 $$
 f(\bsig) = \left(\dfrac{1}{2}\left(|\sigma_I|^a+|\sigma_{II}|^a+|\sigma_{I}-\sigma_{II}|^a\right)\right)^{1/a} - \sigma_0 \leq 0
@@ -227,3 +227,9 @@ plt.show()
 ```
 
 Interestingly, the `cvxpy` implementation is able to handle very large values of $a$, contrary to a simple Newton implementation as in [](/demos/elastoplasticity/Hosford_yield_surface.md).
+
+## References
+
+```{bibliography}
+:filter: docname in docnames
+```

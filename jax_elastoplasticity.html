@@ -188,6 +188,11 @@
 <li class="toctree-l1"><a class="reference internal" href="demos/mfront/heat_transfer/nonlinear_heat_transfer.html">Stationary nonlinear heat transfer</a></li>
 <li class="toctree-l1"><a class="reference internal" href="demos/mfront/heat_transfer/phase_change.html">Transient heat equation with phase change</a></li>
 </ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">CVXPY demos</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="cvxpy.html">Convex optimization-based constitutive update</a></li>
+<li class="toctree-l1"><a class="reference internal" href="demos/cvxpy/cvxpy_return_mapping.html">Computing yield surfaces</a></li>
+</ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">API</span></p>
 <ul class="nav bd-sidenav">
 <li class="toctree-l1"><a class="reference internal" href="api/material.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">material</span></code></a></li>
@@ -300,6 +305,7 @@ document.write(`
 </ul>
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#generic-elastoplasticity-with-isotropic-hardening">Generic elastoplasticity with isotropic hardening</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#references">References</a></li>
 </ul>
             </nav>
         </div>
@@ -348,7 +354,7 @@ document.write(`
 </section>
 <section id="return-mapping-procedure">
 <h3>Return mapping procedure<a class="headerlink" href="#return-mapping-procedure" title="Link to this heading">#</a></h3>
-<p>The return mapping procedure is a predictor-corrector algorithm which consists in finding a new stress <span class="math notranslate nohighlight">\(\bsig_{n+1}\)</span> and plastic strain <span class="math notranslate nohighlight">\(p_{n+1}\)</span> state verifying the current plasticity condition from a previous stress <span class="math notranslate nohighlight">\(\bsig_{n}\)</span> and internal variable <span class="math notranslate nohighlight">\(p_n\)</span> state and an increment of total deformation <span class="math notranslate nohighlight">\(\Delta \beps\)</span>. This step is quite classical in FEM plasticity for a von Mises criterion with isotropic hardening and follows notations from <span id="id1">[]</span>.</p>
+<p>The return mapping procedure is a predictor-corrector algorithm which consists in finding a new stress <span class="math notranslate nohighlight">\(\bsig_{n+1}\)</span> and plastic strain <span class="math notranslate nohighlight">\(p_{n+1}\)</span> state verifying the current plasticity condition from a previous stress <span class="math notranslate nohighlight">\(\bsig_{n}\)</span> and internal variable <span class="math notranslate nohighlight">\(p_n\)</span> state and an increment of total deformation <span class="math notranslate nohighlight">\(\Delta \beps\)</span>. This step is quite classical in FEM plasticity for a von Mises criterion with isotropic hardening and follows notations from <span id="id1">[<a class="reference internal" href="#id5" title="Marc Bonnet, Attilio Frangi, and Christian Rey. The finite element method in solid mechanics. McGraw-Hill Education New York, 2014. ISBN 978-8838674464.">Bonnet <em>et al.</em>, 2014</a>]</span>, see also <span id="id2">[<a class="reference internal" href="#id4" title="Juan C Simo and Thomas JR Hughes. Computational inelasticity. Volume 7. Springer Science &amp; Business Media, 2006.">Simo and Hughes, 2006</a>]</span>.</p>
 <p>In the case of plastic flow, the flow rule <a class="reference internal" href="#equation-flow-rule">(5)</a> is approximated at <span class="math notranslate nohighlight">\(t_{n+1}\)</span> using a backward-Euler approximation:</p>
 <div class="math notranslate nohighlight" id="equation-flow-rule-incr">
 <span class="eqno">(6)<a class="headerlink" href="#equation-flow-rule-incr" title="Link to this equation">#</a></span>\[\Delta \bepsp = \Delta p \dfrac{3}{2\sigma_{\text{eq},n+1}}\bs_{n+1}\]</div>
@@ -576,6 +582,21 @@ r_{\Delta\bepsp}(\Delta\bepsp, \Delta p) &amp;= \Delta\beps_p - \bn\Delta p = 0
 </div>
 <p>For an illustrative application of this behavior, see <a class="reference internal" href="demos/elastoplasticity/Hosford_yield_surface.html"><span class="std std-doc">Computing the Hosford plane stress yield surface</span></a>.</p>
 </section>
+<section id="references">
+<h2>References<a class="headerlink" href="#references" title="Link to this heading">#</a></h2>
+<div class="docutils container" id="id3">
+<div role="list" class="citation-list">
+<div class="citation" id="id5" role="doc-biblioentry">
+<span class="label"><span class="fn-bracket">[</span><a role="doc-backlink" href="#id1">BFR14</a><span class="fn-bracket">]</span></span>
+<p>Marc Bonnet, Attilio Frangi, and Christian Rey. <em>The finite element method in solid mechanics</em>. McGraw-Hill Education New York, 2014. ISBN 978-8838674464.</p>
+</div>
+<div class="citation" id="id4" role="doc-biblioentry">
+<span class="label"><span class="fn-bracket">[</span><a role="doc-backlink" href="#id2">SH06</a><span class="fn-bracket">]</span></span>
+<p>Juan C Simo and Thomas JR Hughes. <em>Computational inelasticity</em>. Volume 7. Springer Science &amp; Business Media, 2006.</p>
+</div>
+</div>
+</div>
+</section>
 </section>
 
     <script type="text/x-thebe-config">
@@ -649,6 +670,7 @@ r_{\Delta\bepsp}(\Delta\bepsp, \Delta p) &amp;= \Delta\beps_p - \bn\Delta p = 0
 </ul>
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#generic-elastoplasticity-with-isotropic-hardening">Generic elastoplasticity with isotropic hardening</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#references">References</a></li>
 </ul>
   </nav></div>
 

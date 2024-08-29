@@ -53,7 +53,7 @@ which gives in the present case:
 
 ### Return mapping procedure
 
-The return mapping procedure is a predictor-corrector algorithm which consists in finding a new stress $\bsig_{n+1}$ and plastic strain $p_{n+1}$ state verifying the current plasticity condition from a previous stress $\bsig_{n}$ and internal variable $p_n$ state and an increment of total deformation $\Delta \beps$. This step is quite classical in FEM plasticity for a von Mises criterion with isotropic hardening and follows notations from {cite:p}`bonnet2014finite`.
+The return mapping procedure is a predictor-corrector algorithm which consists in finding a new stress $\bsig_{n+1}$ and plastic strain $p_{n+1}$ state verifying the current plasticity condition from a previous stress $\bsig_{n}$ and internal variable $p_n$ state and an increment of total deformation $\Delta \beps$. This step is quite classical in FEM plasticity for a von Mises criterion with isotropic hardening and follows notations from {cite:p}`bonnet2014finite`, see also {cite:p}`simo2006computational`.
 
 In the case of plastic flow, the flow rule {eq}`flow-rule` is approximated at $t_{n+1}$ using a backward-Euler approximation:
 
@@ -322,3 +322,9 @@ Finally, the local Newton system is solved (the corresponding jacobian is comput
 ```
 
 For an illustrative application of this behavior, see [](/demos/elastoplasticity/Hosford_yield_surface.md).
+
+## References
+
+```{bibliography}
+:filter: docname in docnames
+```

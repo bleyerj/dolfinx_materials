@@ -14,7 +14,7 @@ The constitutive update of complex behaviors requires:
 
 A pure Python implementation generally prove extremely inefficient due to the loop over all quadrature points. To solve this issue, we will rely on the [JAX library](https://jax.readthedocs.io).
 
-JAX is a Python library for accelerated (GPU) array computation and program transformation, designed for high-performance numerical computing and large-scale machine learning. Its key features of interest here involve:
+JAX is a Python library for accelerated (GPU) array computation and program transformation, designed for high-performance numerical computing and large-scale machine learning {cite:p}`jax2018github`. Its key features of interest here involve:
 
 * [Accelerated `numpy`/`scipy` functions](https://jax.readthedocs.io/en/latest/jax-101/01-jax-basics.html)
 * [Automatic Differentiation](https://jax.readthedocs.io/en/latest/jax-101/04-advanced-autodiff.html), see also the [AutoDiff Cookbook](https://jax.readthedocs.io/en/latest/notebooks/autodiff_cookbook.html)
@@ -51,11 +51,9 @@ class LinearElasticIsotropic(JAXMaterial):
 
 By default, the `state` dictionary contains two fields: `"Stress"` and `"Strain"` of dimension 6. For the sake of generality and simplicity, JAX behaviors are always written in a 3D setting, dimension `dim=6` corresponding to the 6 components of symmetric tensors.
 
-We import the spherical and deviatoric projector tensors `J` and `K` from the `tensors` helper module and define the elastic stiffness operator `C`. The `constitutive_update` method simply computes $\boldsymbol{\sig}=\mathbb{C}:\boldsymbol{\varepsilon}$. It then updates the state `"Stress"` with the computed values and outputs the tangent operator which is here simply `C` and the state containing the new stress.
+We import the spherical and deviatoric projector tensors `J` and `K` from the `tensors` helper module and define the elastic stiffness operator `C`, see also [](tensors_conventions). The `constitutive_update` method simply computes $\boldsymbol{\sigma}=\mathbb{C}:\boldsymbol{\varepsilon}$. It then updates the state `"Stress"` with the computed values and outputs the tangent operator which is here simply `C` and the state containing the new stress.
 
 Note that we explicitly use `jnp.dot` to perform the operation.
-
-% TODO: Add tensor conventions
 
 ## JIT and automatic vectorization
 
@@ -105,3 +103,9 @@ class LinearElasticIsotropic(JAXMaterial):
 ```
 
 For more details on the use of AD on JAX behaviors, see [](jax_elastoplasticity.md) and the [](demos/elastoplasticity/plane_elastoplasticity.md) demo.
+
+## References
+
+```{bibliography}
+:filter: docname in docnames
+```

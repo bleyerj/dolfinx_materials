@@ -188,6 +188,11 @@
 <li class="toctree-l1 current active"><a class="current reference internal" href="#">Stationary nonlinear heat transfer</a></li>
 <li class="toctree-l1"><a class="reference internal" href="phase_change.html">Transient heat equation with phase change</a></li>
 </ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">CVXPY demos</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../../../cvxpy.html">Convex optimization-based constitutive update</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../cvxpy/cvxpy_return_mapping.html">Computing yield surfaces</a></li>
+</ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">API</span></p>
 <ul class="nav bd-sidenav">
 <li class="toctree-l1"><a class="reference internal" href="../../../api/material.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">material</span></code></a></li>
@@ -600,14 +605,14 @@ temperature gradient (at the end of the time step).</p>
 <section id="nonlinear-variational-formulation">
 <h4>Nonlinear variational formulation<a class="headerlink" href="#nonlinear-variational-formulation" title="Link to this heading">#</a></h4>
 <p>We are now in position of defining the nonlinear variational formulation corresponding to the stationary nonlinear heat transfer. Without any external loading, the nonlinear residual reads as:</p>
-<div class="amsmath math notranslate nohighlight" id="equation-c843be91-6117-441c-be57-1395db1d3085">
-<span class="eqno">(8)<a class="headerlink" href="#equation-c843be91-6117-441c-be57-1395db1d3085" title="Permalink to this equation">#</a></span>\[\begin{equation}
+<div class="amsmath math notranslate nohighlight" id="equation-2b2321b2-0fe2-4197-9fb1-1c17f01e2d2a">
+<span class="eqno">(8)<a class="headerlink" href="#equation-2b2321b2-0fe2-4197-9fb1-1c17f01e2d2a" title="Permalink to this equation">#</a></span>\[\begin{equation}
 F(\widehat{T}) = \int_\Omega \mathbf{j}\cdot \nabla \widehat{T} \text{dx} = 0 \quad \forall \widehat{T}
 \end{equation}\]</div>
 <p>where the heat flux <span class="math notranslate nohighlight">\(\mathbf{j}\)</span> is provided by the <code class="docutils literal notranslate"><span class="pre">QuadratureMap</span></code> as a flux. The latter is a <code class="docutils literal notranslate"><span class="pre">dolfinx</span></code> function defined on <code class="docutils literal notranslate"><span class="pre">Quadrature</span></code> function space (no interpolation is possible). Note that the integration measure must match the chosen quadrature scheme and quadrature degree. It is provided here as <code class="docutils literal notranslate"><span class="pre">qmap.dx</span></code>.</p>
 <p>The <code class="docutils literal notranslate"><span class="pre">qmap.derivative</span></code> function works similarly to the standard <code class="docutils literal notranslate"><span class="pre">ufl.derivative</span></code> function except that it will also differentiate the heat flux. From the two tangent operator blocks <code class="docutils literal notranslate"><span class="pre">dj_ddgT</span></code> and <code class="docutils literal notranslate"><span class="pre">dj_ddT</span></code>, it will automatically be deduced that the heat flux <span class="math notranslate nohighlight">\(\mathbf{j}\)</span> is a function of both the temperature gradient <span class="math notranslate nohighlight">\(\mathbf{g}=\nabla T\)</span> and the temperature itself i.e. <span class="math notranslate nohighlight">\(\mathbf{j}=\mathbf{j}(\mathbf{g}, T)\)</span>. Hence, the computed Jacobian form will be:</p>
-<div class="amsmath math notranslate nohighlight" id="equation-2d86cb8f-c815-45d9-8176-ac483e7188aa">
-<span class="eqno">(9)<a class="headerlink" href="#equation-2d86cb8f-c815-45d9-8176-ac483e7188aa" title="Permalink to this equation">#</a></span>\[\begin{equation}
+<div class="amsmath math notranslate nohighlight" id="equation-3ee7d2e7-c187-4f75-bffd-e164612e3ea5">
+<span class="eqno">(9)<a class="headerlink" href="#equation-3ee7d2e7-c187-4f75-bffd-e164612e3ea5" title="Permalink to this equation">#</a></span>\[\begin{equation}
 J(\widehat{T},T^*) = \int_{\Omega} \nabla \widehat{T}\cdot\left(\dfrac{\partial \mathbf{j}}{\partial \mathbf{g}}\cdot \nabla T^*+\dfrac{\partial \mathbf{j}}{\partial T}\cdot T^*\right) \text{dx}
 \end{equation}\]</div>
 <p>The resulting nonlinear problem is managed by the <code class="docutils literal notranslate"><span class="pre">NonlinearMaterialProblem</span></code> class. It is solved using a Newton non-linear solver. The <code class="docutils literal notranslate"><span class="pre">solve</span></code> method returns the converged status and the number of Newton iterations.</p>

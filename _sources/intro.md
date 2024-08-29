@@ -73,6 +73,7 @@ where $\bsig_{n+1},\balpha_{n+1}$ are obtained by solving the following problem:
 ```
 given $\Delta\beps, \beps_n, \balpha_n$ and where $F_n$ denotes a time-discretized version of $F$ i.e. depending on $\balpha_n$ for instance. For more details on the various discretization strategies and solving schemes, we refer to {cite:p}`simo2006computational`. In the `dolfinx_materials` library, such an evolution will be managed by a concrete implementation of a `Material` object using, for instance, a third-party library. This constitutive update is therefore fully decoupled from the finite-element library which sees only $\bsig(\beps)$ as an abstract non-linear function.
 
+`FEniCSx`, through UFL, is well-equipped to handle relatively complex constitutive behaviors, such as hyperelasticity (including anisotropic models), by defining them via a free energy potential and mathematical primitives. In these cases, *symbolic* automatic differentiation (AD) is efficiently employed to derive stress-strain relationships directly. However, UFL exhibits limitations when it comes to constitutive models defined by implicit expressions, such as those involving ordinary differential equations (ODEs) for auxiliary state variables. The fundamental distinction here is that such constitutive laws must be conceptualized as computational algorithms rather than closed-form mathematical expressions, highlighting the difference between *symbolic* and *algorithmic* AD.
 
 ## Consistent tangent operator
 
@@ -86,7 +87,7 @@ a_\text{tangent}(\bu,\bv) = \int_{\Omega} \nabla^s \bu: \mathbb{C}_\text{tang}(\
 
 which involves the local tangent stiffness tensor $\mathbb{C}_\text{tang}(\beps)$. The latter is the direct differentiation of the mapping {eq}`constitutive-black-box`. The `Material` object must therefore, not only provide a concrete implementation of the stress evaluation but also of its derivative with respect to the imposed strain $\beps$. This step is crucial as it directly impacts the convergence quality of the global Newton system, and it is often cumbersome and error-prone. 
 
-To streamline this process, Automatic Differentiation (AD) tools, such as those available in JAX, become highly valuable. These tools automate the differentiation process, reducing errors and enhancing the efficiency of computing the tangent operator. We will leverage JAX's AutoDiff capabilities extensively when working with `JAXMaterial` objects, see [](jax.md).
+To streamline this process, AD tools, such as those available in JAX, become highly valuable. These tools automate the differentiation process, reducing errors and enhancing the efficiency of computing the tangent operator. We will leverage JAX's AutoDiff capabilities extensively when working with `JAXMaterial` objects, see [](jax.md).
 
 ```{note}
 For some generalized multi-physics behaviors, we may also need some derivatives of a state variable in $\mathcal{S}$ with respect to the imposed strain.
@@ -129,6 +130,49 @@ For more details on such examples, we refer to the following MFront demos:
 The constitutive update process involves solving a small, local system of nonlinear evolution equations at each integration point to update the material state. This process, even for complex models like crystal plasticity with hundreds of state variables, is highly parallelizable and computationally efficient compared to solving the global system of equations governing the entire structure. Since the constitutive update takes up only a small fraction of the total computational time, there is flexibility to use more complex and expressive material models without significantly impacting overall performance. This context presents a promising opportunity for the application of automatic differentiation. AD can streamline the development and implementation of these complex constitutive models by automatically generating the necessary derivatives for the nonlinear equations and the associated consistent tangent operators, improving accuracy and reducing the manual effort required for coding, debugging, and optimizing these models. Consequently, modern AD tools can further enhance the expressiveness and ease of implementation of advanced material models without sacrificing computational efficiency.
 
 However, attention should be paid as how to use AD in the context of constitutive modeling. For instance, performing AD on an unrolled version of the constitutive update program will not be efficient. The JAX section discusses various strategies, including custom differentiation using the implicit theorem to seamlessly perform AD on the constitutive update implementation.
+
+(tensors_conventions)=
+## Conventions for representing tensors
+
+### 2nd-rank tensors
+
+2nd-rank tensors are represented as vectors using the Mandel representation. Components ordering follow the conventions used by the MFront project [described here](https://thelfer.github.io/tfel/web/tensors.html).
+
+A symmetric 2nd-rank tensor $\boldsymbol{a}$ stored as follows in 3D:
+
+$$
+\{\boldsymbol{a}\} = \begin{Bmatrix}a_{11} & a_{22} & a_{33} & \sqrt{2}a_{12} & \sqrt{2}a_{13} & \sqrt{2}a_{23} \end{Bmatrix}^\text{T}
+$$
+and in 2D:
+
+$$
+\{\boldsymbol{a}\} = \begin{Bmatrix}a_{11} & a_{22} & \sqrt{2}a_{12} \end{Bmatrix}^\text{T}
+$$
+
+A non-symmetric 2nd-rank tensor $\boldsymbol{a}$ stored as follows in 3D:
+
+$$
+\{\boldsymbol{a}\} = \begin{Bmatrix}a_{11} & a_{22} & a_{33} & a_{12} & a_{21} & a_{13} & a_{31} & a_{23} & a_{32} \end{Bmatrix}^\text{T}
+$$
+and similarly in 2D:
+
+$$
+\{\boldsymbol{a}\} = \begin{Bmatrix}a_{11} & a_{22} & a_{12} & a_{21} \end{Bmatrix}^\text{T}
+$$
+
+### 4th-rank tensors
+
+4th-rank tensors are represented as matrices with components complying with the representation of 2nd-rank tensors.
+
+For instance, a symmetric 4th-order tensor in 2D will be represented as:
+
+$$
+[\mathbf{C}] &= \begin{bmatrix}
+C_{1111} & C_{1122} & \sqrt{2}C_{1112} \\
+C_{2211} & C_{2222} & \sqrt{2}C_{2212} \\
+\sqrt{2}C_{1112} & \sqrt{2}C_{2212} & 2C_{1212}
+\end{bmatrix}
+$$
 
 ## References
 
