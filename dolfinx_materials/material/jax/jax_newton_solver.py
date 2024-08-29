@@ -10,8 +10,7 @@
 import jax
 import jax.numpy as jnp
 from functools import partial
-from jaxopt import GaussNewton
-from typing import NamedTuple, Any
+from typing import NamedTuple
 
 
 class SolverParameters(NamedTuple):
@@ -20,15 +19,6 @@ class SolverParameters(NamedTuple):
     rtol: float
     atol: float
     niter_max: int
-
-
-class SolverState(NamedTuple):
-    """Current state of NewtonSolver"""
-
-    iter: int
-    residual: Any
-    residual_norm: float
-    value: Any
 
 
 @jax.jit
@@ -51,7 +41,6 @@ def newton_solve(x, r, dr_dx, params):
         norm_res, niter, _ = state
         return jnp.logical_and(
             jnp.logical_and(norm_res > params.atol, norm_res > params.rtol * norm_res0),
-            # norm_res > params.rtol * norm_res0,
             niter < params.niter_max,
         )
 
@@ -77,7 +66,9 @@ def newton_solve(x, r, dr_dx, params):
     norm_res, niter_total, history = jax.lax.while_loop(
         cond_fun, body_fun, (norm_res0, niter, history)
     )
-    return history
+    x_sol, res_sol = history
+    data = (niter_total, norm_res, res_sol)
+    return x_sol, data
 
 
 class JAXNewton:
@@ -115,8 +106,8 @@ class JAXNewton:
 
     @partial(jax.jit, static_argnums=(0,))
     def solve(self, x):
-        solve = lambda f, x: newton_solve(x, f, jax.jacfwd(f), self.params)[0]
+        solve = lambda f, x: newton_solve(x, f, jax.jacfwd(f), self.params)
 
         tangent_solve = lambda g, y: _solve_linear_system(x, jax.jacfwd(g)(y), y)
-        x_sol = jax.lax.custom_root(self.r, x, solve, tangent_solve)
-        return x_sol, self.r(x_sol)
+        x_sol, data = jax.lax.custom_root(self.r, x, solve, tangent_solve, has_aux=True)
+        return x_sol, data
