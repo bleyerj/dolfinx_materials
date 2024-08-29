@@ -21,53 +21,57 @@ class SolverParameters(NamedTuple):
     niter_max: int
 
 
-@jax.jit
 def _solve_linear_system(x, J, b):
     if jnp.isscalar(x):
         return b / J
     else:
         dx = jnp.linalg.solve(J, b)
+        # dx, _ = jax.scipy.sparse.linalg.gmres(J, b, x, tol=1e-8)
     return dx
 
 
 def newton_solve(x, r, dr_dx, params):
-    niter = 0
-
-    res = r(x)
-    norm_res0 = jnp.linalg.norm(res)
-
-    @jax.jit
-    def cond_fun(state):
-        norm_res, niter, _ = state
-        return jnp.logical_and(
-            jnp.logical_and(norm_res > params.atol, norm_res > params.rtol * norm_res0),
-            niter < params.niter_max,
-        )
-
-    @jax.jit
-    def body_fun(state):
-        norm_res, niter, history = state
-
-        x, res = history
-
-        dx = _solve_linear_system(x, dr_dx(x), -res)
-        x += dx
+    def run_newton(x, params):
+        niter = 0
 
         res = r(x)
-        norm_res = jnp.linalg.norm(res)
+        norm_res0 = jnp.linalg.norm(res)
 
-        history = x, res
-        niter += 1
+        def cond_fun(state):
+            norm_res, niter, _ = state
+            return jnp.logical_and(
+                jnp.logical_and(
+                    norm_res > params.atol, norm_res > params.rtol * norm_res0
+                ),
+                niter < params.niter_max,
+            )
 
-        return (norm_res, niter, history)
+        def body_fun(state):
+            norm_res, niter, history = state
 
-    history = (x, res)
+            x, res = history
 
-    norm_res, niter_total, history = jax.lax.while_loop(
-        cond_fun, body_fun, (norm_res0, niter, history)
-    )
-    x_sol, res_sol = history
-    data = (niter_total, norm_res, res_sol)
+            dx = _solve_linear_system(x, dr_dx(x), -res)
+            x += dx
+
+            res = r(x)
+            norm_res = jnp.linalg.norm(res)
+
+            history = x, res
+            niter += 1
+
+            return (norm_res, niter, history)
+
+        history = (x, res)
+
+        norm_res, niter_total, history = jax.lax.while_loop(
+            cond_fun, body_fun, (norm_res0, niter, history)
+        )
+        x_sol, res_sol = history
+        data = (niter_total, norm_res0, norm_res, res_sol)
+        return x_sol, data
+
+    x_sol, data = run_newton(x, params)
     return x_sol, data
 
 
@@ -100,7 +104,7 @@ class JAXNewton:
         else:
             self.r = r
         if dr_dx is None:
-            self.dr_dx = jax.jit(jax.jacfwd(self.r))
+            self.dr_dx = jax.jacfwd(self.r)
         else:
             self.dr_dx = dr_dx
 
@@ -110,4 +114,6 @@ class JAXNewton:
 
         tangent_solve = lambda g, y: _solve_linear_system(x, jax.jacfwd(g)(y), y)
         x_sol, data = jax.lax.custom_root(self.r, x, solve, tangent_solve, has_aux=True)
+
+        # x_sol, data = newton_solve(x, self.r, self.dr_dx, self.params)
         return x_sol, data

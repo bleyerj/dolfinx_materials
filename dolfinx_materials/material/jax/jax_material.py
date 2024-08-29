@@ -1,15 +1,14 @@
 from dolfinx_materials.material import Material
 import jax
-
 from functools import wraps, partial
 
 jax.config.update("jax_enable_x64", True)  # use double-precision
 
 
-def tangent_AD(consitutive_upate_method):
-    @wraps(consitutive_upate_method)
+def tangent_AD(constitutive_update_method):
+    @wraps(constitutive_update_method)
     def wrapper(self, *args):
-        constitutive_update_fun = partial(consitutive_upate_method, self)
+        constitutive_update_fun = partial(constitutive_update_method, self)
         return jax.jacfwd(constitutive_update_fun, argnums=0, has_aux=True)(*args)
 
     return wrapper

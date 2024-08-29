@@ -2,6 +2,7 @@ import jax
 import jax.numpy as jnp
 from dolfinx_materials.material.jax import JAXMaterial, tangent_AD, JAXNewton
 from .tensors import dev, to_mat
+from time import time
 
 
 def von_Mises_stress(sig):
@@ -84,8 +85,8 @@ class GeneralIsotropicHardening(JAXMaterial):
     def __init__(self, elastic_model, yield_stress, equivalent_stress):
         super().__init__()
         self.elastic_model = elastic_model
-        self.yield_stress = yield_stress
-        self.equivalent_stress = equivalent_stress
+        self.yield_stress = jax.jit(yield_stress)
+        self.equivalent_stress = jax.jit(equivalent_stress)
 
     @property
     def internal_state_variables(self):
@@ -131,8 +132,10 @@ class GeneralIsotropicHardening(JAXMaterial):
         newton = JAXNewton((r_eps_p, r_p))
 
         x0 = jnp.zeros((7,))
-        x, res = newton.solve(x0)
-
+        # tic = time()
+        x, data = newton.solve(x0)
+        # jax.debug.print("Newton time {}", time() - tic)
+        # jax.debug.print("Iterations {}", data[0])
         depsp = x[:-1]
         dp = x[-1]
 
