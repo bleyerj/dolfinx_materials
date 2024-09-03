@@ -1,7 +1,7 @@
 # `dolfinx_materials` : A Python package for advanced material modelling
 
 <p align="center">
-<img src="./docs/images/logo.png" alt="Description" width="600">
+<img src="./docs/images/logo.png" alt="Description" width="500">
 </p>
 
 `dolfinx_materials` is a Python add-on package to the `dolfinx` interface to the [FEniCSx project](https://fenicsproject.org/).

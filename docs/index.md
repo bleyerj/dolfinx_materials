@@ -1,7 +1,7 @@
 # Documentation
 
 ```{image} images/logo.png
-:width: 600px
+:width: 500px
 :align: center
 ```
 
