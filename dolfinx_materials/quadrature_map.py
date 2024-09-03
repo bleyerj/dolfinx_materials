@@ -318,6 +318,9 @@ class QuadratureMap:
 
         # material integration
         flux_vals, isv_vals, Ct_vals = self.material.integrate(grad_vals)
+        assert not (np.any(np.isnan(flux_vals)))
+        assert not (np.any(np.isnan(isv_vals)))
+        assert not (np.any(np.isnan(Ct_vals)))
 
         if self.material.rotation_matrix is not None:
             self.material.rotate_fluxes(
