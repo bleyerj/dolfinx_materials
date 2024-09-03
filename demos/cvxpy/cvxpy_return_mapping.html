@@ -176,6 +176,7 @@
 <ul class="nav bd-sidenav">
 <li class="toctree-l1"><a class="reference internal" href="../../intro.html">General framework</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../jax.html">JAX implementation of material behaviors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../mfront.html">Using MFront behaviors</a></li>
 </ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">JAX demos</span></p>
 <ul class="nav bd-sidenav">
@@ -186,6 +187,7 @@
 </ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">MFront demos</span></p>
 <ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../mfront/finite_strain_elastoplasticity/finite_strain_elastoplasticity.html">Finite-strain elastoplasticity within the logarithmic strain framework</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../mfront/hyperelasticity/hyperelasticity.html">Hyperelastic heterogeneous material</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../mfront/heat_transfer/nonlinear_heat_transfer.html">Stationary nonlinear heat transfer</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../mfront/heat_transfer/phase_change.html">Transient heat equation with phase change</a></li>
@@ -241,6 +243,53 @@
         <div class="header-article-item">
 
 <div class="article-header-buttons">
+
+
+
+
+
+<div class="dropdown dropdown-source-buttons">
+  <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Source repositories">
+    <i class="fab fa-github"></i>
+  </button>
+  <ul class="dropdown-menu">
+      
+      
+      
+      <li><a href="https://github.com/bleyerj/dolfinx_materials" target="_blank"
+   class="btn btn-sm btn-source-repository-button dropdown-item"
+   title="Source repository"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fab fa-github"></i>
+  </span>
+<span class="btn__text-container">Repository</span>
+</a>
+</li>
+      
+      
+      
+      
+      <li><a href="https://github.com/bleyerj/dolfinx_materials/edit/main/demos/cvxpy/cvxpy_return_mapping.md" target="_blank"
+   class="btn btn-sm btn-source-edit-button dropdown-item"
+   title="Suggest edit"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-pencil-alt"></i>
+  </span>
+<span class="btn__text-container">Suggest edit</span>
+</a>
+</li>
+      
+  </ul>
+</div>
+
 
 
 
@@ -482,7 +531,7 @@ f(\bsig) \leq 0 \quad \Leftrightarrow -f_c \leq \sigma_I,\sigma_{II} \leq f_t
 <p class="admonition-title">See also</p>
 <p>For more details on the Hosford yield surface, see also <a class="reference internal" href="../jax/elastoplasticity/Hosford_yield_surface.html"><span class="std std-doc">Computing the Hosford plane stress yield surface</span></a>.</p>
 </div>
-<p>The Hosford yield surface in plane stress conditions is defined by (see also <span id="id1">[<a class="reference internal" href="#id10" title="Jeremy Bleyer and Ghazi Hassen. Automated formulation and resolution of limit analysis problems. Computers &amp; Structures, 243:106341, 2021.">Bleyer and Hassen, 2021</a>]</span>):</p>
+<p>The Hosford yield surface in plane stress conditions is defined by (see also <span id="id1">[<a class="reference internal" href="#id11" title="Jeremy Bleyer and Ghazi Hassen. Automated formulation and resolution of limit analysis problems. Computers &amp; Structures, 243:106341, 2021.">Bleyer and Hassen, 2021</a>]</span>):</p>
 <div class="math notranslate nohighlight">
 \[
 f(\bsig) = \left(\dfrac{1}{2}\left(|\sigma_I|^a+|\sigma_{II}|^a+|\sigma_{I}-\sigma_{II}|^a\right)\right)^{1/a} - \sigma_0 \leq 0
@@ -561,7 +610,7 @@ z_0+z_1&amp;=z_2
 <h2>References<a class="headerlink" href="#references" title="Link to this heading">#</a></h2>
 <div class="docutils container" id="id2">
 <div role="list" class="citation-list">
-<div class="citation" id="id10" role="doc-biblioentry">
+<div class="citation" id="id11" role="doc-biblioentry">
 <span class="label"><span class="fn-bracket">[</span><a role="doc-backlink" href="#id1">BH21</a><span class="fn-bracket">]</span></span>
 <p>Jeremy Bleyer and Ghazi Hassen. Automated formulation and resolution of limit analysis problems. <em>Computers &amp; Structures</em>, 243:106341, 2021.</p>
 </div>
