@@ -1,5 +1,8 @@
 # `dolfinx_materials` : A Python package for advanced material modelling
 
+<p align="center">
+<img src="./docs/images/logo.png" alt="Description" width="600">
+</p>
 
 `dolfinx_materials` is a Python add-on package to the `dolfinx` interface to the [FEniCSx project](https://fenicsproject.org/).
 It enables the user to define **complex material constitutive behaviors** which are not expressible using classical [UFL](https://fenics.readthedocs.io/projects/ufl/en/latest/) operators.
