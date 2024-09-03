@@ -30,6 +30,10 @@ $ In this example, we show how to use a JAX implementation of finite-strain plas
 :width: 500px
 ```
 
+```{tip}
+This demo also works in parallel.
+```
+
 ## Problem setup
 
 The setup of the FEniCSx variational problem is quite similar to the MFront [](/demos/mfront/hyperelasticity/hyperelasticity.md) demo.
@@ -57,7 +61,7 @@ W = 2.0  # rod diameter
 R = 20.0 # notch radius
 d = 0.2  # cross-section reduction
 coarse_size = 1.0
-fine_size = 1.0
+fine_size = 0.2
 ```
 
 The mesh consists of a quarter of cylindrical rod with a slightly reduced cross-section at its center to induce necking. The geometry is defined with `gmsh` API and the Open-Cascade kernel.
@@ -322,3 +326,9 @@ file_results.close()
 ```
 
 We observe that the Newton method converges within a few iterations in general meaning that the tangent operator is propely computed.
+
+## References
+
+```{bibliography}
+:filter: docname in docnames
+```

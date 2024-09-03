@@ -16,7 +16,7 @@ kernelspec:
 
 # Finite-element simulations of JAX elastoplasticity
 
-In this example, we show how to use an elastoplastic `JAXMaterial` within a `FEniCSx` finite-element simulation. We use a von Mises elastoplastic material with a general isotropic hardening model. The JAX implementation of such a behavior is described in [](../../jax_elastoplasticity.md#jax-implementation).
+In this example, we show how to use an elastoplastic `JAXMaterial` within a `FEniCSx` finite-element simulation. We use a von Mises elastoplastic material with a general isotropic hardening model. The JAX implementation of such a behavior is described in [](/jax_elastoplasticity.md#generic-elastoplasticity-with-isotropic-hardening).
 
 ```{image} /images/elastoplasticity.gif
 :align: center

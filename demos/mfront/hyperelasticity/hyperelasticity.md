@@ -16,6 +16,10 @@ kernelspec:
 
 In this demo, we show how to define a problem containing a call to a MFront behavior on a subset of cells while defining the behavior on the remaining part of the domain using UFL.
 
+```{tip}
+This demo also works in parallel.
+```
+
 We consider a unit square consisting of circular inclusions of radius $R=0.4$ located at the 8 vertices of the unit cube. The matrix domain $\Omega_\text{m}$ (tagged `1`) consists of a Ogden hyperelastic material implemented with MFront. The inclusions domain $\Omega_\text{i}$ (tagged `2`) is assumed to be much stiffer and will be described by a Saint-Venant Kirchhoff (SVK) material of modulus $E_\text{pen} = 10^3$ GPa and Poisson ratio $\nu=0$. This behavior will be implemented in pure UFL.
 
 ```{image} hyperelasticity.gif
