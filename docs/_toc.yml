@@ -15,8 +15,9 @@ parts:
   - caption: JAX demos
     chapters:
       - file: jax_elastoplasticity.md
-      - file: demos/elastoplasticity/Hosford_yield_surface.md
-      - file: demos/elastoplasticity/plane_elastoplasticity.md
+      - file: demos/jax/elastoplasticity/Hosford_yield_surface.md
+      - file: demos/jax/elastoplasticity/plane_elastoplasticity.md
+      - file: demos/jax/finite_strain_elastoplasticity/finite_strain_elastoplasticity.md
   - caption: MFront demos
     chapters:
       - file: demos/mfront/hyperelasticity/hyperelasticity.md

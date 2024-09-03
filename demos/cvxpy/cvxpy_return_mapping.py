@@ -33,6 +33,7 @@ import cvxpy as cp
 E, nu = 70e3, 0.2
 elastic_model = LinearElasticIsotropic(E, nu)
 
+
 def plot_stress_paths(material, ax):
     eps = 1e-3
     Nbatch = 21
@@ -86,6 +87,7 @@ def plot_stress_paths(material, ax):
 #
 # To follow Disciplined Convex Programming rules of `cvxpy`, we finally write $\{\sigma\}^\text{T}\mathbf{Q}\{\sigma\} \leq \sigma_0**2$ which reads:
 
+
 class PlaneStressvonMises(CvxPyMaterial):
     def yield_constraints(self, sig):
         Q = np.array([[1, -1 / 2, 0], [-1 / 2, 1, 0], [0, 0, 1]])
@@ -120,6 +122,7 @@ plt.show()
 # $$
 # where $\sigma_I$ and $\sigma_{II}$ denote the principal values. Equivalently, this can be expressed using the minimum and maximum eigenvalues $\sigma_\text{max} \leq f_t$ and $\sigma_\text{min} \geq -f_c$. The maximum and minimum principal value are obtained with `cvxpy.lambda_max` and `cvxpy.lambda_min` respectively, resulting in the following implementation:
 
+
 class Rankine(CvxPyMaterial):
     def yield_constraints(self, sig):
         Sig = cp.bmat(
@@ -153,7 +156,7 @@ plt.show()
 # ## Hosford material
 #
 # ```{seealso}
-# For more details on the Hosford yield surface, see also [](/demos/elastoplasticity/Hosford_yield_surface.md).
+# For more details on the Hosford yield surface, see also [](/demos/jax/elastoplasticity/Hosford_yield_surface.md).
 # ```
 #
 # The Hosford yield surface in plane stress conditions is defined by:
@@ -173,6 +176,7 @@ plt.show()
 # \end{align}
 # $$
 # in which the last condition can be expressed as a $p$-norm on the vector $\boldsymbol{z}$ with here $p=a$. The implementation reads:
+
 
 class PlaneStressHosford(CvxPyMaterial):
     def yield_constraints(self, sig):
@@ -204,4 +208,4 @@ plt.ylim(-1.2 * sig0, 1.2 * sig0)
 ax.set_aspect("equal")
 plt.show()
 
-# Interestingly, the `cvxpy` implementation is able to handle very large values of $a$, contrary to a simple Newton implementation as in [](/demos/elastoplasticity/Hosford_yield_surface.md).
+# Interestingly, the `cvxpy` implementation is able to handle very large values of $a$, contrary to a simple Newton implementation as in [](/demos/jax/elastoplasticity/Hosford_yield_surface.md).

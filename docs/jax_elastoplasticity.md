@@ -321,7 +321,7 @@ Finally, the local Newton system is solved (the corresponding jacobian is comput
         return sig, state
 ```
 
-For an illustrative application of this behavior, see [](/demos/elastoplasticity/Hosford_yield_surface.md).
+For an illustrative application of this behavior, see [](/demos/jax/elastoplasticity/Hosford_yield_surface.md).
 
 ## References
 
