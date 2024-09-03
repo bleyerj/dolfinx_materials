@@ -180,11 +180,13 @@
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">JAX demos</span></p>
 <ul class="nav bd-sidenav">
 <li class="toctree-l1"><a class="reference internal" href="jax_elastoplasticity.html">JAX implementation of elastoplasticity</a></li>
-<li class="toctree-l1"><a class="reference internal" href="demos/elastoplasticity/Hosford_yield_surface.html">Computing the Hosford plane stress yield surface</a></li>
-<li class="toctree-l1"><a class="reference internal" href="demos/elastoplasticity/plane_elastoplasticity.html">Finite-element simulations of JAX elastoplasticity</a></li>
+<li class="toctree-l1"><a class="reference internal" href="demos/jax/elastoplasticity/Hosford_yield_surface.html">Computing the Hosford plane stress yield surface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="demos/jax/elastoplasticity/plane_elastoplasticity.html">Finite-element simulations of JAX elastoplasticity</a></li>
+<li class="toctree-l1"><a class="reference internal" href="demos/jax/finite_strain_elastoplasticity/finite_strain_elastoplasticity.html">Finite-strain <span class="math notranslate nohighlight">\(\boldsymbol{F}^\text{e}\boldsymbol{F}^\text{p}\)</span> plasticity</a></li>
 </ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">MFront demos</span></p>
 <ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="demos/mfront/hyperelasticity/hyperelasticity.html">Hyperelastic heterogeneous material</a></li>
 <li class="toctree-l1"><a class="reference internal" href="demos/mfront/heat_transfer/nonlinear_heat_transfer.html">Stationary nonlinear heat transfer</a></li>
 <li class="toctree-l1"><a class="reference internal" href="demos/mfront/heat_transfer/phase_change.html">Transient heat equation with phase change</a></li>
 </ul>
@@ -317,7 +319,7 @@ document.write(`
 <h1>Convex optimization-based constitutive update<a class="headerlink" href="#convex-optimization-based-constitutive-update" title="Link to this heading">#</a></h1>
 <section id="elastoplastic-return-mapping-via-convex-optimization">
 <h2>Elastoplastic return mapping via convex optimization<a class="headerlink" href="#elastoplastic-return-mapping-via-convex-optimization" title="Link to this heading">#</a></h2>
-<p>For a specific class of materials, constitutive update can be also formulated as solving a convex optimization problem. In the case of associated plasticity, this amounts to projecting the elastic trial state onto the yield surface, <span id="id1">[<a class="reference internal" href="#id11" title="Hugo Bruno, Guilherme Barros, Ivan FM Menezes, and Luiz Fernando Martha. Return-mapping algorithms for associative isotropic hardening plasticity using conic optimization. Applied Mathematical Modelling, 78:724–748, 2020.">Bruno <em>et al.</em>, 2020</a>, <a class="reference internal" href="#id9" title="K Krabbenhøft, AV Lyamin, and SW Sloan. Formulation and solution of some plasticity problems as conic programs. International Journal of Solids and Structures, 44(5):1533–1549, 2007.">Krabbenhøft <em>et al.</em>, 2007</a>]</span>. Ignoring hardening for the sake of simplicity, such a projection can be formulated as follows:</p>
+<p>For a specific class of materials, constitutive update can be also formulated as solving a convex optimization problem. In the case of associated plasticity, this amounts to projecting the elastic trial state onto the yield surface, <span id="id1">[<a class="reference internal" href="#id12" title="Hugo Bruno, Guilherme Barros, Ivan FM Menezes, and Luiz Fernando Martha. Return-mapping algorithms for associative isotropic hardening plasticity using conic optimization. Applied Mathematical Modelling, 78:724–748, 2020.">Bruno <em>et al.</em>, 2020</a>, <a class="reference internal" href="#id10" title="K Krabbenhøft, AV Lyamin, and SW Sloan. Formulation and solution of some plasticity problems as conic programs. International Journal of Solids and Structures, 44(5):1533–1549, 2007.">Krabbenhøft <em>et al.</em>, 2007</a>]</span>. Ignoring hardening for the sake of simplicity, such a projection can be formulated as follows:</p>
 <div class="math notranslate nohighlight" id="equation-stress-projection">
 <span class="eqno">(10)<a class="headerlink" href="#equation-stress-projection" title="Link to this equation">#</a></span>\[\begin{split}\newcommand{\bsig}{\boldsymbol{\sigma}}
 \newcommand{\beps}{\boldsymbol{\varepsilon}}
@@ -327,11 +329,11 @@ document.write(`
 \end{array}\end{split}\]</div>
 <p>where <span class="math notranslate nohighlight">\(\bsig_\text{el} = \bsig_\text{old} + \mathbb{C}:\Delta\beps\)</span> is the elastic predictor computed from the previous stress state <span class="math notranslate nohighlight">\(\bsig_\text{old}\)</span> and the current strain increment <span class="math notranslate nohighlight">\(\Delta\beps\)</span>.</p>
 <p>Writing the optimality conditions of <a class="reference internal" href="#equation-stress-projection">(10)</a> results in the system of nonlinear equations arising in the elastoplastic return mapping procedure. However, when considering non-smooth yield surfaces or yield conditions formed by the intersection of many yield surfaces, such local Newton procedures may encounter difficulties of convergence, due to the lack of differentiability of the yield surface.</p>
-<p>In such cases, it may become interesting to consider using dedicated tools to solve the optimization problem <a class="reference internal" href="#equation-stress-projection">(10)</a> directly. At first sight, this problem is a quadratic optimization problem with nonlinear constraints. However, the yield function <span class="math notranslate nohighlight">\(f(\bsig)\)</span> can very often be reformulated using standard cones such as the positive orthant, the second-order Lorentz cone, the cone of positive-definite matrices, etc <span id="id2">[<a class="reference internal" href="#id10" title="Christos D Bisbos and Panos M Pardalos. Second-order cone and semidefinite representations of material failure criteria. Journal of Optimization Theory and Applications, 134(2):275–301, 2007.">Bisbos and Pardalos, 2007</a>]</span>. In this case, we can leverage more efficient convex optimization solvers such as primal-dual interior point solvers <span id="id3">[<a class="reference internal" href="#id12" title="Erling D Andersen, Cornelis Roos, and Tamas Terlaky. On implementing a primal-dual interior-point method for conic quadratic optimization. Mathematical Programming, 95(2):249–277, 2003.">Andersen <em>et al.</em>, 2003</a>]</span>.</p>
+<p>In such cases, it may become interesting to consider using dedicated tools to solve the optimization problem <a class="reference internal" href="#equation-stress-projection">(10)</a> directly. At first sight, this problem is a quadratic optimization problem with nonlinear constraints. However, the yield function <span class="math notranslate nohighlight">\(f(\bsig)\)</span> can very often be reformulated using standard cones such as the positive orthant, the second-order Lorentz cone, the cone of positive-definite matrices, etc <span id="id2">[<a class="reference internal" href="#id11" title="Christos D Bisbos and Panos M Pardalos. Second-order cone and semidefinite representations of material failure criteria. Journal of Optimization Theory and Applications, 134(2):275–301, 2007.">Bisbos and Pardalos, 2007</a>]</span>. In this case, we can leverage more efficient convex optimization solvers such as primal-dual interior point solvers <span id="id3">[<a class="reference internal" href="#id13" title="Erling D Andersen, Cornelis Roos, and Tamas Terlaky. On implementing a primal-dual interior-point method for conic quadratic optimization. Mathematical Programming, 95(2):249–277, 2003.">Andersen <em>et al.</em>, 2003</a>]</span>.</p>
 </section>
 <section id="cvxpy">
 <h2>CVXPY<a class="headerlink" href="#cvxpy" title="Link to this heading">#</a></h2>
-<p><a class="reference external" href="https://www.cvxpy.org"><code class="docutils literal notranslate"><span class="pre">cvxpy</span></code></a> is an open source Python-embedded modeling language for convex optimization problems, enabling to express such problems in a natural way using predefined atomic functions <span id="id4">[<a class="reference internal" href="#id15" title="Akshay Agrawal, Robin Verschueren, Steven Diamond, and Stephen Boyd. A rewriting system for convex optimization problems. Journal of Control and Decision, 5(1):42–60, 2018.">Agrawal <em>et al.</em>, 2018</a>, <a class="reference internal" href="#id14" title="Steven Diamond and Stephen Boyd. CVXPY: A Python-embedded modeling language for convex optimization. Journal of Machine Learning Research, 17(83):1–5, 2016.">Diamond and Boyd, 2016</a>]</span>. It offers a wide range of open-source and commercial solvers. Some of them are also capable of computing sensitivities of the optimization problem to derive the underlying tangent operator <span id="id5">[<a class="reference internal" href="#id16" title="Akshay Agrawal, Brandon Amos, Shane Barratt, Stephen Boyd, Steven Diamond, and J Zico Kolter. Differentiable convex optimization layers. Advances in neural information processing systems, 2019.">Agrawal <em>et al.</em>, 2019</a>]</span>. This is however not explored here at the moment.</p>
+<p><a class="reference external" href="https://www.cvxpy.org"><code class="docutils literal notranslate"><span class="pre">cvxpy</span></code></a> is an open source Python-embedded modeling language for convex optimization problems, enabling to express such problems in a natural way using predefined atomic functions <span id="id4">[<a class="reference internal" href="#id16" title="Akshay Agrawal, Robin Verschueren, Steven Diamond, and Stephen Boyd. A rewriting system for convex optimization problems. Journal of Control and Decision, 5(1):42–60, 2018.">Agrawal <em>et al.</em>, 2018</a>, <a class="reference internal" href="#id15" title="Steven Diamond and Stephen Boyd. CVXPY: A Python-embedded modeling language for convex optimization. Journal of Machine Learning Research, 17(83):1–5, 2016.">Diamond and Boyd, 2016</a>]</span>. It offers a wide range of open-source and commercial solvers. Some of them are also capable of computing sensitivities of the optimization problem to derive the underlying tangent operator <span id="id5">[<a class="reference internal" href="#id17" title="Akshay Agrawal, Brandon Amos, Shane Barratt, Stephen Boyd, Steven Diamond, and J Zico Kolter. Differentiable convex optimization layers. Advances in neural information processing systems, 2019.">Agrawal <em>et al.</em>, 2019</a>]</span>. This is however not explored here at the moment.</p>
 <div class="admonition seealso">
 <p class="admonition-title">See also</p>
 <p>For more details, see also Andrey’s Latyshev work at <a class="github reference external" href="https://github.com/a-latyshev/convex-plasticity">a-latyshev/convex-plasticity</a>.</p>
@@ -398,31 +400,31 @@ document.write(`
 <h2>References<a class="headerlink" href="#references" title="Link to this heading">#</a></h2>
 <div class="docutils container" id="id6">
 <div role="list" class="citation-list">
-<div class="citation" id="id16" role="doc-biblioentry">
+<div class="citation" id="id17" role="doc-biblioentry">
 <span class="label"><span class="fn-bracket">[</span><a role="doc-backlink" href="#id5">AAB+19</a><span class="fn-bracket">]</span></span>
 <p>Akshay Agrawal, Brandon Amos, Shane Barratt, Stephen Boyd, Steven Diamond, and J Zico Kolter. Differentiable convex optimization layers. <em>Advances in neural information processing systems</em>, 2019.</p>
 </div>
-<div class="citation" id="id15" role="doc-biblioentry">
+<div class="citation" id="id16" role="doc-biblioentry">
 <span class="label"><span class="fn-bracket">[</span><a role="doc-backlink" href="#id4">AVDB18</a><span class="fn-bracket">]</span></span>
 <p>Akshay Agrawal, Robin Verschueren, Steven Diamond, and Stephen Boyd. A rewriting system for convex optimization problems. <em>Journal of Control and Decision</em>, 5(1):42–60, 2018.</p>
 </div>
-<div class="citation" id="id12" role="doc-biblioentry">
+<div class="citation" id="id13" role="doc-biblioentry">
 <span class="label"><span class="fn-bracket">[</span><a role="doc-backlink" href="#id3">ART03</a><span class="fn-bracket">]</span></span>
 <p>Erling D Andersen, Cornelis Roos, and Tamas Terlaky. On implementing a primal-dual interior-point method for conic quadratic optimization. <em>Mathematical Programming</em>, 95(2):249–277, 2003.</p>
 </div>
-<div class="citation" id="id10" role="doc-biblioentry">
+<div class="citation" id="id11" role="doc-biblioentry">
 <span class="label"><span class="fn-bracket">[</span><a role="doc-backlink" href="#id2">BP07</a><span class="fn-bracket">]</span></span>
 <p>Christos D Bisbos and Panos M Pardalos. Second-order cone and semidefinite representations of material failure criteria. <em>Journal of Optimization Theory and Applications</em>, 134(2):275–301, 2007.</p>
 </div>
-<div class="citation" id="id11" role="doc-biblioentry">
+<div class="citation" id="id12" role="doc-biblioentry">
 <span class="label"><span class="fn-bracket">[</span><a role="doc-backlink" href="#id1">BBMM20</a><span class="fn-bracket">]</span></span>
 <p>Hugo Bruno, Guilherme Barros, Ivan FM Menezes, and Luiz Fernando Martha. Return-mapping algorithms for associative isotropic hardening plasticity using conic optimization. <em>Applied Mathematical Modelling</em>, 78:724–748, 2020.</p>
 </div>
-<div class="citation" id="id14" role="doc-biblioentry">
+<div class="citation" id="id15" role="doc-biblioentry">
 <span class="label"><span class="fn-bracket">[</span><a role="doc-backlink" href="#id4">DB16</a><span class="fn-bracket">]</span></span>
 <p>Steven Diamond and Stephen Boyd. CVXPY: A Python-embedded modeling language for convex optimization. <em>Journal of Machine Learning Research</em>, 17(83):1–5, 2016.</p>
 </div>
-<div class="citation" id="id9" role="doc-biblioentry">
+<div class="citation" id="id10" role="doc-biblioentry">
 <span class="label"><span class="fn-bracket">[</span><a role="doc-backlink" href="#id1">KrabbenhoftLS07</a><span class="fn-bracket">]</span></span>
 <p>K Krabbenhøft, AV Lyamin, and SW Sloan. Formulation and solution of some plasticity problems as conic programs. <em>International Journal of Solids and Structures</em>, 44(5):1533–1549, 2007.</p>
 </div>

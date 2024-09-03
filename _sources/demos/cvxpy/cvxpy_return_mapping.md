@@ -154,7 +154,7 @@ plt.show()
 ## Hosford material
 
 ```{seealso}
-For more details on the Hosford yield surface, see also [](/demos/elastoplasticity/Hosford_yield_surface.md).
+For more details on the Hosford yield surface, see also [](/demos/jax/elastoplasticity/Hosford_yield_surface.md).
 ```
 
 The Hosford yield surface in plane stress conditions is defined by (see also {cite:p}`bleyer2021automated`):
@@ -226,7 +226,7 @@ ax.set_aspect("equal")
 plt.show()
 ```
 
-Interestingly, the `cvxpy` implementation is able to handle very large values of $a$, contrary to a simple Newton implementation as in [](/demos/elastoplasticity/Hosford_yield_surface.md).
+Interestingly, the `cvxpy` implementation is able to handle very large values of $a$, contrary to a simple Newton implementation as in [](/demos/jax/elastoplasticity/Hosford_yield_surface.md).
 
 ## References
 

@@ -179,9 +179,11 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../jax_elastoplasticity.html">JAX implementation of elastoplasticity</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../demos/elastoplasticity/Hosford_yield_surface.html">Computing the Hosford plane stress yield surface</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../demos/elastoplasticity/plane_elastoplasticity.html">Finite-element simulations of JAX elastoplasticity</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../demos/jax/finite_strain_elastoplasticity/finite_strain_elastoplasticity.html">Finite-strain <span class="math notranslate nohighlight">\(\boldsymbol{F}^\text{e}\boldsymbol{F}^\text{p}\)</span> plasticity</a></li>
 </ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">MFront demos</span></p>
 <ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../../../demos/mfront/hyperelasticity/hyperelasticity.html">Hyperelastic heterogeneous material</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../demos/mfront/heat_transfer/nonlinear_heat_transfer.html">Stationary nonlinear heat transfer</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../demos/mfront/heat_transfer/phase_change.html">Transient heat equation with phase change</a></li>
 </ul>
@@ -553,10 +555,11 @@ document.write(`
         <span class="k">return</span> <span class="n">pos</span>
 
     <span class="k">def</span> <span class="nf">get_internal_state_variable_index</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+
         <span class="n">index</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_behaviour</span><span class="o">.</span><span class="n">internal_state_variable_names</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
         <span class="n">start</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">internal_state_variables_pos</span><span class="p">[</span><span class="n">index</span><span class="p">]</span>
         <span class="n">size</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">internal_state_variables_size</span><span class="p">[</span><span class="n">index</span><span class="p">]</span>
-        <span class="n">pos</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">index</span> <span class="o">+</span> <span class="n">size</span><span class="p">)</span>
+        <span class="n">pos</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">start</span> <span class="o">+</span> <span class="n">size</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">pos</span>
 
     <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">i</span><span class="p">):</span>

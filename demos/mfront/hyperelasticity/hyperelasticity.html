@@ -63,7 +63,7 @@
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
     <link rel="next" title="Stationary nonlinear heat transfer" href="../heat_transfer/nonlinear_heat_transfer.html" />
-    <link rel="prev" title="Finite-element simulations of JAX elastoplasticity" href="../../elastoplasticity/plane_elastoplasticity.html" />
+    <link rel="prev" title="Finite-strain \(\boldsymbol{F}^\text{e}\boldsymbol{F}^\text{p}\) plasticity" href="../../jax/finite_strain_elastoplasticity/finite_strain_elastoplasticity.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   </head>
@@ -180,8 +180,9 @@
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">JAX demos</span></p>
 <ul class="nav bd-sidenav">
 <li class="toctree-l1"><a class="reference internal" href="../../../jax_elastoplasticity.html">JAX implementation of elastoplasticity</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../elastoplasticity/Hosford_yield_surface.html">Computing the Hosford plane stress yield surface</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../elastoplasticity/plane_elastoplasticity.html">Finite-element simulations of JAX elastoplasticity</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../jax/elastoplasticity/Hosford_yield_surface.html">Computing the Hosford plane stress yield surface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../jax/elastoplasticity/plane_elastoplasticity.html">Finite-element simulations of JAX elastoplasticity</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../jax/finite_strain_elastoplasticity/finite_strain_elastoplasticity.html">Finite-strain <span class="math notranslate nohighlight">\(\boldsymbol{F}^\text{e}\boldsymbol{F}^\text{p}\)</span> plasticity</a></li>
 </ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">MFront demos</span></p>
 <ul class="current nav bd-sidenav">
@@ -317,6 +318,10 @@ document.write(`
   <section class="tex2jax_ignore mathjax_ignore" id="hyperelastic-heterogeneous-material">
 <h1>Hyperelastic heterogeneous material<a class="headerlink" href="#hyperelastic-heterogeneous-material" title="Link to this heading">#</a></h1>
 <p>In this demo, we show how to define a problem containing a call to a MFront behavior on a subset of cells while defining the behavior on the remaining part of the domain using UFL.</p>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>This demo also works in parallel.</p>
+</div>
 <p>We consider a unit square consisting of circular inclusions of radius <span class="math notranslate nohighlight">\(R=0.4\)</span> located at the 8 vertices of the unit cube. The matrix domain <span class="math notranslate nohighlight">\(\Omega_\text{m}\)</span> (tagged <code class="docutils literal notranslate"><span class="pre">1</span></code>) consists of a Ogden hyperelastic material implemented with MFront. The inclusions domain <span class="math notranslate nohighlight">\(\Omega_\text{i}\)</span> (tagged <code class="docutils literal notranslate"><span class="pre">2</span></code>) is assumed to be much stiffer and will be described by a Saint-Venant Kirchhoff (SVK) material of modulus <span class="math notranslate nohighlight">\(E_\text{pen} = 10^3\)</span> GPa and Poisson ratio <span class="math notranslate nohighlight">\(\nu=0\)</span>. This behavior will be implemented in pure UFL.</p>
 <a class="reference internal image-reference" href="../../../_images/hyperelasticity.gif"><img alt="../../../_images/hyperelasticity.gif" class="align-center" src="../../../_images/hyperelasticity.gif" style="width: 500px;" /></a>
 <section id="meshing">
@@ -499,8 +504,8 @@ document.write(`
 <span class="n">qmap</span><span class="o">.</span><span class="n">register_gradient</span><span class="p">(</span><span class="s2">&quot;DeformationGradient&quot;</span><span class="p">,</span> <span class="n">F</span><span class="p">(</span><span class="n">u</span><span class="p">))</span>
 <span class="n">qmap</span><span class="o">.</span><span class="n">dx</span> <span class="o">=</span> <span class="n">qmap</span><span class="o">.</span><span class="n">dx</span><span class="p">(</span><span class="n">subdomain_data</span><span class="o">=</span><span class="n">subdomains</span><span class="p">)</span>
 
-<span class="n">sig</span> <span class="o">=</span> <span class="n">qmap</span><span class="o">.</span><span class="n">fluxes</span><span class="p">[</span><span class="s2">&quot;FirstPiolaKirchhoffStress&quot;</span><span class="p">]</span>
-<span class="n">Res_matrix</span> <span class="o">=</span> <span class="n">ufl</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">sig</span><span class="p">,</span> <span class="n">dF</span><span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">))</span> <span class="o">*</span> <span class="n">dx</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">PK1</span> <span class="o">=</span> <span class="n">qmap</span><span class="o">.</span><span class="n">fluxes</span><span class="p">[</span><span class="s2">&quot;FirstPiolaKirchhoffStress&quot;</span><span class="p">]</span>
+<span class="n">Res_matrix</span> <span class="o">=</span> <span class="n">ufl</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">PK1</span><span class="p">,</span> <span class="n">dF</span><span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">))</span> <span class="o">*</span> <span class="n">dx</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -644,8 +649,8 @@ Increment 9
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Average total time spent in constitutive update 1.33s
-Average time spent in global linear solver 87.59s
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Average total time spent in constitutive update 1.46s
+Average time spent in global linear solver 87.55s
 </pre></div>
 </div>
 </div>
@@ -719,12 +724,12 @@ Average time spent in global linear solver 87.59s
                   
 <div class="prev-next-area">
     <a class="left-prev"
-       href="../../elastoplasticity/plane_elastoplasticity.html"
+       href="../../jax/finite_strain_elastoplasticity/finite_strain_elastoplasticity.html"
        title="previous page">
       <i class="fa-solid fa-angle-left"></i>
       <div class="prev-next-info">
         <p class="prev-next-subtitle">previous</p>
-        <p class="prev-next-title">Finite-element simulations of JAX elastoplasticity</p>
+        <p class="prev-next-title">Finite-strain <span class="math notranslate nohighlight">\(\boldsymbol{F}^\text{e}\boldsymbol{F}^\text{p}\)</span> plasticity</p>
       </div>
     </a>
     <a class="right-next"

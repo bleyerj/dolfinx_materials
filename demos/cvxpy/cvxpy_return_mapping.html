@@ -180,11 +180,13 @@
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">JAX demos</span></p>
 <ul class="nav bd-sidenav">
 <li class="toctree-l1"><a class="reference internal" href="../../jax_elastoplasticity.html">JAX implementation of elastoplasticity</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../elastoplasticity/Hosford_yield_surface.html">Computing the Hosford plane stress yield surface</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../elastoplasticity/plane_elastoplasticity.html">Finite-element simulations of JAX elastoplasticity</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../jax/elastoplasticity/Hosford_yield_surface.html">Computing the Hosford plane stress yield surface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../jax/elastoplasticity/plane_elastoplasticity.html">Finite-element simulations of JAX elastoplasticity</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../jax/finite_strain_elastoplasticity/finite_strain_elastoplasticity.html">Finite-strain <span class="math notranslate nohighlight">\(\boldsymbol{F}^\text{e}\boldsymbol{F}^\text{p}\)</span> plasticity</a></li>
 </ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">MFront demos</span></p>
 <ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../mfront/hyperelasticity/hyperelasticity.html">Hyperelastic heterogeneous material</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../mfront/heat_transfer/nonlinear_heat_transfer.html">Stationary nonlinear heat transfer</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../mfront/heat_transfer/phase_change.html">Transient heat equation with phase change</a></li>
 </ul>
@@ -478,9 +480,9 @@ f(\bsig) \leq 0 \quad \Leftrightarrow -f_c \leq \sigma_I,\sigma_{II} \leq f_t
 <h2>Hosford material<a class="headerlink" href="#hosford-material" title="Link to this heading">#</a></h2>
 <div class="admonition seealso">
 <p class="admonition-title">See also</p>
-<p>For more details on the Hosford yield surface, see also <a class="reference internal" href="../elastoplasticity/Hosford_yield_surface.html"><span class="std std-doc">Computing the Hosford plane stress yield surface</span></a>.</p>
+<p>For more details on the Hosford yield surface, see also <a class="reference internal" href="../jax/elastoplasticity/Hosford_yield_surface.html"><span class="std std-doc">Computing the Hosford plane stress yield surface</span></a>.</p>
 </div>
-<p>The Hosford yield surface in plane stress conditions is defined by (see also <span id="id1">[<a class="reference internal" href="#id9" title="Jeremy Bleyer and Ghazi Hassen. Automated formulation and resolution of limit analysis problems. Computers &amp; Structures, 243:106341, 2021.">Bleyer and Hassen, 2021</a>]</span>):</p>
+<p>The Hosford yield surface in plane stress conditions is defined by (see also <span id="id1">[<a class="reference internal" href="#id10" title="Jeremy Bleyer and Ghazi Hassen. Automated formulation and resolution of limit analysis problems. Computers &amp; Structures, 243:106341, 2021.">Bleyer and Hassen, 2021</a>]</span>):</p>
 <div class="math notranslate nohighlight">
 \[
 f(\bsig) = \left(\dfrac{1}{2}\left(|\sigma_I|^a+|\sigma_{II}|^a+|\sigma_{I}-\sigma_{II}|^a\right)\right)^{1/a} - \sigma_0 \leq 0
@@ -553,13 +555,13 @@ z_0+z_1&amp;=z_2
 <img alt="../../_images/5fb8bacd6059425274c969ccbdbc9af738c19c26b3a91ec1469e196449e24caa.png" src="../../_images/5fb8bacd6059425274c969ccbdbc9af738c19c26b3a91ec1469e196449e24caa.png" />
 </div>
 </div>
-<p>Interestingly, the <code class="docutils literal notranslate"><span class="pre">cvxpy</span></code> implementation is able to handle very large values of <span class="math notranslate nohighlight">\(a\)</span>, contrary to a simple Newton implementation as in <a class="reference internal" href="../elastoplasticity/Hosford_yield_surface.html"><span class="std std-doc">Computing the Hosford plane stress yield surface</span></a>.</p>
+<p>Interestingly, the <code class="docutils literal notranslate"><span class="pre">cvxpy</span></code> implementation is able to handle very large values of <span class="math notranslate nohighlight">\(a\)</span>, contrary to a simple Newton implementation as in <a class="reference internal" href="../jax/elastoplasticity/Hosford_yield_surface.html"><span class="std std-doc">Computing the Hosford plane stress yield surface</span></a>.</p>
 </section>
 <section id="references">
 <h2>References<a class="headerlink" href="#references" title="Link to this heading">#</a></h2>
 <div class="docutils container" id="id2">
 <div role="list" class="citation-list">
-<div class="citation" id="id9" role="doc-biblioentry">
+<div class="citation" id="id10" role="doc-biblioentry">
 <span class="label"><span class="fn-bracket">[</span><a role="doc-backlink" href="#id1">BH21</a><span class="fn-bracket">]</span></span>
 <p>Jeremy Bleyer and Ghazi Hassen. Automated formulation and resolution of limit analysis problems. <em>Computers &amp; Structures</em>, 243:106341, 2021.</p>
 </div>

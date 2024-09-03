@@ -102,7 +102,7 @@ class LinearElasticIsotropic(JAXMaterial):
         return sig, state
 ```
 
-For more details on the use of AD on JAX behaviors, see [](jax_elastoplasticity.md) and the [](demos/elastoplasticity/plane_elastoplasticity.md) demo.
+For more details on the use of AD on JAX behaviors, see [](jax_elastoplasticity.md) and the [](demos/jax/elastoplasticity/plane_elastoplasticity.md) demo.
 
 ## References
 
