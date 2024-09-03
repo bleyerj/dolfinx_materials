@@ -50,8 +50,9 @@ sphinx:
       show_navbar_depth: 1
       home_page_in_toc: true
       show_toc_level: 2
-      use_edit_page_button: false
-      use_repository_button: false
+      repository_url: https://github.com/bleyerj/dolfinx_materials
+      use_edit_page_button: true
+      use_repository_button: true
       use_download_button: false
     myst_heading_anchors: 3
   extra_extensions:
