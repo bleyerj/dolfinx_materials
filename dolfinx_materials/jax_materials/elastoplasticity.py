@@ -28,6 +28,7 @@ class vonMisesIsotropicHardening(JAXMaterial):
         self.elastic_model = elastic_model
         self.yield_stress = yield_stress
         self.equivalent_stress = von_Mises_stress
+        self.newton_solver = JAXNewton()
 
     @property
     def internal_state_variables(self):
@@ -69,8 +70,8 @@ class vonMisesIsotropicHardening(JAXMaterial):
             )
             return jax.lax.cond(yield_criterion < 0.0, r_elastic, r_plastic, dp)
 
-        newton = JAXNewton(r)
-        dp, res = newton.solve(0.0)
+        self.newton_solver.set_residual(r)
+        dp, data = self.newton_solver.solve(0.0)
 
         sig = sig_el - 2 * mu * deps_p(dp, yield_criterion)
 
@@ -87,6 +88,7 @@ class GeneralIsotropicHardening(JAXMaterial):
         self.elastic_model = elastic_model
         self.yield_stress = jax.jit(yield_stress)
         self.equivalent_stress = jax.jit(equivalent_stress)
+        self.newton_solver = JAXNewton()
 
     @property
     def internal_state_variables(self):
@@ -129,13 +131,10 @@ class GeneralIsotropicHardening(JAXMaterial):
             r_plastic = lambda deps_p, dp: deps_p - n * dp
             return jax.lax.cond(yield_criterion < 0.0, r_elastic, r_plastic, deps_p, dp)
 
-        newton = JAXNewton((r_eps_p, r_p))
+        self.newton_solver.set_residual((r_eps_p, r_p))
 
         x0 = jnp.zeros((7,))
-        # tic = time()
-        x, data = newton.solve(x0)
-        # jax.debug.print("Newton time {}", time() - tic)
-        # jax.debug.print("Iterations {}", data[0])
+        x, data = self.newton_solver.solve(x0)
         depsp = x[:-1]
         dp = x[-1]
 

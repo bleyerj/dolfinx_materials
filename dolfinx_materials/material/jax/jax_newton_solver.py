@@ -21,6 +21,26 @@ class SolverParameters(NamedTuple):
     niter_max: int
 
 
+def _initial_check(norm_res, x, tol):
+    if norm_res > tol or jnp.isnan(norm_res):
+        raise ValueError(f"{x}, norm = {norm_res}")
+
+
+def _inside_check(norm_res, x, dx, r, dr_dx):
+    if jnp.isnan(norm_res):
+        raise ValueError(f"x={x} dx={dx} r={r} dr_dx={dr_dx}, norm = {norm_res}")
+
+
+def _final_check(norm_res, cond):
+    if cond:
+        _convergence_info(norm_res, "Residual has not converged")
+
+
+def _convergence_info(norm_res, tol, string):
+    if norm_res > tol or jnp.isnan(norm_res):
+        raise ValueError(f"{string}, norm = {norm_res}")
+
+
 def _solve_linear_system(x, J, b):
     if jnp.isscalar(x):
         return b / J
@@ -36,6 +56,7 @@ def newton_solve(x, r, dr_dx, params):
 
         res = r(x)
         norm_res0 = jnp.linalg.norm(res)
+        # jax.debug.callback(_initial_check, norm_res0, res, params.atol)
 
         def cond_fun(state):
             norm_res, niter, _ = state
@@ -57,6 +78,8 @@ def newton_solve(x, r, dr_dx, params):
             res = r(x)
             norm_res = jnp.linalg.norm(res)
 
+            # jax.debug.callback(_inside_check, norm_res, x, dx, res, dr_dx(x))
+
             history = x, res
             niter += 1
 
@@ -64,9 +87,9 @@ def newton_solve(x, r, dr_dx, params):
 
         history = (x, res)
 
-        norm_res, niter_total, history = jax.lax.while_loop(
-            cond_fun, body_fun, (norm_res0, niter, history)
-        )
+        state = jax.lax.while_loop(cond_fun, body_fun, (norm_res0, niter, history))
+        norm_res, niter_total, history = state
+        # jax.debug.callback(_final_check, norm_res, cond_fun(state))
         x_sol, res_sol = history
         data = (niter_total, norm_res0, norm_res, res_sol)
         return x_sol, data
@@ -78,8 +101,22 @@ def newton_solve(x, r, dr_dx, params):
 class JAXNewton:
     """A tiny Newton solver implemented in JAX. Derivatives are computed via custom implicit differentiation."""
 
-    def __init__(self, r, dr_dx=None, rtol=1e-8, atol=1e-8, niter_max=2000):
-        """Newton solver for a vector of residual r(x).
+    def __init__(self, rtol=1e-8, atol=1e-8, niter_max=2000):
+        """Newton solver
+
+        Parameters
+        ----------
+        rtol : float, optional
+            Relative tolerance for the Newton method, by default 1e-8
+        atol : float, optional
+            Absolute tolerance for the Newton method, by default 1e-8
+        niter_max : int, optional
+            Maximum number of allowed iterations, by default 200
+        """
+        self.params = SolverParameters(rtol, atol, niter_max)
+
+    def set_residual(self, r, dr_dx=None):
+        """Set the residual  vector r(x) and its jacobian
 
         Parameters
         ----------
@@ -90,14 +127,7 @@ class JAXNewton:
         dr_dx : callable, optional
             The jacobian of the residual. dr_dx(x) is a function of R^n to R^{n}xR^n. If None (default),
             JAX computes the residual using forward-mode automatic differentiation.
-        rtol : float, optional
-            Relative tolerance for the Newton method, by default 1e-8
-        atol : float, optional
-            Absolute tolerance for the Newton method, by default 1e-8
-        niter_max : int, optional
-            Maximum number of allowed iterations, by default 200
         """
-        self.params = SolverParameters(rtol, atol, niter_max)
         # residual
         if isinstance(r, list) or isinstance(r, tuple):
             self.r = lambda x: jnp.concatenate([jnp.atleast_1d(ri(x)) for ri in r])

@@ -3,6 +3,7 @@ import jax
 from functools import wraps, partial
 
 jax.config.update("jax_enable_x64", True)  # use double-precision
+jax.config.update("jax_debug_nans", True)  # raise when encountering nan
 
 
 def tangent_AD(constitutive_update_method):
