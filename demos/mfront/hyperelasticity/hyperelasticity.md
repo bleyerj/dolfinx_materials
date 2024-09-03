@@ -191,8 +191,8 @@ qmap = QuadratureMap(domain, deg_quad, material, cells=cells_matrix)
 qmap.register_gradient("DeformationGradient", F(u))
 qmap.dx = qmap.dx(subdomain_data=subdomains)
 
-sig = qmap.fluxes["FirstPiolaKirchhoffStress"]
-Res_matrix = ufl.dot(sig, dF(u, v)) * dx(1)
+PK1 = qmap.fluxes["FirstPiolaKirchhoffStress"]
+Res_matrix = ufl.dot(PK1, dF(u, v)) * dx(1)
 ```
 
 Finally, the total residual is the sum of both residuals. We also include a normalizing factor since all stress quantities are expressed in Pa units.
