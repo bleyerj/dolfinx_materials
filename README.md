@@ -66,6 +66,24 @@ All this work is licensed under the [Creative Commons Attribution-ShareAlike 4.0
 
 ## Citing
 
+The project can be cited from Zenodo:
+
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.13882184.svg)](https://doi.org/10.5281/zenodo.13882184)
+```
+@software{bleyer2024dolfinx_materials,
+  author       = {Bleyer, Jeremy},
+  title        = {{dolfinx\_materials: A Python package for advanced 
+                   material modelling}},
+  month        = oct,
+  year         = 2024,
+  publisher    = {Zenodo},
+  version      = {v0.3.0},
+  doi          = {10.5281/zenodo.13882183},
+  url          = {https://doi.org/10.5281/zenodo.13882183}
+}
+```
+
+
 Papers related to the MFront and MGIS projects can be cited as:
 
 [![DOI](https://joss.theoj.org/papers/10.21105/joss.02003/status.svg)](https://doi.org/10.21105/joss.02003)
