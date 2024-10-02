@@ -12,7 +12,7 @@ This project extends the [`mgis.fenics` package](https://thelfer.github.io/mgis/
 ## Introduction
 
 ```{include} ../README.md
-:start-line: 7
+:start-line: 6
 ```
 
 ```{image} images/banner_tutelles.png
