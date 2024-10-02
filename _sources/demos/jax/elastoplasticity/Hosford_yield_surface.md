@@ -49,7 +49,7 @@ elastic_model = LinearElasticIsotropic(E, nu)
 a = 10.0
 sig0 = 500.0
 material = GeneralIsotropicHardening(
-    elastic_model, lambda sig: sig0, lambda sig: Hosford_stress(sig, a=a)
+    elastic_model, lambda p: sig0, lambda sig: Hosford_stress(sig, a=a)
 )
 ```
 

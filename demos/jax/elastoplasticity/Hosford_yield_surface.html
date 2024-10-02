@@ -176,6 +176,7 @@
 <ul class="nav bd-sidenav">
 <li class="toctree-l1"><a class="reference internal" href="../../../intro.html">General framework</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../jax.html">JAX implementation of material behaviors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../mfront.html">Using MFront behaviors</a></li>
 </ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">JAX demos</span></p>
 <ul class="current nav bd-sidenav">
@@ -186,6 +187,7 @@
 </ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">MFront demos</span></p>
 <ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../../mfront/finite_strain_elastoplasticity/finite_strain_elastoplasticity.html">Finite-strain elastoplasticity within the logarithmic strain framework</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../mfront/hyperelasticity/hyperelasticity.html">Hyperelastic heterogeneous material</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../mfront/heat_transfer/nonlinear_heat_transfer.html">Stationary nonlinear heat transfer</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../mfront/heat_transfer/phase_change.html">Transient heat equation with phase change</a></li>
@@ -384,7 +386,7 @@ f(\bsig) = \sigma_\text{eq}^\text{H} - \sigma_0 = \left(\dfrac{1}{2}\left(|\sigm
 <span class="n">a</span> <span class="o">=</span> <span class="mf">10.0</span>
 <span class="n">sig0</span> <span class="o">=</span> <span class="mf">500.0</span>
 <span class="n">material</span> <span class="o">=</span> <span class="n">GeneralIsotropicHardening</span><span class="p">(</span>
-    <span class="n">elastic_model</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">sig</span><span class="p">:</span> <span class="n">sig0</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">sig</span><span class="p">:</span> <span class="n">Hosford_stress</span><span class="p">(</span><span class="n">sig</span><span class="p">,</span> <span class="n">a</span><span class="o">=</span><span class="n">a</span><span class="p">)</span>
+    <span class="n">elastic_model</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">p</span><span class="p">:</span> <span class="n">sig0</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">sig</span><span class="p">:</span> <span class="n">Hosford_stress</span><span class="p">(</span><span class="n">sig</span><span class="p">,</span> <span class="n">a</span><span class="o">=</span><span class="n">a</span><span class="p">)</span>
 <span class="p">)</span>
 </pre></div>
 </div>
