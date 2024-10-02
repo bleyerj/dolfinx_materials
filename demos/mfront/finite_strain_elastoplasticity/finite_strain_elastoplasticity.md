@@ -62,11 +62,14 @@ H0.setEntryName("HardeningSlope");
 };
 ```
 
-## `FEniCS` implementation
+## `FEniCSx` implementation
 
 We define a box mesh representing half of a beam oriented along the $x$-direction. The beam will be fully clamped on its left side and symmetry conditions will be imposed on its right extremity. The loading consists of a uniform self-weight.
 
-<img src="finite_strain_plasticity_solution.png" width="500">
+```{image} finite_strain_plasticity_solution.png
+:align: center
+:width: 500px
+```
 
 ```{code-cell} ipython3
 import numpy as np
@@ -84,12 +87,16 @@ from dolfinx_materials.utils import (
     nonsymmetric_tensor_to_vector,
 )
 
+
+comm = MPI.COMM_WORLD
+rank = comm.rank
+
 current_path = os.getcwd()
 
 length, width, height = 1.0, 0.04, 0.1
-nx, ny, nz = 30, 5, 8
+nx, ny, nz = 20, 4, 6
 domain = mesh.create_box(
-    MPI.COMM_WORLD,
+    comm,
     [(0, -width / 2, -height / 2.0), (length, width / 2, height / 2.0)],
     [nx, ny, nz],
     cell_type=mesh.CellType.tetrahedron,
@@ -134,10 +141,11 @@ material = MFrontMaterial(
     "LogarithmicStrainPlasticity",
     material_properties={"YieldStrength": 250e6, "HardeningSlope": 1e6},
 )
-print(material.behaviour.getBehaviourType())
-print(material.behaviour.getKinematic())
-print(material.gradient_names, material.gradient_sizes)
-print(material.flux_names, material.flux_sizes)
+if rank == 0:
+    print(material.behaviour.getBehaviourType())
+    print(material.behaviour.getKinematic())
+    print(material.gradient_names, material.gradient_sizes)
+    print(material.flux_names, material.flux_sizes)
 ```
 
 In this large-strain setting, the `QuadratureMapping` acts from the deformation gradient $\boldsymbol{F}=\boldsymbol{I}+\nabla\boldsymbol{u}$ to the first Piola-Kirchhoff stress $\boldsymbol{P}$. We must therefore register the deformation gradient as `Identity(3)+grad(u)`. 
@@ -178,7 +186,7 @@ Finally, we setup the nonlinear problem, the corresponding Newton solver and sol
 
 problem = NonlinearMaterialProblem(qmap, Res, Jac, u, bcs)
 
-newton = NewtonSolver(MPI.COMM_WORLD)
+newton = NewtonSolver(comm)
 newton.rtol = 1e-4
 newton.atol = 1e-4
 newton.convergence_criterion = "residual"
@@ -203,7 +211,8 @@ for i, t in enumerate(load_steps[1:]):
 
     converged, it = problem.solve(newton, print_solution=False)
 
-    print(f"Increment {i+1} converged in {it} iterations.")
+    if rank == 0:
+        print(f"Increment {i+1} converged in {it} iterations.")
 
     p0 = qmap.project_on("EquivalentPlasticStrain", ("DG", 0))
 
@@ -211,7 +220,10 @@ for i, t in enumerate(load_steps[1:]):
     vtk.write_function(p0, t)
 
     w = u.sub(2).collapse()
-    results[i + 1, 0] = max(np.abs(w.vector.array))
+    local_max = max(np.abs(w.vector.array))
+    # Perform the reduction to get the global maximum on rank 0
+    global_max = comm.reduce(local_max, op=MPI.MAX, root=0)
+    results[i + 1, 0] = global_max
     results[i + 1, 1] = t
 vtk.close()
 ```
@@ -220,11 +232,12 @@ During the load incrementation, we monitor the evolution of the maximum vertical
 The load-displacement curve exhibits a classical elastoplastic behavior rapidly followed by a stiffening behavior due to membrane catenary effects. 
 
 ```{code-cell} ipython3
-plt.figure()
-plt.plot(results[:, 0], results[:, 1], "-oC3")
-plt.xlabel("Displacement")
-plt.ylabel("Load")
-plt.show()
+if rank==0:
+    plt.figure()
+    plt.plot(results[:, 0], results[:, 1], "-oC3")
+    plt.xlabel("Displacement")
+    plt.ylabel("Load")
+    plt.show()
 ```
 
 ## References
