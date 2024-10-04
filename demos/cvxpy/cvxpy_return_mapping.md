@@ -81,7 +81,7 @@ $$
 \end{align}
 $$
 
-To follow Disciplined Convex Programming rules of `cvxpy`, we finally write $\{\sigma\}^\text{T}\mathbf{Q}\{\sigma\} \leq \sigma_0**2$ which reads:
+To follow Disciplined Convex Programming rules of `cvxpy`, we finally write $\{\sigma\}^\text{T}\mathbf{Q}\{\sigma\} \leq \sigma_0^2$ which reads:
 
 ```{code-cell} ipython3
 class PlaneStressvonMises(CvxPyMaterial):
