@@ -91,8 +91,8 @@ from dolfinx_materials.material.jax.tensors import J, K
 class LinearElasticIsotropic(JAXMaterial):
     def __init__(self, E, nu):
         super().__init__()
-        E = 9 * kappa * mu / (3 * kappa + mu)
-        nu = (3 * kappa - 2 * mu) / (2 * (3 * kappa + mu))
+        kappa = E / (3 * (1 - 2 * nu))
+        mu = E / (2 * (1 + nu))
         self.C = 3 * self.kappa * J + 2 * self.mu * K
 
     @tangent_AD
