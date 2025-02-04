@@ -23,6 +23,7 @@ def project(
     dx: ufl.Measure = ufl.dx,
     bcs=[],
     smooth=None,
+    entity_maps=None,
 ):
     """Performs a manual projection of an original function onto a target space.
 
@@ -38,6 +39,8 @@ def project(
         Boundary conditions, by default []
     smooth : float, optional
         Performs a smoothed projection with a Helmholtz filter of size smooth
+    entity_maps: dict
+        Entity maps in case of mixed subdomains
     """
     # Ensure we have a mesh and attach to measure
     V = target_field.function_space
@@ -48,8 +51,8 @@ def project(
     a = ufl.inner(Pv, w) * dx
     if smooth is not None:
         a += smooth**2 * ufl.inner(ufl.grad(Pv), ufl.grad(w)) * dx
-    a = fem.form(a)
-    L = fem.form(ufl.inner(original_field, w) * dx)
+    a = fem.form(a, entity_maps=entity_maps)
+    L = fem.form(ufl.inner(original_field, w) * dx, entity_maps=entity_maps)
 
     # Assemble linear system
     A = fem.petsc.assemble_matrix(a, bcs)

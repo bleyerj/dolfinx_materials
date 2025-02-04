@@ -357,7 +357,7 @@ class QuadratureMap:
             if key not in self.gradients:  # update flux and isv but not gradients
                 update_vals(self.variables[key], final_state[key], self.cells)
 
-    def project_on(self, name, interp):
+    def project_on(self, name, interp, entity_maps=None):
         """
         Computes a projection onto standard FE space.
 
@@ -367,6 +367,8 @@ class QuadratureMap:
             Name of the field to project
         interp : tuple
             Tuple of interpolation space info to project on, e.g. ("DG", 0). Shape is automatically deduced.
+        entity_maps: dict
+            Entity maps in case of mixed subdomains
         """
         if name not in self.variables:
             collected = [
@@ -388,5 +390,5 @@ class QuadratureMap:
 
         V = fem.functionspace(self.mesh, interp + (shape,))
         projected = fem.Function(V, name=name)
-        project(field, projected, self.dx)
+        project(field, projected, self.dx, entity_maps=entity_maps)
         return projected
