@@ -317,7 +317,9 @@ class QuadratureMap:
         Ct_vals = np.zeros_like(get_vals(self.jacobian_flatten)[self.dofs])
 
         # material integration
+        # print("Grads", grad_vals)
         flux_vals, isv_vals, Ct_vals = self.material.integrate(grad_vals)
+        # print("Fluxes", flux_vals)
         assert not (np.any(np.isnan(flux_vals)))
         assert not (np.any(np.isnan(isv_vals)))
         assert not (np.any(np.isnan(Ct_vals)))
