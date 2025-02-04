@@ -46,8 +46,6 @@ u_exp = fem.Expression(ufl.dot(E_macro, x), V.element.interpolation_points())
 
 
 def rotation_symmetry(material, phi, isotropic):
-    phi = fem.Constant(domain, 0.0)
-
     qmap = QuadratureMap(domain, 2, material)
     qmap.register_gradient("Strain", eps(u))
     sig = qmap.fluxes["Stress"]
@@ -70,7 +68,6 @@ def rotation_symmetry(material, phi, isotropic):
         u.interpolate(u_exp)
 
         qmap.update()
-
         assert np.allclose(Sig, sig.x.array) == isotropic
 
 
@@ -99,3 +96,6 @@ def test_rotation_isotropy():
         material_properties={"YoungModulus1": 100000.0},
     )
     rotation_symmetry(material, phi, False)
+
+
+test_rotation_isotropy()
