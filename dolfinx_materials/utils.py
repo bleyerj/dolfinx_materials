@@ -62,7 +62,7 @@ def project(
     # Solve linear system
     solver = PETSc.KSP().create(A.getComm())
     solver.setOperators(A)
-    solver.solve(b, target_field.vector)
+    solver.solve(b, target_field.x.petsc_vec)
     target_field.x.scatter_forward()
 
 
@@ -99,7 +99,7 @@ def get_vals(fun):
         dim = 1
     else:
         dim = len(fun)
-    return fun.vector.array.reshape((-1, dim))
+    return fun.x.array.reshape((-1, dim))
 
 
 def cell_to_dofs(cells, V):
@@ -135,10 +135,10 @@ def cell_to_dofs_cached(dofs, block_size):
 
 def update_vals(fun, array, cells=None):
     if cells is None:
-        fun.vector.array[:] = array.ravel()
+        fun.x.array[:] = array.ravel()
     else:
         dofs = cell_to_dofs(cells, fun.function_space)
-        fun.vector.array[dofs] = array.ravel()
+        fun.x.array[dofs] = array.ravel()
 
 
 def symmetric_tensor_to_vector(T, T22=0):

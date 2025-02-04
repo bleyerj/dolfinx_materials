@@ -149,6 +149,7 @@ if rank == 0:
 
 # In this large-strain setting, the `QuadratureMapping` acts from the deformation gradient $\boldsymbol{F}=\boldsymbol{I}+\nabla\boldsymbol{u}$ to the first Piola-Kirchhoff stress $\boldsymbol{P}$. We must therefore register the deformation gradient as `Identity(3)+grad(u)`.
 
+
 # +
 def F(u):
     return nonsymmetric_tensor_to_vector(ufl.Identity(gdim) + ufl.grad(u))
@@ -215,7 +216,7 @@ for i, t in enumerate(load_steps[1:]):
     vtk.write_function(p0, t)
 
     w = u.sub(2).collapse()
-    local_max = max(np.abs(w.vector.array))
+    local_max = max(np.abs(w.x.array))
     # Perform the reduction to get the global maximum on rank 0
     global_max = MPI.COMM_WORLD.reduce(local_max, op=MPI.MAX, root=0)
     results[i + 1, 0] = global_max
@@ -226,7 +227,7 @@ vtk.close()
 # During the load incrementation, we monitor the evolution of the maximum vertical downwards displacement.
 # The load-displacement curve exhibits a classical elastoplastic behavior rapidly followed by a stiffening behavior due to membrane catenary effects.
 
-if rank==0:
+if rank == 0:
     plt.figure()
     plt.plot(results[:, 0], results[:, 1], "-oC3")
     plt.xlabel("Displacement")

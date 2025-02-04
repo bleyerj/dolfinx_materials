@@ -297,7 +297,7 @@ file_results = io.VTKFile(
 N = 40
 Exx = np.linspace(0, 30e-3, N + 1)
 for i, exx in enumerate(Exx[1:]):
-    uD_x.vector.set(exx * L)
+    uD_x.x.petsc_vec.set(exx * L)
 
     converged, it = problem.solve(newton)
 

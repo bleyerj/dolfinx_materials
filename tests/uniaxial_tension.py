@@ -75,12 +75,12 @@ def uniaxial_tension_2D(material, Exx, N=1, order=1, save_fields=None):
     file_results.write_mesh(domain)
     Stress = np.zeros((len(Exx), 6))
     for i, exx in enumerate(Exx[1:]):
-        uD_x_r.vector.array[:] = exx
+        uD_x_r.x.array[:] = exx
 
         converged, _ = problem.solve(newton)
 
         assert converged
-        Stress[i + 1, :] = sig.vector.array[:6]
+        Stress[i + 1, :] = sig.x.array[:6]
 
         if save_fields is not None:
             for field_name in save_fields:

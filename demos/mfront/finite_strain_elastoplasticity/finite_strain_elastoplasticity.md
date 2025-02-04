@@ -220,7 +220,7 @@ for i, t in enumerate(load_steps[1:]):
     vtk.write_function(p0, t)
 
     w = u.sub(2).collapse()
-    local_max = max(np.abs(w.vector.array))
+    local_max = max(np.abs(w.x.array))
     # Perform the reduction to get the global maximum on rank 0
     global_max = comm.reduce(local_max, op=MPI.MAX, root=0)
     results[i + 1, 0] = global_max

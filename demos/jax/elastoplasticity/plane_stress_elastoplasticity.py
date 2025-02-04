@@ -131,7 +131,7 @@ N = 10
 Eyy = np.linspace(0, 10e-3, N + 1)
 Syy = np.zeros_like(Eyy)
 for i, eyy in enumerate(Eyy[1:]):
-    uD_t.vector.array[1::2] = eyy * Ly
+    uD_t.x.array[1::2] = eyy * Ly
 
     converged, it = problem.solve(newton)
 

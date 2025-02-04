@@ -56,11 +56,11 @@ def rotation_symmetry(material, phi, isotropic):
     u.interpolate(u_exp)
     qmap.update()
 
-    Sig = np.copy(sig.vector.array)
+    Sig = np.copy(sig.x.array)
     # # test that the material is isotropic
     for phi_i in [np.pi / 3, np.pi / 4, np.pi / 2]:
         phi.value = phi_i
-        u.vector.set(0.0)
+        u.x.petsc_vec.set(0.0)
 
         qmap = QuadratureMap(domain, 2, material)
         qmap.register_gradient("Strain", eps(u))
@@ -71,7 +71,7 @@ def rotation_symmetry(material, phi, isotropic):
 
         qmap.update()
 
-        assert np.allclose(Sig, sig.vector.array) == isotropic
+        assert np.allclose(Sig, sig.x.array) == isotropic
 
 
 def test_rotation_isotropy():

@@ -65,34 +65,34 @@ qmap.initialize_state()
 
 u.interpolate(u_exp)
 
-p.vector.array[:] = 1e-4
+p.x.array[:] = 1e-4
 # without value
 qmap.update_initial_state("EquivalentPlasticStrain")
-assert np.allclose(p.vector.array, 1e-4)
+assert np.allclose(p.x.array, 1e-4)
 
 # with value
 qmap.update_initial_state("EquivalentPlasticStrain", 1e-3)
-assert np.allclose(p.vector.array, 1e-3)
+assert np.allclose(p.x.array, 1e-3)
 
 # with fem.Constant
 p0 = fem.Constant(domain, 2e-3)
 qmap.update_initial_state("EquivalentPlasticStrain", p0)
-assert np.allclose(p.vector.array, 2e-3)
+assert np.allclose(p.x.array, 2e-3)
 
 # with fem.Function
 V0 = fem.functionspace(domain, ("DG", 0))
 p0 = fem.Function(V0)
-p0.vector.set(3e-3)
+p0.x.petsc_vec.set(3e-3)
 qmap.update_initial_state("EquivalentPlasticStrain", p0)
-assert np.allclose(p.vector.array, 3e-3)
+assert np.allclose(p.x.array, 3e-3)
 
 # vectorial case
 # with fem.Constant
 s0 = np.array([1.0, 2.0, 3.0, 4.0])
 sig0 = fem.Constant(domain, s0)
 qmap.update_initial_state("Stress", sig0)
-assert np.allclose(sig.vector.array, np.tile(s0, 4))
+assert np.allclose(sig.x.array, np.tile(s0, 4))
 
 # with numpy array
 qmap.update_initial_state("Stress", 2 * s0)
-assert np.allclose(sig.vector.array, np.tile(2 * s0, 4))
+assert np.allclose(sig.x.array, np.tile(2 * s0, 4))

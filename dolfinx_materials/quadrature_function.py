@@ -49,7 +49,7 @@ class QuadratureExpression:
             expr_eval = self.expression.eval(self.mesh, cells)
         with Timer("dx_mat:Prepare dofs"):
             dofs = cell_to_dofs(cells, self._function_space)
-        self.function.vector.array[dofs] = expr_eval.flatten()[:]
+        self.function.x.array[dofs] = expr_eval.flatten()[:]
 
     def variation(self, u, v):
         deriv = sum(
@@ -61,4 +61,4 @@ class QuadratureExpression:
         return ufl.algorithms.expand_derivatives(deriv)
 
     def set_values(self, x):
-        self.function.vector.array[:] = x
+        self.function.x.array[:] = x

@@ -77,7 +77,7 @@ out_file = "TANN.xdmf"
 with io.XDMFFile(domain.comm, out_file, "w") as xdmf:
     xdmf.write_mesh(domain)
 
-u.vector.set(0.0)
+u.x.petsc_vec.set(0.0)
 for n, Ui in enumerate(U_list):
     displ.value[0] = Ui
 

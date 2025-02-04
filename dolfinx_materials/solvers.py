@@ -124,11 +124,15 @@ class CustomNewtonProblem:
             # Compute b - J(u_D-u_(i-1))
             if isinstance(self.a, list):
                 for ai in self.a:
-                    apply_lifting(self.b, [ai], [self.bcs], x0=[self.u.vector], scale=1)
+                    apply_lifting(
+                        self.b, [ai], [self.bcs], x0=[self.u.x.petsc_vec], scale=1
+                    )
             else:
-                apply_lifting(self.b, [self.a], [self.bcs], x0=[self.u.vector], scale=1)
+                apply_lifting(
+                    self.b, [self.a], [self.bcs], x0=[self.u.x.petsc_vec], scale=1
+                )
             # Set dx|_bc = u_{i-1}-u_D
-            set_bc(self.b, self.bcs, self.u.vector, 1.0)
+            set_bc(self.b, self.bcs, self.u.x.petsc_vec, 1.0)
             self.b.ghostUpdate(
                 addv=PETSc.InsertMode.INSERT_VALUES, mode=PETSc.ScatterMode.FORWARD
             )
@@ -136,14 +140,14 @@ class CustomNewtonProblem:
             # Solve linear problem
             solver.setOperators(self.A)
             with Timer("Linear solve"):
-                solver.solve(self.b, self.du.vector)
+                solver.solve(self.b, self.du.x.petsc_vec)
             self.du.x.scatter_forward()
 
             # Update u_{i+1} = u_i + relaxation_param * delta x_i
             self.u.x.array[:] += self.du.x.array[:]
             i += 1
             # Compute norm of update
-            correction_norm = self.du.vector.norm(0)
+            correction_norm = self.du.x.petsc_vec.norm(0)
             error_norm = self.b.norm(0)
             if i == 1:
                 error_norm0 = error_norm
@@ -239,7 +243,7 @@ class NonlinearMaterialProblem(NonlinearProblem):
         solver.setJ(self.J, self.matrix())
         solver.set_form(self.form)
 
-        it, converged = solver.solve(self.u.vector)
+        it, converged = solver.solve(self.u.x.petsc_vec)
         self.u.x.scatter_forward()
 
         if converged:
@@ -264,9 +268,9 @@ class SNESNonlinearMaterialProblem(NonlinearMaterialProblem):
     def F(self, snes, x, F):
         """Assemble residual vector."""
         x.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
-        x.copy(self.u.vector)
+        x.copy(self.u.x.petsc_vec)
 
-        self.u.vector.ghostUpdate(
+        self.u.x.petsc_vec.ghostUpdate(
             addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD
         )
 
@@ -302,10 +306,10 @@ class SNESNonlinearMaterialProblem(NonlinearMaterialProblem):
         it: int
             Number of iterations to convergence
         """
-        solver.setFunction(self.F, self.vector())
+        solver.setFunction(self.F, self.x.petsc_vec())
         solver.setJacobian(self.J, self.matrix())
 
-        solver.solve(None, self.u.vector)
+        solver.solve(None, self.u.x.petsc_vec)
         converged = solver.getConvergedReason() > 0
         it = solver.getIterationNumber()
         if converged:

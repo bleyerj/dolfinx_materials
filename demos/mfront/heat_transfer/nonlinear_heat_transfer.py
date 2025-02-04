@@ -189,7 +189,7 @@
 # @TangentOperator {
 #   ∂j∕∂Δ∇T = -k ⋅ tmatrix<N, N, real>::Id();
 #   ∂j∕∂ΔT  =  B ⋅ k ⋅ k ⋅ (∇T + Δ∇T);
-# } // end of @TangentOperator 
+# } // end of @TangentOperator
 # ```
 # ## `FEniCSx` implementation
 #
@@ -228,7 +228,7 @@ def right(x):
 
 Tl = 300.0
 Tr = 800.0
-T.vector.set(Tl)
+T.x.petsc_vec.set(Tl)
 
 left_dofs = fem.locate_dofs_geometrical(V, left)
 right_dofs = fem.locate_dofs_geometrical(V, right)
@@ -269,7 +269,7 @@ qmap = QuadratureMap(domain, deg_quad, material)
 
 # #### Variable registration
 #
-# The `MFront` behavior implicitly declares the temperature as an external state variable called `"Temperature"`. We must therefore associate this external state variable to a known mechanical field. This can be achieved explicitly using the `register_external_state_variable` method. 
+# The `MFront` behavior implicitly declares the temperature as an external state variable called `"Temperature"`. We must therefore associate this external state variable to a known mechanical field. This can be achieved explicitly using the `register_external_state_variable` method.
 #
 # For problems in which the temperature only acts as a parameter (no jacobian blocks with respect to the temperature), the temperature can be automatically registered as a constant value ($293.15 \text{ K}$ by default) or to any other (`dolfin.Constant`, `float` or `dolfin.Function`) value using the `register_external_state_variable` method.
 #
@@ -312,10 +312,10 @@ assert converged and it < 10
 
 # We finally check that the thermal conductivity coefficient $k$, computed from the ratio between the horizontal heat flux and temperature gradient matches the temperature-dependent expressions implemented in the `MFront` behavior.
 
-j_vals = j.vector.array
-g_vals = qmap.gradients["TemperatureGradient"].function.vector.array
+j_vals = j.x.array
+g_vals = qmap.gradients["TemperatureGradient"].function.x.array
 k_gauss = -j_vals[::2] / g_vals[::2]
-T_gauss = qmap.external_state_variables["Temperature"].function.vector.array
+T_gauss = qmap.external_state_variables["Temperature"].function.x.array
 A = material.get_parameter("A")
 B = material.get_parameter("B")
 k_ref = 1 / (A + B * T_gauss)

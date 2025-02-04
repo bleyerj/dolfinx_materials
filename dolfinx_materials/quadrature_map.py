@@ -162,7 +162,7 @@ class QuadratureMap:
                 Vm = create_quadrature_functionspace(self.mesh, self.degree, shape)
                 mat_prop_fun = fem.Function(Vm, name=name)
                 self.eval_quadrature(mat_prop, mat_prop_fun)
-                values = mat_prop_fun.vector.array
+                values = mat_prop_fun.x.array
             if values is not None:
                 self.material.update_material_property(name, values)
 
@@ -186,7 +186,7 @@ class QuadratureMap:
         )
         self.external_state_variables.update({name: state_var})
         state_var.eval(self.cells)
-        values = state_var.function.vector.array
+        values = state_var.function.x.array
         self.material.initialize_external_state_variable(name, values)
 
     def register_gradient(self, name, gradient):
@@ -216,7 +216,7 @@ class QuadratureMap:
         """Update material external state variables with dolfinx values."""
         for name, esv in self.external_state_variables.items():
             esv.eval(self.cells)
-            values = esv.function.vector.array
+            values = esv.function.x.array
             self.material.update_external_state_variable(name, values)
 
     def update_material_rotation_matrix(self):
@@ -241,7 +241,7 @@ class QuadratureMap:
         """Evaluates an expression at quadrature points and updates the corresponding function."""
         expr_expr = fem.Expression(ufl_expr, self.quadrature_points)
         expr_eval = expr_expr.eval(self.mesh, self.cells)
-        fem_func.vector.array[:] = expr_eval.flatten()[:]
+        fem_func.x.array[:] = expr_eval.flatten()[:]
 
     def get_gradient_vals(self, gradient, cells):
         gradient.eval(cells)
@@ -309,7 +309,7 @@ class QuadratureMap:
 
         if self.material.rotation_matrix is not None:
             self.material.rotate_gradients(
-                grad_vals.ravel(), self.rotation_func.vector.array
+                grad_vals.ravel(), self.rotation_func.x.array
             )
 
         flux_size = sum(list(self.material.fluxes.values()))
@@ -323,11 +323,9 @@ class QuadratureMap:
         assert not (np.any(np.isnan(Ct_vals)))
 
         if self.material.rotation_matrix is not None:
-            self.material.rotate_fluxes(
-                flux_vals.ravel(), self.rotation_func.vector.array
-            )
+            self.material.rotate_fluxes(flux_vals.ravel(), self.rotation_func.x.array)
             self.material.rotate_tangent_operator(
-                Ct_vals.ravel(), self.rotation_func.vector.array
+                Ct_vals.ravel(), self.rotation_func.x.array
             )
 
         self.update_fluxes(flux_vals)

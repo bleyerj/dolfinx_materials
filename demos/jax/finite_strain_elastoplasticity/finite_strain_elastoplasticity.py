@@ -34,9 +34,9 @@ comm = MPI.COMM_WORLD
 rank = comm.rank
 
 dim = 3
-L = 10.0 # rod half-length
+L = 10.0  # rod half-length
 W = 2.0  # rod diameter
-R = 20.0 # notch radius
+R = 20.0  # notch radius
 d = 0.2  # cross-section reduction
 coarse_size = 1.0
 fine_size = 0.2
@@ -93,7 +93,7 @@ domain.topology.create_connectivity(fdim, dim)
 
 order = 2
 V = fem.functionspace(domain, ("P", order, (dim,)))
-deg_quad = 2 * (order- 1)
+deg_quad = 2 * (order - 1)
 V_x, _ = V.sub(0).collapse()
 V_y, _ = V.sub(1).collapse()
 V_z, _ = V.sub(2).collapse()
@@ -112,7 +112,7 @@ bcs = [
     fem.dirichletbc(u0_y, bottom_x_dofs, V.sub(0)),
     fem.dirichletbc(u0_y, side_y_dofs, V.sub(1)),
     fem.dirichletbc(u0_z, side_z_dofs, V.sub(2)),
-    fem.dirichletbc(uD_x, top_x_dofs, V.sub(0))
+    fem.dirichletbc(uD_x, top_x_dofs, V.sub(0)),
 ]
 # -
 
@@ -120,6 +120,7 @@ bcs = [
 
 # +
 Id = ufl.Identity(dim)
+
 
 def F(u):
     return nonsymmetric_tensor_to_vector(Id + ufl.grad(u))
@@ -137,11 +138,13 @@ E = 70e3
 nu = 0.3
 sig0 = 500.0
 
-b = 10.
+b = 10.0
 sigu = 750.0
+
 
 def yield_stress(p):
     return sig0 + (sigu - sig0) * (1 - jnp.exp(-b * p))
+
 
 elastic_model = LinearElasticIsotropic(E, nu)
 
@@ -200,7 +203,7 @@ file_results = io.VTKFile(
 N = 40
 Exx = np.linspace(0, 30e-3, N + 1)
 for i, exx in enumerate(Exx[1:]):
-    uD_x.vector.set(exx * L)
+    uD_x.x.petsc_vec.set(exx * L)
 
     converged, it = problem.solve(newton)
 
@@ -209,7 +212,7 @@ for i, exx in enumerate(Exx[1:]):
 
     file_results.write_function(u, i + 1)
     file_results.write_function(p, i + 1)
-    
+
     constitutive_update_time = timing("Constitutive update")[2]
     linear_solve_time = timing("PETSc Krylov solver")[2]
 
@@ -217,12 +220,16 @@ for i, exx in enumerate(Exx[1:]):
     all_times = None
     if rank == 0:
         all_times = np.zeros((comm.size, 2))
-    comm.Gather(np.array([constitutive_update_time, linear_solve_time]), all_times, root=0)
+    comm.Gather(
+        np.array([constitutive_update_time, linear_solve_time]), all_times, root=0
+    )
 
     # Compute the average time on rank 0
     if rank == 0:
         average_time = np.mean(all_times, axis=0)
-        print(f"Increment {i}\nAverage time for constitutive update {average_time[0]:.2f}s")
+        print(
+            f"Increment {i}\nAverage time for constitutive update {average_time[0]:.2f}s"
+        )
         print(f"Average time for global linear solver {average_time[1]:.2f}s\n")
 
 file_results.close()

@@ -153,7 +153,7 @@ Force = np.zeros_like(Eyy)
 nit = np.zeros_like(Eyy)
 for i, eyy in enumerate(Eyy[1:]):
     u_imp = eyy*Ly
-    uD_t.vector.array[1::2] = u_imp
+    uD_t.x.array[1::2] = u_imp
 
     converged, it = problem.solve(newton, print_solution=False)
 

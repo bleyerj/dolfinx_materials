@@ -250,7 +250,7 @@ def bottom(x):
 
 Tl = 853.15
 Tr = 1013.15
-T.vector.set(Tr)
+T.x.petsc_vec.set(Tr)
 
 left_dofs = fem.locate_dofs_geometrical(V, left)
 right_dofs = fem.locate_dofs_geometrical(V, right)
@@ -350,8 +350,8 @@ for t, delta_t in zip(times[1:], np.diff(times)):
 
     converged, it = problem.solve(newton, print_solution=False)
 
-    h.vector.copy(h_old.vector)  # update enthalpy
-    j.vector.copy(j_old.vector)  # update heat flux
+    h.x.petsc_vec.copy(h_old.x.petsc_vec)  # update enthalpy
+    j.x.petsc_vec.copy(j_old.x.petsc_vec)  # update heat flux
 
     sol_time = np.isclose(t, code_Aster_times)
     if any(sol_time):
@@ -360,7 +360,7 @@ for t, delta_t in zip(times[1:], np.diff(times)):
         ax1 = plt.gca()
         ax1.set_xlabel("$x$ coordinate")
         ax1.set_ylabel("Temperature [°C]")
-        T_val = T.vector.array[bottom_dofs]
+        T_val = T.x.array[bottom_dofs]
         ax1.plot(
             x,
             T_val - 273.15,
