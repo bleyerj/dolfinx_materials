@@ -9,7 +9,7 @@ from dolfinx_materials.solvers import NonlinearMaterialProblem
 from dolfinx.cpp.nls.petsc import NewtonSolver  # noqa
 
 
-def uniaxial_tension_2D(material, Exx, N=1, order=1, save_fields=None):
+def uniaxial_tension_2D(material, Exx, N=1, order=1, save_fields=None, angle=None):
     domain = mesh.create_unit_square(MPI.COMM_WORLD, N, N, mesh.CellType.quadrilateral)
     V = fem.functionspace(domain, ("P", order, (2,)))
 
@@ -57,6 +57,16 @@ def uniaxial_tension_2D(material, Exx, N=1, order=1, save_fields=None):
 
     qmap = QuadratureMap(domain, deg_quad, material)
     qmap.register_gradient(material.gradient_names[0], strain(u))
+    if angle is not None:
+        phi = fem.Constant(domain, angle)
+        qmap.material.rotation_matrix = ufl.as_matrix(
+            [
+                [ufl.cos(phi), ufl.sin(phi), 0],
+                [-ufl.sin(phi), ufl.cos(phi), 0],
+                [0, 0, 1.0],
+            ]
+        )
+        qmap.update_material_rotation_matrix()
 
     sig = qmap.fluxes[material.flux_names[0]]
     Res = ufl.dot(sig, strain(v)) * qmap.dx
@@ -77,7 +87,7 @@ def uniaxial_tension_2D(material, Exx, N=1, order=1, save_fields=None):
     for i, exx in enumerate(Exx[1:]):
         uD_x_r.x.array[:] = exx
 
-        converged, _ = problem.solve(newton)
+        converged, _ = problem.solve(newton, False)
 
         assert converged
         Stress[i + 1, :] = sig.x.array[:6]

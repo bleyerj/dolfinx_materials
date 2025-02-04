@@ -115,9 +115,9 @@ class QuadratureMap:
 
         self.set_data_manager(self.cells)
 
+        Wrot = create_quadrature_functionspace(self.mesh, self.degree, (3, 3))
+        self.rotation_func = fem.Function(Wrot)
         if self.material.rotation_matrix is not None:
-            Wrot = create_quadrature_functionspace(self.mesh, self.degree, (3, 3))
-            self.rotation_func = fem.Function(Wrot)
             self.update_material_rotation_matrix()
 
         self.update_material_properties()
