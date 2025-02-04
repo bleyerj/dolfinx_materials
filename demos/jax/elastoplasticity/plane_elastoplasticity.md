@@ -53,13 +53,13 @@ $$
 where $\sigma_0$ and $\sigma_u$ are the initial and final yield stresses respectively and $b$ is a hardening parameter controlling the rate of convergence from $\sigma_0$ to $\sigma_u$ as a function of the cumulated plastic strain $p$.
 
 ```{code-cell} ipython3
-E = 70e3
+E, nu = 70e3, 0.3
+elastic_model = LinearElasticIsotropic(E, nu)
+
+
 sig0 = 350.0
 sigu = 500.0
-b = 1e3
-elastic_model = LinearElasticIsotropic(E=70e3, nu=0.3)
-
-
+b = 100
 def yield_stress(p):
     return sig0 + (sigu - sig0) * (1 - jnp.exp(-b * p))
 
@@ -111,7 +111,7 @@ def strain(u):
         ]
     )
 
-u = fem.Function(V)
+u = fem.Function(V, name="Displacement")
 
 qmap = QuadratureMap(domain, deg_quad, material)
 print("Gradients", material.gradient_names)
@@ -148,7 +148,7 @@ out_file = "elastoplasticity.pvd"
 vtk = io.VTKFile(domain.comm, out_file, "w")
 
 N = 15
-Eyy = np.linspace(0, 10e-3, N + 1)
+Eyy = np.linspace(0, 15e-3, N + 1)
 Force = np.zeros_like(Eyy)
 nit = np.zeros_like(Eyy)
 for i, eyy in enumerate(Eyy[1:]):

@@ -46,7 +46,6 @@ def _solve_linear_system(x, J, b):
         return b / J
     else:
         dx = jnp.linalg.solve(J, b)
-        # dx, _ = jax.scipy.sparse.linalg.gmres(J, b, x, tol=1e-8)
     return dx
 
 

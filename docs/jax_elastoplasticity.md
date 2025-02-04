@@ -218,7 +218,7 @@ Simulating this behavior for a loading/unloading shear strain with an exponentia
 In this section, we expand upon the previous section by considering a generic yield surface $f(\bsig;p) = \bar{\sigma}(\bsig) - R(p)$ instead of the specific von Mises surface. Here $\bar{\sigma}$ represents a chosen equivalent stress. For simplicity, we still consider a generic isotropic hardening function $R(p)$ and associated (normal) plastic flow rule. In discretized form, the latter reads:
 
 $$
-\Delta \bepsp = \Delta p \dfrac{\partial \sig_eq}{\partial \bsig} = \Delta p \bn
+\Delta \bepsp = \Delta p \dfrac{\partial \bar{\sigma}}{\partial \bsig} = \Delta p \bn
 $$
 where $\bn$ denotes the normal vector to the yield surface. This vector depends on the final stress state $\bsig$. This is the main difference with the von Mises case. As a consequence, the return mapping can no longer be written explicitly in terms of the elastic predictor. We must formulate a nonlinear system of equations involving both the cumulated plastic strain $p$ and the plastic strain tensor $\bepsp$.
 

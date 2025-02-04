@@ -5,10 +5,12 @@ from .tensors import dev, to_mat
 from time import time
 
 
+@jax.jit
 def von_Mises_stress(sig):
     return jnp.sqrt(3 / 2.0) * jnp.linalg.norm(dev(sig))
 
 
+@jax.jit
 def Hosford_stress(sig, a=10):
     sI = jnp.linalg.eigh(to_mat(sig))[0]
     return (
@@ -118,7 +120,10 @@ class GeneralIsotropicHardening(JAXMaterial):
             dp = dx[-1]
             sig_eq = self.equivalent_stress(stress(deps_p))
             r_elastic = lambda dp: dp
-            r_plastic = lambda dp: sig_eq - self.yield_stress(p_old + dp)
+            r_plastic = (
+                lambda dp: (sig_eq - self.yield_stress(p_old + dp))
+                / self.elastic_model.E
+            )
             return jax.lax.cond(yield_criterion < 0.0, r_elastic, r_plastic, dp)
 
         def r_eps_p(dx):
