@@ -96,6 +96,3 @@ def test_rotation_isotropy():
         material_properties={"YoungModulus1": 100000.0},
     )
     rotation_symmetry(material, phi, False)
-
-
-test_rotation_isotropy()
