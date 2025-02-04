@@ -65,7 +65,7 @@ def uniaxial_tension_2D(material, Exx, N=1, order=1, save_fields=None):
     problem = NonlinearMaterialProblem(qmap, Res, Jac, u, bcs)
     newton = NewtonSolver(MPI.COMM_WORLD)
     newton.rtol = 1e-6
-    newton.max_it = 10
+    newton.max_it = 20
 
     file_results = io.XDMFFile(
         domain.comm,
