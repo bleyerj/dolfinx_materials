@@ -1,6 +1,14 @@
-from ufl import TrialFunction, derivative
+from mpi4py import MPI
+from ufl import Form
 from dolfinx.fem import form, apply_lifting, set_bc, Function
+from dolfinx.fem.bcs import DirichletBC
+from dolfinx.cpp.nls.petsc import NewtonSolver
+from dolfinx.cpp.la.petsc import get_local_vectors
 from dolfinx.fem.petsc import (
+    assemble_matrix_block,
+    assemble_vector_block,
+    create_matrix_block,
+    create_vector_block,
     assemble_vector,
     assemble_matrix,
     create_matrix,
@@ -8,9 +16,9 @@ from dolfinx.fem.petsc import (
     NonlinearProblem,
 )
 from petsc4py import PETSc
+from dolfinx_materials.quadrature_map import QuadratureMap
+
 from dolfinx.common import Timer
-import numpy as np
-from mpi4py import MPI
 
 
 def mpiprint(s):
@@ -317,6 +325,119 @@ class SNESNonlinearMaterialProblem(NonlinearMaterialProblem):
             if print_solution:
                 mpiprint(f"Solution reached in {it} iterations.")
             self._constitutive_advance()
+        else:
+            mpiprint(
+                f"No solution found after {it} iterations. Revert to previous solution and adjust solver parameters."
+            )
+
+        return converged, it
+
+
+class BlockedNonlinearMaterialProblem:
+    """Class for solving a blocked nonlinear variational problem compatible with dolfinx_materials"""
+
+    def __init__(
+        self,
+        qmaps: list[QuadratureMap],
+        F_blocked_compiled: list[Form],
+        J_blocked_compiled: list[list[Form]],
+        w=list[Function],
+        bcs: list[DirichletBC] = [],
+    ) -> None:
+        self._L = F_blocked_compiled
+        self._a = J_blocked_compiled
+        self.w = w
+        self.bcs = bcs
+
+        self._x = create_vector_block(F_blocked_compiled)
+        self.quadrature_maps = qmaps
+
+    def _constitutive_update(self):
+        for qmap in self.quadrature_maps:
+            qmap.update()
+
+    def _constitutive_advance(self):
+        for qmap in self.quadrature_maps:
+            qmap.advance()
+
+    @property
+    def L(self) -> list[Form]:
+        """Compiled linear form (the residual form)"""
+        return self._L
+
+    @property
+    def a(self) -> list[list[Form]]:
+        """Compiled bilinear form (the Jacobian form)"""
+        return self._a
+
+    def form(self, x: PETSc.Vec) -> None:  # type: ignore[no-any-attribute]
+        """This function is called before the residual or Jacobian is
+        computed. This is usually used to update ghost values.
+
+        Args:
+            x: The vector containing the latest solution
+        """
+        self.update_solution(x)
+        self._constitutive_update()
+
+    def update_solution(self, x: PETSc.Vec) -> None:  # type: ignore[no-any-attribute]
+        x.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)  # type: ignore[no-any-attribute]
+        blocked_maps = [
+            (
+                si.function_space.dofmap.index_map,
+                si.function_space.dofmap.index_map_bs,
+            )
+            for si in self.w
+        ]
+        local_values = get_local_vectors(self._x, blocked_maps)
+        for lx, u in zip(local_values, self.w):
+            u.x.array[:] = lx
+
+    def F(self, x: PETSc.Vec, b: PETSc.Vec) -> None:  # type: ignore[no-any-attribute]
+        """Assemble the residual F into the vector b.
+
+        Args:
+            x: The vector containing the latest solution
+            b: Vector to assemble the residual into
+        """
+        with b.localForm() as b_local:
+            b_local.set(0.0)
+        assemble_vector_block(b, self._L, self._a, bcs=self.bcs, x0=self._x, alpha=-1.0)
+        b.ghostUpdate(addv=PETSc.InsertMode.INSERT_VALUES, mode=PETSc.ScatterMode.FORWARD)  # type: ignore[no-any-attribute]
+
+    def J(self, x: PETSc.Vec, A: PETSc.Mat) -> None:  # type: ignore[no-any-attribute]
+        """Assemble the Jacobian matrix.
+
+        Args:
+            x: The vector containing the latest solution
+        """
+        A.zeroEntries()
+        assemble_matrix_block(A, self._a, self.bcs)  # , diagonal=1.0)??
+        A.assemble()
+
+    def matrix(self) -> PETSc.Mat:  # type: ignore[no-any-attribute]
+        return create_matrix_block(self.a)  # type: ignore
+
+    def vector(self) -> PETSc.Vec:  # type: ignore[no-any-attribute]
+        return create_vector_block(self.L)  # type: ignore
+
+    def solve(
+        self, solver: NewtonSolver, print_solution: bool = True
+    ) -> tuple[bool, int]:
+        solver.setF(self.F, self.vector())
+        solver.setJ(self.J, self.matrix())
+        solver.set_form(self.form)
+
+        it, converged = solver.solve(self._x)
+        self._x.ghostUpdate(
+            addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD  # type: ignore[no-any-attribute]
+        )
+        if converged:
+            if print_solution:
+                mpiprint(f"Solution reached in {it} iterations.")
+                self.update_solution(self._x)
+                self._constitutive_advance()
+
         else:
             mpiprint(
                 f"No solution found after {it} iterations. Revert to previous solution and adjust solver parameters."

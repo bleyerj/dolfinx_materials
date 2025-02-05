@@ -19,137 +19,131 @@ from dolfinx_materials.utils import (
     symmetric_tensor_to_vector,
 )
 
-path = pathlib.Path(__file__).parent.absolute()
 
+def test_multimaterials():
+    path = pathlib.Path(__file__).parent.absolute()
 
-domain = mesh.create_unit_square(
-    MPI.COMM_WORLD,
-    2,
-    2,
-    cell_type=mesh.CellType.quadrilateral,
-)
-gdim = domain.geometry.dim
-
-
-def left(x):
-    return x[0] <= 0.5
-
-
-def right(x):
-    return x[0] >= 0.5
-
-
-num_entities_local = domain.topology.index_map(gdim).size_local
-cells_l = mesh.locate_entities(domain, gdim, left)
-cells_l = cells_l[cells_l < num_entities_local]  # remove ghost entities
-
-cells_r = mesh.locate_entities(domain, gdim, right)
-cells_r = cells_r[cells_r < num_entities_local]  # remove ghost entities
-
-marked_entities = np.hstack((cells_l, cells_r))
-marked_values = np.hstack((np.full_like(cells_l, 1), np.full_like(cells_r, 2)))
-
-sorted_entities = np.argsort(marked_entities)
-subdomains = mesh.meshtags(
-    domain, gdim, marked_entities[sorted_entities], marked_values[sorted_entities]
-)
-
-V = fem.functionspace(domain, ("Q", 1, (gdim,)))
-
-
-u = fem.Function(V, name="Displacement")
-v = ufl.TestFunction(V)
-du = ufl.TrialFunction(V)
-
-
-def eps(u):
-    return symmetric_tensor_to_vector(ufl.sym(ufl.grad(u)))
-
-
-x = ufl.SpatialCoordinate(domain)
-exx = fem.Constant(domain, 1e-2)
-E_macro = ufl.as_matrix([[exx, 0], [0, 0]])
-u_exp = fem.Expression(ufl.dot(E_macro, x), V.element.interpolation_points())
-
-domain.topology.create_connectivity(gdim - 1, gdim)
-boundary_facets = mesh.exterior_facet_indices(domain.topology)
-boundary_dofs = fem.locate_dofs_topological(V, gdim - 1, boundary_facets)
-uD = fem.Function(V)
-bcs = [fem.dirichletbc(uD, boundary_dofs)]
-
-mat_prop = {
-    "YoungModulus": 70e3,
-    "PoissonRatio": 0.3,
-    "HardeningSlope": 5e3,
-    "YieldStrength": 250.0,
-}
-
-material, material_l, material_r = [
-    MFrontMaterial(
-        path / "src/libBehaviour.so",
-        "IsotropicLinearHardeningPlasticity",
-        hypothesis="plane_strain",
-        material_properties=mat_prop,
+    domain = mesh.create_unit_square(
+        MPI.COMM_WORLD,
+        2,
+        2,
+        cell_type=mesh.CellType.quadrilateral,
     )
-    for i in range(3)
-]
+    gdim = domain.geometry.dim
 
-qmap = QuadratureMap(domain, 2, material)
-qmap.register_gradient("Strain", eps(u))
-sig = qmap.fluxes["Stress"]
-qmap.initialize_state()
+    def left(x):
+        return x[0] <= 0.5
 
-qmap_l = QuadratureMap(domain, 2, material_l, cells=cells_l)
-qmap_l.register_gradient("Strain", eps(u))
-sig_l = qmap_l.fluxes["Stress"]
-qmap_l.initialize_state()
+    def right(x):
+        return x[0] >= 0.5
 
-qmap_r = QuadratureMap(domain, 2, material_r, cells=cells_r)
-qmap_r.register_gradient("Strain", eps(u))
-sig_r = qmap_r.fluxes["Stress"]
-qmap_r.initialize_state()
+    num_entities_local = domain.topology.index_map(gdim).size_local
+    cells_l = mesh.locate_entities(domain, gdim, left)
+    cells_l = cells_l[cells_l < num_entities_local]  # remove ghost entities
 
-newton = NewtonSolver(MPI.COMM_WORLD)
-newton.rtol = 1e-6
-newton.max_it = 10
+    cells_r = mesh.locate_entities(domain, gdim, right)
+    cells_r = cells_r[cells_r < num_entities_local]  # remove ghost entities
 
-Exx = np.linspace(0, 1e-2, 10)
+    marked_entities = np.hstack((cells_l, cells_r))
+    marked_values = np.hstack((np.full_like(cells_l, 1), np.full_like(cells_r, 2)))
 
-# mono-materiel problem
-Res = ufl.dot(sig, eps(v)) * qmap.dx
-Jac = qmap.derivative(Res, u, du)
+    sorted_entities = np.argsort(marked_entities)
+    subdomains = mesh.meshtags(
+        domain, gdim, marked_entities[sorted_entities], marked_values[sorted_entities]
+    )
 
-problem = NonlinearMaterialProblem(qmap, Res, Jac, u, bcs)
+    V = fem.functionspace(domain, ("Q", 1, (gdim,)))
 
-Sig = np.zeros((len(Exx), len(sig.x.array)))
-for i, exxi in enumerate(Exx[1:]):
-    exx.value = exxi
-    uD.interpolate(u_exp)
+    u = fem.Function(V, name="Displacement")
+    v = ufl.TestFunction(V)
+    du = ufl.TrialFunction(V)
 
-    converged, it = problem.solve(newton)
+    def eps(u):
+        return symmetric_tensor_to_vector(ufl.sym(ufl.grad(u)))
 
-    assert converged
+    x = ufl.SpatialCoordinate(domain)
+    exx = fem.Constant(domain, 1e-2)
+    E_macro = ufl.as_matrix([[exx, 0], [0, 0]])
+    u_exp = fem.Expression(ufl.dot(E_macro, x), V.element.interpolation_points())
 
-    Sig[i + 1, :] = sig.x.array
+    domain.topology.create_connectivity(gdim - 1, gdim)
+    boundary_facets = mesh.exterior_facet_indices(domain.topology)
+    boundary_dofs = fem.locate_dofs_topological(V, gdim - 1, boundary_facets)
+    uD = fem.Function(V)
+    bcs = [fem.dirichletbc(uD, boundary_dofs)]
 
+    mat_prop = {
+        "YoungModulus": 70e3,
+        "PoissonRatio": 0.3,
+        "HardeningSlope": 5e3,
+        "YieldStrength": 250.0,
+    }
 
-# multi-material problem
-Res_l = ufl.dot(sig_l, eps(v)) * qmap_l.dx
-Res_r = ufl.dot(sig_r, eps(v)) * qmap_r.dx
-Jac_l = qmap_l.derivative(Res_l, u, du)
-Jac_r = qmap_r.derivative(Res_r, u, du)
+    material, material_l, material_r = [
+        MFrontMaterial(
+            path / "src/libBehaviour.so",
+            "IsotropicLinearHardeningPlasticity",
+            hypothesis="plane_strain",
+            material_properties=mat_prop,
+        )
+        for i in range(3)
+    ]
 
-problem = NonlinearMaterialProblem(
-    [qmap_l, qmap_r], Res_l + Res_r, Jac_l + Jac_r, u, bcs
-)
+    qmap = QuadratureMap(domain, 2, material)
+    qmap.register_gradient("Strain", eps(u))
+    sig = qmap.fluxes["Stress"]
+    qmap.initialize_state()
 
-for i, exxi in enumerate(Exx[1:]):
-    exx.value = exxi
-    uD.interpolate(u_exp)
+    qmap_l = QuadratureMap(domain, 2, material_l, cells=cells_l)
+    qmap_l.register_gradient("Strain", eps(u))
+    sig_l = qmap_l.fluxes["Stress"]
+    qmap_l.initialize_state()
 
-    converged, it = problem.solve(newton)
+    qmap_r = QuadratureMap(domain, 2, material_r, cells=cells_r)
+    qmap_r.register_gradient("Strain", eps(u))
+    sig_r = qmap_r.fluxes["Stress"]
+    qmap_r.initialize_state()
 
-    assert converged
+    newton = NewtonSolver(MPI.COMM_WORLD)
+    newton.rtol = 1e-6
+    newton.max_it = 10
 
-    assert np.allclose(sig_l.x.array * sig_r.x.array, np.zeros_like(sig.x.array))
-    assert np.allclose(Sig[i + 1, :], sig_l.x.array + sig_r.x.array)
+    Exx = np.linspace(0, 1e-2, 10)
+
+    # mono-materiel problem
+    Res = ufl.dot(sig, eps(v)) * qmap.dx
+    Jac = qmap.derivative(Res, u, du)
+
+    problem = NonlinearMaterialProblem(qmap, Res, Jac, u, bcs)
+
+    Sig = np.zeros((len(Exx), len(sig.x.array)))
+    for i, exxi in enumerate(Exx[1:]):
+        exx.value = exxi
+        uD.interpolate(u_exp)
+
+        converged, it = problem.solve(newton)
+
+        assert converged
+
+        Sig[i + 1, :] = sig.x.array
+
+    # multi-material problem
+    Res_l = ufl.dot(sig_l, eps(v)) * qmap_l.dx
+    Res_r = ufl.dot(sig_r, eps(v)) * qmap_r.dx
+    Jac_l = qmap_l.derivative(Res_l, u, du)
+    Jac_r = qmap_r.derivative(Res_r, u, du)
+
+    problem = NonlinearMaterialProblem(
+        [qmap_l, qmap_r], Res_l + Res_r, Jac_l + Jac_r, u, bcs
+    )
+
+    for i, exxi in enumerate(Exx[1:]):
+        exx.value = exxi
+        uD.interpolate(u_exp)
+
+        converged, it = problem.solve(newton)
+
+        assert converged
+
+        assert np.allclose(sig_l.x.array * sig_r.x.array, np.zeros_like(sig.x.array))
+        assert np.allclose(Sig[i + 1, :], sig_l.x.array + sig_r.x.array)
