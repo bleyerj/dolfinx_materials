@@ -77,12 +77,13 @@ def uniaxial_tension_2D(material, Exx, N=1, order=1, save_fields=None, angle=Non
     newton.rtol = 1e-6
     newton.max_it = 20
 
-    file_results = io.XDMFFile(
-        domain.comm,
-        f"{material.name}_results.xdmf",
-        "w",
-    )
-    file_results.write_mesh(domain)
+    if save_fields:
+        file_results = io.XDMFFile(
+            domain.comm,
+            f"{material.name}_results.xdmf",
+            "w",
+        )
+        file_results.write_mesh(domain)
     Stress = np.zeros((len(Exx), 6))
     for i, exx in enumerate(Exx[1:]):
         uD_x_r.x.array[:] = exx
@@ -92,10 +93,11 @@ def uniaxial_tension_2D(material, Exx, N=1, order=1, save_fields=None, angle=Non
         assert converged
         Stress[i + 1, :] = sig.x.array[:6]
 
-        if save_fields is not None:
+        if save_fields:
             for field_name in save_fields:
                 field = qmap.project_on(field_name, ("DG", 0))
                 file_results.write_function(field, i)
 
-    file_results.close()
+    if save_fields:
+        file_results.close()
     return Stress
