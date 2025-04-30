@@ -191,7 +191,7 @@ def nonsymmetric_tensor_to_vector(T, T22=0):
 def vector_to_tensor(T):
     """Return vector following MFront conventions as a tensor"""
     if ufl.shape(T) == (4,):
-        return ufl.as_matrix([[T[0], T[3] / np.sqrt(2)], T[3] / np.sqrt(2), T[1]])
+        return ufl.as_matrix([[T[0], T[3] / np.sqrt(2)], [T[3] / np.sqrt(2), T[1]]])
     elif ufl.shape(T) == (6,):
         return ufl.as_matrix(
             [
@@ -201,7 +201,7 @@ def vector_to_tensor(T):
             ]
         )
     elif ufl.shape(T) == (5,):
-        return ufl.as_matrix([[T[0], T[3]], T[4], T[1]])
+        return ufl.as_matrix([[T[0], T[3]], [T[4], T[1]]])
     elif ufl.shape(T) == (9,):
         return ufl.as_matrix(
             [[T[0], T[3], T[5]], [T[4], T[1], T[7]], [T[6], T[8], T[2]]]
