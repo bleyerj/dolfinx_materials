@@ -56,7 +56,7 @@ elastic_model = LinearElasticIsotropic(E, nu)
 
 sig0 = 350.0
 sigu = 500.0
-b = 100
+b = 1e3
 
 
 def yield_stress(p):
@@ -129,7 +129,6 @@ v = ufl.TestFunction(V)
 sig = qmap.fluxes["Stress"]
 Res = ufl.dot(sig, strain(v)) * qmap.dx
 Jac = qmap.derivative(Res, u, du)
-# -
 
 # Next, the custom nonlinear problem is defined with the class `NonlinearMaterialProblem` as well as the corresponding Newton solver.
 
@@ -147,7 +146,7 @@ out_file = "elastoplasticity.pvd"
 vtk = io.VTKFile(domain.comm, out_file, "w")
 
 N = 15
-Eyy = np.linspace(0, 15e-3, N + 1)
+Eyy = np.linspace(0, 10e-3, N + 1)
 Force = np.zeros_like(Eyy)
 nit = np.zeros_like(Eyy)
 for i, eyy in enumerate(Eyy[1:]):

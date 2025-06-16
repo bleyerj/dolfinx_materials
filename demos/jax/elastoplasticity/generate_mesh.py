@@ -28,8 +28,8 @@ def generate_perforated_plate(W, H, R, mesh_sizes):
         volumes = gmsh.model.getEntities(gdim)
         assert len(volumes) == 1
         gmsh.model.addPhysicalGroup(gdim, [volumes[0][1]], 1, name="Plate")
-        gmsh.model.addPhysicalGroup(gdim - 1, [1], 1, name="Bottom")
-        gmsh.model.addPhysicalGroup(gdim - 1, [4], 2, name="Top")
+        gmsh.model.addPhysicalGroup(gdim - 1, [6], 1, name="Bottom")
+        gmsh.model.addPhysicalGroup(gdim - 1, [9], 2, name="Top")
 
         try:
             field_tag = gmsh.model.mesh.field.add("Box")
@@ -46,15 +46,11 @@ def generate_perforated_plate(W, H, R, mesh_sizes):
             gmsh.option.setNumber("Mesh.CharacteristicLengthMax", mesh_sizes)
 
         gmsh.model.mesh.generate(gdim)
-
         domain, markers, facets = model_to_mesh(
             gmsh.model,
             mesh_comm,
             model_rank,
             gdim=gdim,
-        )
-        domain.topology.create_connectivity(
-            domain.topology.dim - 1, domain.topology.dim
         )
 
     gmsh.finalize()
