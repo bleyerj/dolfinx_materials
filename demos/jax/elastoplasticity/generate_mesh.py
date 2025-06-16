@@ -53,6 +53,9 @@ def generate_perforated_plate(W, H, R, mesh_sizes):
             model_rank,
             gdim=gdim,
         )
+        domain.topology.create_connectivity(
+            domain.topology.dim - 1, domain.topology.dim
+        )
 
     gmsh.finalize()
     return domain, markers, facets
