@@ -73,7 +73,7 @@ class vonMisesIsotropicHardening(JAXMaterial):
             return jax.lax.cond(yield_criterion < 0.0, r_elastic, r_plastic, dp)
 
         self.newton_solver.set_residual(r)
-        dp, data = self.newton_solver.solve(0.0)
+        dp = self.newton_solver.solve(0.0)
 
         sig = sig_el - 2 * mu * deps_p(dp, yield_criterion)
 
@@ -139,7 +139,7 @@ class GeneralIsotropicHardening(JAXMaterial):
         self.newton_solver.set_residual((r_eps_p, r_p))
 
         x0 = jnp.zeros((7,))
-        x, data = self.newton_solver.solve(x0)
+        x = self.newton_solver.solve(x0)
         depsp = x[:-1]
         dp = x[-1]
 

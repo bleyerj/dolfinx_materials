@@ -87,7 +87,7 @@ class FeFpJ2Plasticity(JAXMaterial):
         # Implicit system solution
         x0 = jnp.zeros((7,))
         x0 = x0.at[:-1].set(to_vect(be_bar_trial, True))
-        x, data = self.newton_solver.solve(x0)
+        x = self.newton_solver.solve(x0)
 
         be_bar = to_mat(x[:-1])
         dp = x[-1]

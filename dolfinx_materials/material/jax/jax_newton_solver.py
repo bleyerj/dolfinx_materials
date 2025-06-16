@@ -94,7 +94,7 @@ def newton_solve(x, r, dr_dx, params):
         return x_sol, data
 
     x_sol, data = run_newton(x, params)
-    return x_sol, data
+    return x_sol
 
 
 class JAXNewton:
@@ -142,7 +142,7 @@ class JAXNewton:
         solve = lambda f, x: newton_solve(x, f, jax.jacfwd(f), self.params)
 
         tangent_solve = lambda g, y: _solve_linear_system(x, jax.jacfwd(g)(y), y)
-        x_sol, data = jax.lax.custom_root(self.r, x, solve, tangent_solve, has_aux=True)
+        x_sol = jax.lax.custom_root(self.r, x, solve, tangent_solve, has_aux=False)
 
         # x_sol, data = newton_solve(x, self.r, self.dr_dx, self.params)
-        return x_sol, data
+        return x_sol

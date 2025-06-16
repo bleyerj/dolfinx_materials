@@ -308,7 +308,7 @@ Finally, the local Newton system is solved (the corresponding jacobian is comput
 
 ```python
         x0 = jnp.zeros((7,))
-        x, res = newton.solve(x0)
+        x = newton.solve(x0)
 
         depsp = x[:-1]
         dp = x[-1]
