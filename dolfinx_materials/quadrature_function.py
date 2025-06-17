@@ -3,7 +3,7 @@
 """
 QuadratureFunction class and utility functions
 
-@Author  :   Jeremy Bleyer, Ecole des Ponts ParisTech, Navier
+@Author  :   Jeremy Bleyer, Ecole Nationale des Ponts et Chaussées, Navier
 @Contact :   jeremy.bleyer@enpc.fr
 @Time    :   17/05/2023
 """

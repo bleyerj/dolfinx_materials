@@ -2,7 +2,7 @@
 # -*-coding:utf-8 -*-
 """
 
-@Author  :   Jeremy Bleyer, Ecole des Nationale des Ponts et Chaussées, Navier
+@Author  :   Jeremy Bleyer, Ecole Nationale des Ponts et Chaussées, Navier
 @Contact :   jeremy.bleyer@enpc.fr
 @Time    :   21/08/2024
 """

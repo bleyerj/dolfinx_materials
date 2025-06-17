@@ -3,7 +3,7 @@
 """
 MFrontNonlinearMaterial class
 
-@author: Jeremy Bleyer, Ecole des Ponts ParisTech,
+@author: Jeremy Bleyer, Ecole Nationale des Ponts et Chaussées,
 Laboratoire Navier (ENPC,IFSTTAR,CNRS UMR 8205)
 @email: jeremy.bleyer@enpc.fr
 """
