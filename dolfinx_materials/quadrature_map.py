@@ -155,9 +155,12 @@ class QuadratureMap:
     def update_material_properties(self):
         """Update material properties from provided values."""
         for name, mat_prop in self.material.material_properties.items():
-            if isinstance(mat_prop, (int, float, np.ndarray)):
-                values = mat_prop
-            else:
+            try:
+                values = np.asarray(mat_prop)
+            except Exception:
+                # if isinstance(mat_prop, (int, float, np.ndarray)):
+                #     values = mat_prop
+                # else:
                 shape = mat_prop.ufl_shape
                 Vm = create_quadrature_functionspace(self.mesh, self.degree, shape)
                 mat_prop_fun = fem.Function(Vm, name=name)
