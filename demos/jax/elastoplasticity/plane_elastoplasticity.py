@@ -29,9 +29,10 @@ import matplotlib.pyplot as plt
 import jax.numpy as jnp
 from mpi4py import MPI
 import ufl
+import time
+import os
 from dolfinx import io, fem
 from dolfinx.cpp.nls.petsc import NewtonSolver
-from dolfinx.common import list_timings, TimingType
 from dolfinx_materials.quadrature_map import QuadratureMap
 from dolfinx_materials.solvers import NonlinearMaterialProblem
 from dolfinx_materials.jax_materials import (
@@ -150,11 +151,31 @@ N = 15
 Eyy = np.linspace(0, 15e-3, N + 1)
 Force = np.zeros_like(Eyy)
 nit = np.zeros_like(Eyy)
+step_times = []
+
+# Start total timing
+t_total_start = time.time()
+
+if MPI.COMM_WORLD.rank == 0:
+    print("\n" + "="*70)
+    print("ELASTOPLASTICITY SIMULATION")
+    print("="*70)
+    print(f"Number of load steps: {N}")
+    print(f"Mesh DOFs: {V.dofmap.index_map.size_global}")
+    print("="*70 + "\n")
+
 for i, eyy in enumerate(Eyy[1:]):
+    step_num = i + 1
+    t_step_start = time.time()
+    
     u_imp = eyy * Ly
     uD_t.x.array[1::2] = u_imp
 
     converged, it = problem.solve(newton, print_solution=False)
+    
+    t_step_end = time.time()
+    t_step = t_step_end - t_step_start
+    step_times.append(t_step)
 
     p = qmap.project_on("p", ("DG", 0))
     stress = qmap.project_on("Stress", ("DG", 0))
@@ -167,8 +188,28 @@ for i, eyy in enumerate(Eyy[1:]):
     vtk.write_function(p, i + 1)
     vtk.write_function(syy, i + 1)
     nit[i + 1] = it
+    
+    # Print per-step info
+    if MPI.COMM_WORLD.rank == 0:
+        status = "✓" if converged else "✗"
+        print(f"Step {step_num:2d}/{N}: Time={t_step:7.3f}s | Strain={eyy*100:6.3f}% | "
+              f"Stress={Force[i+1]/Lx:7.1f} MPa | Iterations={it:2d} | Status={status}")
+
+t_total_end = time.time()
+t_total = t_total_end - t_total_start
 
 vtk.close()
+
+if MPI.COMM_WORLD.rank == 0:
+    print("\n" + "="*70)
+    print("SIMULATION SUMMARY")
+    print("="*70)
+    print(f"Total computation time: {t_total:7.3f}s")
+    print(f"Average time per step:  {np.mean(step_times):7.3f}s")
+    print(f"Min time per step:      {np.min(step_times):7.3f}s")
+    print(f"Max time per step:      {np.max(step_times):7.3f}s")
+    print(f"Total iterations:       {int(np.sum(nit))}")
+    print("="*70 + "\n")
 # -
 
 # ## Results
@@ -193,7 +234,11 @@ plt.show()
 
 from dolfinx.common import timing
 
-constitutive_update_time = timing("Constitutive update")[2]
-linear_solve_time = timing("PETSc Krylov solver")[2]
-print(f"Total time spent in constitutive update {constitutive_update_time:.2f}s")
-print(f"Total time spent in global linear solver {linear_solve_time:.2f}s")
+
+constitutive_update_time = timing("Constitutive update")[1].total_seconds()
+linear_solve_time = timing("KSP Solve")[1].total_seconds()
+print(f"Total time spent in constitutive update: {constitutive_update_time:.2f}s")
+print(f"Total time spent in global linear solver: {linear_solve_time:.2f}s")
+
+# from dolfinx.common import list_timings
+# list_timings(MPI.COMM_WORLD)

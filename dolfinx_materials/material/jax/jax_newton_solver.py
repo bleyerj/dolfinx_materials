@@ -90,7 +90,8 @@ def newton_solve(x, r, dr_dx, params):
         norm_res, niter_total, history = state
         # jax.debug.callback(_final_check, norm_res, cond_fun(state))
         x_sol, res_sol = history
-        data = (niter_total, norm_res0, norm_res, res_sol)
+        # Return only float data for JAX compatibility (no int64)
+        data = (norm_res0, norm_res, res_sol)
         return x_sol, data
 
     x_sol, data = run_newton(x, params)

@@ -171,20 +171,21 @@ class CustomNewtonProblem:
                     f"No solution found after {i} iterations. Revert to previous solution and adjust solver parameters."
                 )
 
-        return converged, it
+        return converged, i
 
 
-class NonlinearMaterialProblem(NonlinearProblem):
+class NonlinearMaterialProblem:
     """
-    This class handles the definition of a nonlinear problem containing an abstract `QuadratureMap` object compatible with a dolfinx NewtonSolver.
+    A nonlinear solver for material-aware problems with constitutive integration.
+    Performs Newton iterations with material updates at each step.
     """
 
-    def __init__(self, qmap, F, J, u, bcs):
+    def __init__(self, qmap, F, J, u, bcs, petsc_options_prefix="nl_"):
         """
         Parameters
         ----------
         qmap : dolfinx_materials.quadrature_map.QuadratureMap
-            The abstract QuadratureMap object
+            The QuadratureMap object
         F : Form
             Nonlinear residual form
         J : Form
@@ -193,15 +194,37 @@ class NonlinearMaterialProblem(NonlinearProblem):
             Unknown function representing the solution
         bcs : list
             list of fem.dirichletbc
+        petsc_options_prefix : str
+            PETSc options prefix
         """
-        super().__init__(F, u, J=J, bcs=bcs)
-        self._F = None
-        self._J = None
+        from dolfinx import fem
+        
+        # Compile forms
+        self._F = fem.form(F) if not isinstance(F, fem.Form) else F
+        self._J = fem.form(J) if not isinstance(J, fem.Form) else J
+        
         self.u = u
+        self.bcs = bcs
+        
+        # Store quadrature maps
         if not isinstance(qmap, list):
             self.quadrature_maps = [qmap]
         else:
             self.quadrature_maps = qmap
+        
+        # Get function spaces for creating vectors/matrices
+        u_space = u.function_space
+        
+        # Create vectors and matrices for assembly
+        self.b = create_vector(u_space)
+        self.A = create_matrix(self._J)
+        self.du = create_vector(u_space)
+        
+        # Create KSP solver once and reuse it
+        self.ksp = PETSc.KSP().create(MPI.COMM_WORLD)
+        self.ksp.setType("preonly")
+        pc = self.ksp.getPC()
+        pc.setType("lu")
 
     def _constitutive_update(self):
         with Timer("Constitutive update"):
@@ -212,23 +235,13 @@ class NonlinearMaterialProblem(NonlinearProblem):
         for qmap in self.quadrature_maps:
             qmap.advance()
 
-    def form(self, x):
-        x.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
-        self._constitutive_update()
-
-    def matrix(self):
-        return create_matrix(self.a)
-
-    def vector(self):
-        return create_vector(self.L)
-
-    def solve(self, solver, print_solution=True):
-        """Solve the problem
+    def solve(self, solver=None, print_solution=True):
+        """Solve the problem using Newton iterations with material updates.
 
         Parameters
         ----------
         solver :
-            Nonlinear solver object
+            Nonlinear solver object with rtol, atol, max_it attributes
         print_solution : bool, optional
             Print convergence info, by default True
 
@@ -239,25 +252,81 @@ class NonlinearMaterialProblem(NonlinearProblem):
         it: int
             Number of iterations to convergence
         """
-        solver.setF(self.F, self.vector())
-        solver.setJ(self.J, self.matrix())
-        solver.set_form(self.form)
-
-        it, converged = solver.solve(self.u.x.petsc_vec)
-        self.u.x.scatter_forward()
-
+        if solver is None:
+            from dolfinx.cpp.nls.petsc import NewtonSolver
+            solver = NewtonSolver(MPI.COMM_WORLD)
+            solver.rtol = 1e-6
+            solver.atol = 1e-6
+            solver.max_it = 20
+        
+        # Initial Newton iteration
+        i = 0
+        converged = False
+        res0_norm = 1.0
+        
+        while i < solver.max_it:
+            import time
+            t_iter_start = time.time()
+            
+            # Constitutive update with current displacement before each residual assembly
+            t_const_start = time.time()
+            self._constitutive_update()
+            t_const = time.time() - t_const_start
+            
+            # Assemble residual
+            t_asm_start = time.time()
+            with self.b.localForm() as b_local:
+                b_local.set(0.0)
+            assemble_vector(self.b, self._F)
+            self.b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+            self.b.scale(-1.0)  # Negate for Newton system
+            
+            # Assemble Jacobian (assembler handles BCs correctly)
+            self.A.zeroEntries()
+            assemble_matrix(self.A, self._J, bcs=self.bcs)
+            self.A.assemble()
+            t_asm = time.time() - t_asm_start
+            
+            # Apply BC modifications to RHS
+            from dolfinx.fem import apply_lifting, set_bc
+            apply_lifting(self.b, [self._J], bcs=[self.bcs], x0=[self.u.x.petsc_vec], alpha=1.0)
+            set_bc(self.b, self.bcs, self.u.x.petsc_vec, 1.0)
+            self.b.ghostUpdate(addv=PETSc.InsertMode.INSERT_VALUES, mode=PETSc.ScatterMode.FORWARD)
+            
+            # Compute residual norm (after BC modifications)
+            res_norm = self.b.norm()
+            if i == 0:
+                res0_norm = max(res_norm, 1.0)
+            
+            # Check convergence
+            if res_norm < solver.atol or res_norm < solver.rtol * res0_norm:
+                converged = True
+                if print_solution:
+                    mpiprint(f"Solution converged in {i} iterations")
+                break
+            
+            # Solve linear system: A * du = b (reuse KSP)
+            t_ksp_start = time.time()
+            with Timer("KSP Solve"):
+                self.ksp.setOperators(self.A)
+                self.ksp.solve(self.b, self.du)
+            t_ksp = time.time() - t_ksp_start
+            
+            # Update solution: u += du
+            self.u.x.petsc_vec.axpy(1.0, self.du)
+            self.u.x.scatter_forward()
+            
+            i += 1
+        
+        # Always advance material state after solve (converged or not)
         if converged:
-            # (Residual norm {error_norm})")
-            if print_solution:
-                mpiprint(f"Solution reached in {it} iterations.")
             self._constitutive_advance()
-
+            
         else:
             mpiprint(
                 f"No solution found after {it} iterations. Revert to previous solution and adjust solver parameters."
             )
-
-        return converged, it
+        return converged, i
 
 
 class SNESNonlinearMaterialProblem(NonlinearMaterialProblem):

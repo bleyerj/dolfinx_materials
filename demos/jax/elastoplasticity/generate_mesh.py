@@ -1,6 +1,6 @@
 import gmsh
 from mpi4py import MPI
-from dolfinx.io.gmshio import model_to_mesh
+from dolfinx.io.gmsh import model_to_mesh
 
 
 def generate_perforated_plate(W, H, R, mesh_sizes):
@@ -27,9 +27,23 @@ def generate_perforated_plate(W, H, R, mesh_sizes):
 
         volumes = gmsh.model.getEntities(gdim)
         assert len(volumes) == 1
+
+        # Get boundaries
+        boundaries = gmsh.model.getBoundary([(gdim, volumes[0][1])], oriented=False)
+        bottom_curve = None
+        top_curve = None
+        for b in boundaries:
+            center = gmsh.model.occ.getCenterOfMass(b[0], b[1])
+            if abs(center[1] - 0) < 1e-6:  # bottom
+                bottom_curve = b[1]
+            elif abs(center[1] - H) < 1e-6:  # top
+                top_curve = b[1]
+
         gmsh.model.addPhysicalGroup(gdim, [volumes[0][1]], 1, name="Plate")
-        gmsh.model.addPhysicalGroup(gdim - 1, [1], 1, name="Bottom")
-        gmsh.model.addPhysicalGroup(gdim - 1, [4], 2, name="Top")
+        if bottom_curve is not None:
+            gmsh.model.addPhysicalGroup(gdim - 1, [bottom_curve], 1, name="Bottom")
+        if top_curve is not None:
+            gmsh.model.addPhysicalGroup(gdim - 1, [top_curve], 2, name="Top")
 
         try:
             field_tag = gmsh.model.mesh.field.add("Box")
@@ -47,12 +61,16 @@ def generate_perforated_plate(W, H, R, mesh_sizes):
 
         gmsh.model.mesh.generate(gdim)
 
-        domain, markers, facets = model_to_mesh(
+        mesh_data = model_to_mesh(
             gmsh.model,
             mesh_comm,
             model_rank,
             gdim=gdim,
         )
+
+        domain = mesh_data.mesh
+        markers = mesh_data.cell_tags
+        facets = mesh_data.facet_tags
 
     gmsh.finalize()
     return domain, markers, facets
