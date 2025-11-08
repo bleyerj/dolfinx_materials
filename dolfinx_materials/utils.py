@@ -12,7 +12,6 @@ import ufl
 from petsc4py import PETSc
 import numpy as np
 from dolfinx.common import Timer
-from functools import lru_cache
 import basix
 
 
@@ -105,42 +104,49 @@ def get_vals(fun):
     return fun.x.array.reshape((-1, dim))
 
 
+def build_cell_to_dofs_map(V):
+    """
+    Build a full cell->DOF map for function space V (including block size)
+    as a dense NumPy array of shape (num_cells, dofs_per_cell * block_size).
+    """
+
+    # Raw cell->dofs array, shape [num_cells, dofs_per_cell]
+    dofs = np.asarray(V.dofmap.list, dtype=np.int32)
+    num_cells = (
+        V.mesh.topology.index_map(V.mesh.topology.dim).size_local
+        + V.mesh.topology.index_map(V.mesh.topology.dim).num_ghosts
+    )
+    dofs_per_cell = dofs.size // num_cells
+    dofs = dofs.reshape(num_cells, dofs_per_cell)
+
+    bs = V.dofmap.bs
+
+    # If scalar space: done.
+    if bs == 1:
+        return dofs.copy()
+
+    # Vector/tensor space: expand each scalar DOF into block components.
+    # Vectorized equivalent of np.kron for all rows.
+    # shape (num_cells, dofs_per_cell * bs)
+    expanded = (
+        (dofs[:, :, None] * bs + np.arange(bs)).reshape(num_cells, -1).astype(np.int32)
+    )
+
+    return expanded
+
+
 def cell_to_dofs(cells, V):
     with Timer("dx_mat:cell_to_dofs"):
-        dofs = fem.locate_dofs_topological(V, V.mesh.geometry.dim, cells)
-        block_size = V.dofmap.bs
-        return cell_to_dofs_cached(tuple(dofs), block_size)
-
-
-def cacheRef(f):
-    cache = {}
-
-    def g(*args):
-        # use `id` to get memory address for function argument.
-        cache_key = "-".join(list(map(lambda e: str(id(e)), args)))
-        if cache_key in cache:
-            return cache[cache_key]
-        v = f(*args)
-        cache[cache_key] = v
-        return v
-
-    return g
-
-
-@lru_cache
-def cell_to_dofs_cached(dofs, block_size):
-    return np.asarray(
-        np.kron(np.asarray(dofs), block_size * np.ones(block_size))
-        + np.kron(np.ones(len(dofs)), np.arange(0, block_size)),
-        dtype=np.int32,
-    )
+        dofmap = build_cell_to_dofs_map(V)
+    return dofmap[cells].ravel()
 
 
 def update_vals(fun, array, cells=None):
     if cells is None:
         fun.x.array[:] = array.ravel()
     else:
-        dofs = cell_to_dofs(cells, fun.function_space)
+        bs = len(fun.x.array) // len(cells)
+        dofs = np.add.outer(cells * bs, np.arange(bs)).ravel()
         fun.x.array[dofs] = array.ravel()
 
 

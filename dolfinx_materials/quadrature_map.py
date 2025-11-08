@@ -158,9 +158,6 @@ class QuadratureMap:
             try:
                 values = np.asarray(mat_prop)
             except Exception:
-                # if isinstance(mat_prop, (int, float, np.ndarray)):
-                #     values = mat_prop
-                # else:
                 shape = mat_prop.ufl_shape
                 Vm = create_quadrature_functionspace(self.mesh, self.degree, shape)
                 mat_prop_fun = fem.Function(Vm, name=name)
@@ -315,14 +312,13 @@ class QuadratureMap:
                 grad_vals.ravel(), self.rotation_func.x.array
             )
 
-        flux_size = sum(list(self.material.fluxes.values()))
-        flux_vals = np.zeros((num_QP, flux_size))
-        Ct_vals = np.zeros_like(get_vals(self.jacobian_flatten)[self.dofs])
+        # flux_size = sum(list(self.material.fluxes.values()))
+        # flux_vals = np.zeros((num_QP, flux_size))
+        # Ct_vals = np.zeros_like(get_vals(self.jacobian_flatten)[self.dofs])
 
         # material integration
         # print("Grads", grad_vals)
         flux_vals, isv_vals, Ct_vals = self.material.integrate(grad_vals)
-        # print("Fluxes", flux_vals)
         assert not (np.any(np.isnan(flux_vals)))
         assert not (np.any(np.isnan(isv_vals)))
         assert not (np.any(np.isnan(Ct_vals)))
@@ -332,10 +328,10 @@ class QuadratureMap:
             self.material.rotate_tangent_operator(
                 Ct_vals.ravel(), self.rotation_func.x.array
             )
-
-        self.update_fluxes(flux_vals)
-        self.update_internal_state_variables(isv_vals)
-        update_vals(self.jacobian_flatten, Ct_vals, self.cells)
+        with Timer("dx_mat: update values"):
+            self.update_fluxes(flux_vals)
+            self.update_internal_state_variables(isv_vals)
+            update_vals(self.jacobian_flatten, Ct_vals, self.cells)
 
     def update_fluxes(self, flux_vals):
         buff = 0
