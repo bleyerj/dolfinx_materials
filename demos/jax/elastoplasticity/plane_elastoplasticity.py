@@ -144,10 +144,17 @@ newton.max_it = 20
 # We then loop over a set of imposed vertical strains, apply the corresponding imposed displacement boundary condition on the top surface, solve the problem and then compute plastic and stress fields projected onto a DG space for visualization. Finally, we use the imposed displacement field to compute the associated resultant force in a consistent manner, see [](https://bleyerj.github.io/comet-fenicsx/tips/computing_reactions/computing_reactions.html) for more details.
 
 # +
-out_file = "elastoplasticity.pvd"
+# write results directory relative to this script's directory
+script_dir = os.path.dirname(os.path.abspath(__file__))
+out_dir = os.path.join(script_dir, "results", "vtk")
+if domain.comm.rank == 0:
+    os.makedirs(out_dir, exist_ok=True)
+domain.comm.barrier()
+
+out_file = os.path.join(out_dir, "elastoplasticity.pvd")
 vtk = io.VTKFile(domain.comm, out_file, "w")
 
-N = 15
+N = 30
 Eyy = np.linspace(0, 15e-3, N + 1)
 Force = np.zeros_like(Eyy)
 nit = np.zeros_like(Eyy)
