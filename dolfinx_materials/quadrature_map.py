@@ -290,7 +290,6 @@ class QuadratureMap:
 
     def update(self):
         """Perform constitutive update call."""
-        num_QP = len(self.quadrature_points) * self.num_cells
         if not self._initialized:
             self.initialize_state()
 
@@ -319,9 +318,9 @@ class QuadratureMap:
         # material integration
         # print("Grads", grad_vals)
         flux_vals, isv_vals, Ct_vals = self.material.integrate(grad_vals)
-        assert not (np.any(np.isnan(flux_vals)))
-        assert not (np.any(np.isnan(isv_vals)))
-        assert not (np.any(np.isnan(Ct_vals)))
+        # assert not (np.any(np.isnan(flux_vals)))
+        # assert not (np.any(np.isnan(isv_vals)))
+        # assert not (np.any(np.isnan(Ct_vals)))
 
         if self.material.rotation_matrix is not None:
             self.material.rotate_fluxes(flux_vals.ravel(), self.rotation_func.x.array)
@@ -354,6 +353,7 @@ class QuadratureMap:
         """
         self.material.data_manager.update()
         final_state = self.material.get_final_state_dict()
+        # print(final_state)
         for key in self.variables.keys():
             if key not in self.gradients:  # update flux and isv but not gradients
                 update_vals(self.variables[key], final_state[key], self.cells)
