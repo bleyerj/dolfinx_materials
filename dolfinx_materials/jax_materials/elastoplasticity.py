@@ -3,9 +3,22 @@ import jax.numpy as jnp
 from dolfinx_materials.material.jax import JAXMaterial, tangent_AD, JAXNewton
 from .tensors import dev, to_mat
 from time import time
+import optimistix as optx
+import lineax as lx
 
 
-@jax.jit
+def safe_zero(method):
+    """Decorator for yield surfaces to avoid NaNs for zero stress in both fwd and bwd AD."""
+
+    def wrapper(x, *args):
+        x_norm = jnp.linalg.norm(x)
+        x_safe = jnp.where(x_norm > 0, x, x)
+        return jnp.where(x_norm > 0, method(x_safe, *args), 0.0)
+
+    return wrapper
+
+
+@safe_zero
 def von_Mises_stress(sig):
     return jnp.sqrt(3 / 2.0) * jnp.linalg.norm(dev(sig))
 
@@ -47,8 +60,10 @@ class vonMisesIsotropicHardening(JAXMaterial):
         C = self.elastic_model.C
         sig_el = sig_old + C @ deps
         sig_Y_old = self.yield_stress(p_old)
-        sig_eq_el = jnp.clip(self.equivalent_stress(sig_el), a_min=1e-8)
-        n_el = dev(sig_el) / sig_eq_el
+        sig_eq_el = self.equivalent_stress(
+            sig_el
+        )  # jnp.clip(self.equivalent_stress(sig_el), a_min=1e-8)
+        n_el = jax.jacfwd(self.equivalent_stress)(sig_el)  # dev(sig_el) / sig_eq_el
         yield_criterion = sig_eq_el - sig_Y_old
 
         def deps_p_elastic(dp):
@@ -68,14 +83,18 @@ class vonMisesIsotropicHardening(JAXMaterial):
         def r(dp):
             r_elastic = lambda dp: dp
             r_plastic = (
-                lambda dp: sig_eq_el - 3 * mu * dp - self.yield_stress(p_old + dp)
+                lambda dp: (sig_eq_el - 3 * mu * dp - self.yield_stress(p_old + dp))
+                / self.elastic_model.E
             )
             return jax.lax.cond(yield_criterion < 0.0, r_elastic, r_plastic, dp)
 
         self.newton_solver.set_residual(r)
         dp = self.newton_solver.solve(0.0)
 
-        sig = sig_el - 2 * mu * deps_p(dp, yield_criterion)
+        depsp = n_el * dp
+        sig = sig_old + self.elastic_model.C @ (
+            deps - dev(depsp)
+        )  # sig_el - 2 * mu * dev(depsp)
 
         state["Strain"] += deps
         state["p"] += dp
