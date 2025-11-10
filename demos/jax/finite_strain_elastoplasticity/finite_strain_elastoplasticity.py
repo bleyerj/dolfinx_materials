@@ -16,19 +16,22 @@
 #
 # $\newcommand{\bF}{\boldsymbol{F}}\newcommand{\bFe}{\boldsymbol{F}^\text{e}}\newcommand{\bFp}{\boldsymbol{F}^\text{p}}$ In this example, we show how to use a JAX implementation of finite-strain plasticity using the $\bFe\bFp$ formalism. The setup of the FEniCSx variational problem is quite similar to the MFront [](/demos/mfront/hyperelasticity/hyperelasticity.md) demo.
 
-# +
+import jax
+import jax.numpy as jnp
+
+jax.config.update("jax_platform_name", "gpu")
+
 import numpy as np
 from mpi4py import MPI
 import gmsh
 import ufl
 from petsc4py import PETSc
 from dolfinx import fem, io
-from dolfinx.cpp.nls.petsc import NewtonSolver
 from dolfinx_materials.quadrature_map import QuadratureMap
 from dolfinx_materials.jax_materials import LinearElasticIsotropic, FeFpJ2Plasticity
 import jax.numpy as jnp
 from dolfinx_materials.solvers import (
-    SNESNonlinearMaterialProblem,
+    NonlinearMaterialProblem,
 )
 from dolfinx_materials.utils import nonsymmetric_tensor_to_vector
 
@@ -143,7 +146,7 @@ E = 70e3
 nu = 0.3
 sig0 = 500.0
 
-b = 1e3
+b = 100.0
 sigu = 750.0
 
 
@@ -174,17 +177,30 @@ qmap.update()
 # As in the MFront demo, we define the custom nonlinear problem, the corresponding Newton solver, the PETSc Krylov solver and its Geometric Algebraic MultiGrid preconditioner.
 
 # +
-# problem = NonlinearMaterialProblem(qmap, Res, Jac, u, bcs)
-problem = SNESNonlinearMaterialProblem(qmap, Res, Jac, u, bcs)
+problem = NonlinearMaterialProblem(
+    qmap,
+    Res,
+    u,
+    J=Jac,
+    bcs=bcs,
+    petsc_options_prefix="snes",
+    petsc_options={
+        "ksp_type": "gmres",
+        "pc_type": "gamg",
+        # "pc_factor_mat_solver_type": "mumps",
+        "snes_linesearch_type": "none",
+    },
+)
+# problem = SNESNonlinearMaterialProblem(qmap, Res, Jac, u, bcs)
 
 
-snes = PETSc.SNES().create()
+# snes = PETSc.SNES().create()
 
-snes.setTolerances(rtol=1.0e-8, max_it=10)
-snes.getKSP().setType("preonly")
-# snes.getKSP().setTolerances(rtol=1.0e-8)
-snes.getKSP().getPC().setType("lu")
-snes.getKSP().getPC().setFactorSolverType("mumps")
+# snes.setTolerances(rtol=1.0e-8, max_it=10)
+# snes.getKSP().setType("preonly")
+# # snes.getKSP().setTolerances(rtol=1.0e-8)
+# snes.getKSP().getPC().setType("lu")
+# snes.getKSP().getPC().setFactorSolverType("mumps")
 
 # newton = NewtonSolver(comm)
 # newton.rtol = 1e-8
@@ -227,7 +243,8 @@ for i, exx in enumerate(Exx[1:]):
     )
     old_snes_time = 0 if i == 0 else timing("SNES: solve")[1].total_seconds()
 
-    converged, it = problem.solve(snes)
+    # converged, it = problem.solve(snes)
+    problem.solve()
 
     p = qmap.project_on("p", ("DG", 0))
     p.name = "EquivalentPlasticStrain"

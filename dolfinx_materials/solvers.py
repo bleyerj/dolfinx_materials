@@ -1,25 +1,82 @@
+from functools import partial
+from typing import Sequence, Callable
 from mpi4py import MPI
+from petsc4py import PETSc
+import ufl
 from ufl import Form
-from dolfinx.fem import form, Function
+import dolfinx
+from dolfinx.fem import Function
 from dolfinx.fem.bcs import DirichletBC
 from dolfinx.fem.petsc import (
+    assign,
     apply_lifting,
     set_bc,
     assemble_vector,
-    assemble_matrix,
-    create_matrix,
-    create_vector,
     NonlinearProblem,
 )
-from petsc4py import PETSc
+from dolfinx.common import Timer
+from dolfinx.mesh import EntityMap as _EntityMap
+
 from dolfinx_materials.quadrature_map import QuadratureMap
 
-from dolfinx.common import Timer
 
+def assemble_residual_with_callback(
+    u: Function,
+    F: Form,
+    J: Form,
+    bcs: Sequence[DirichletBC],
+    external_callback: Callable,
+    snes: PETSc.SNES,
+    x: PETSc.Vec,
+    b: PETSc.Vec,
+) -> None:
+    """Assemble the residual at ``x`` into the vector ``b`` with a callback to
+    external functions.
 
-def mpiprint(s):
-    if MPI.COMM_WORLD.rank == 0:
-        print(s)
+    Prior to assembling the residual and after updating the solution ``u``, the
+    function ``external_callback`` with input arguments ``args_external_callback``
+    is called.
+
+    A function conforming to the interface expected by ``SNES.setFunction`` can
+    be created by fixing the first 5 arguments, e.g. (cf.
+    ``dolfinx.fem.petsc.assemble_residual``):
+
+    Example::
+
+        snes = PETSc.SNES().create(mesh.comm)
+        assemble_residual = functools.partial(
+            dolfinx.fem.petsc.assemble_residual, u, F, J, bcs,
+            external_callback, args_external_callback)
+        snes.setFunction(assemble_residual, b)
+
+    Args:
+        u: Function tied to the solution vector within the residual and
+           Jacobian.
+        F: Form of the residual.
+        J: Form of the Jacobian.
+        bcs: List of Dirichlet boundary conditions to lift the residual.
+        external_callback: A callback function to call prior to assembling the
+                           residual.
+        args_external_callback: Arguments to pass to the external callback
+                                function.
+        snes: The solver instance.
+        x: The vector containing the point to evaluate the residual at.
+        b: Vector to assemble the residual into.
+    """
+    x.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+    x.copy(u.x.petsc_vec)
+    u.x.scatter_forward()
+
+    # Call external functions, e.g. evaluation of external operators
+    external_callback()
+
+    with b.localForm() as b_local:
+        b_local.set(0.0)
+    assemble_vector(b, F)
+
+    apply_lifting(b, [J], [bcs], [x], -1.0)
+    b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+    set_bc(b, bcs, x, -1.0)
 
 
 class NonlinearMaterialProblem(NonlinearProblem):
@@ -29,13 +86,19 @@ class NonlinearMaterialProblem(NonlinearProblem):
 
     def __init__(
         self,
-        qmap,
-        F,
-        J,
-        u,
-        bcs=None,
-        petsc_options_prefix=None,
-        petsc_options=None,
+        qmap: QuadratureMap,
+        F: ufl.form.Form | Sequence[ufl.form.Form],
+        u: Function | Sequence[Function],
+        *,
+        petsc_options_prefix: str,
+        bcs: Sequence[DirichletBC] | None = None,
+        J: ufl.form.Form | Sequence[Sequence[ufl.form.Form]] | None = None,
+        P: ufl.form.Form | Sequence[Sequence[ufl.form.Form]] | None = None,
+        kind: str | Sequence[Sequence[str]] | None = None,
+        petsc_options: dict | None = None,
+        form_compiler_options: dict | None = None,
+        jit_options: dict | None = None,
+        entity_maps: Sequence[_EntityMap] | None = None,
     ):
         """
         Parameters
@@ -57,14 +120,29 @@ class NonlinearMaterialProblem(NonlinearProblem):
             J=J,
             bcs=bcs,
             petsc_options_prefix=petsc_options_prefix,
+            kind=kind,
             petsc_options=petsc_options,
+            form_compiler_options=form_compiler_options,
+            jit_options=jit_options,
+            entity_maps=entity_maps,
         )
-        # self.u = u
         self.bcs = bcs
         if not isinstance(qmap, list):
             self.quadrature_maps = [qmap]
         else:
             self.quadrature_maps = qmap
+
+        self.solver.setFunction(
+            partial(
+                assemble_residual_with_callback,
+                self.u,
+                self.F,
+                self.J,
+                self.bcs,
+                self._constitutive_update,
+            ),
+            self.b,
+        )
 
     def _constitutive_update(self):
         with Timer("Constitutive update"):
@@ -75,114 +153,18 @@ class NonlinearMaterialProblem(NonlinearProblem):
         for qmap in self.quadrature_maps:
             qmap.advance()
 
-    def form(self, x):
-        x.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
-        self._constitutive_update()
+    def solve(self):
+        # Copy current iterate into the work array.
+        assign(self.u, self.x)
 
-    # def matrix(self):
-    #     return create_matrix(self.a)
-
-    # def vector(self):
-    #     return create_vector(self.L)
-
-    def solve(self, solver, print_solution=True):
-        """Solve the problem
-
-        Parameters
-        ----------
-        solver :
-            Nonlinear solver object
-        print_solution : bool, optional
-            Print convergence info, by default True
-
-        Returns
-        -------
-        converged: bool
-            Convergence status
-        it: int
-            Number of iterations to convergence
-        """
-        solver.setF(self.F, self.b)
-        solver.setJ(self.J, self.A)
-        solver.set_form(self.form)
-
-        it, converged = solver.solve(self.u.x.petsc_vec)
-        self.u.x.scatter_forward()
-
-        if converged:
-            # (Residual norm {error_norm})")
-            if print_solution:
-                mpiprint(f"Solution reached in {it} iterations.")
-            self._constitutive_advance()
-
-        else:
-            mpiprint(
-                f"No solution found after {it} iterations. Revert to previous solution and adjust solver parameters."
-            )
-
-        return converged, it
-
-
-class SNESNonlinearMaterialProblem(NonlinearMaterialProblem):
-    """
-    This class handles the definition of a nonlinear problem containing an abstract `QuadratureMap` object compatible with a PETSc SNESSolver.
-    """
-
-    def residual(self, snes, x, F):
-        """Assemble residual vector."""
-        x.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
-        x.copy(self.u.x.petsc_vec)
-
-        self.u.x.petsc_vec.ghostUpdate(
-            addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD
-        )
-
-        self._constitutive_update()
-
-        with F.localForm() as f_local:
-            f_local.set(0.0)
-        assemble_vector(F, self._F)
-        apply_lifting(F, [self._J], bcs=[self.bcs], x0=[x], alpha=-1.0)
-        F.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
-        set_bc(F, self.bcs, x, -1.0)
-
-    def jacobian(self, snes, x, J, P):
-        """Assemble Jacobian matrix."""
-        J.zeroEntries()
-        assemble_matrix(J, self._J, bcs=self.bcs)
-        J.assemble()
-
-    def solve(self, solver, print_solution=True):
-        """Solve the problem
-
-        Parameters
-        ----------
-        solver :
-            Nonlinear solver object
-        print_solution : bool, optional
-            Print convergence info, by default True
-
-        Returns
-        -------
-        converged: bool
-            Convergence status
-        it: int
-            Number of iterations to convergence
-        """
-        solver.setFunction(self.residual, self.b)
-        solver.setJacobian(self.jacobian, self.A)
+        # Solve problem
         with Timer("SNES: solve"):
-            solver.solve(None, self.u.x.petsc_vec)
-        converged = solver.getConvergedReason() > 0
-        it = solver.getIterationNumber()
-        if converged:
-            # (Residual norm {error_norm})")
-            if print_solution:
-                mpiprint(f"Solution reached in {it} iterations.")
-            self._constitutive_advance()
-        else:
-            mpiprint(
-                f"No solution found after {it} iterations. Revert to previous solution and adjust solver parameters."
-            )
+            self.solver.solve(None, self.x)
+        dolfinx.la.petsc._ghost_update(self.x, PETSc.InsertMode.INSERT, PETSc.ScatterMode.FORWARD)  # type: ignore[attr-defined]
 
-        return converged, it
+        # Copy solution back to function
+        assign(self.x, self.u)
+
+        self._constitutive_advance()
+
+        return self.u
