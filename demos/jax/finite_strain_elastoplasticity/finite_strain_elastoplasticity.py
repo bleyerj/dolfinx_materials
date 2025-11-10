@@ -183,21 +183,21 @@ snes.getKSP().setType("gmres")
 snes.getKSP().setTolerances(rtol=1.0e-8)
 snes.getKSP().getPC().setType("gamg")
 
-newton = NewtonSolver(comm)
-newton.rtol = 1e-8
-newton.atol = 1e-8
-newton.convergence_criterion = "residual"
+# newton = NewtonSolver(comm)
+# newton.rtol = 1e-8
+# newton.atol = 1e-8
+# newton.convergence_criterion = "residual"
 
-# Set solver options
-ksp = newton.krylov_solver
-opts = PETSc.Options()
-option_prefix = ksp.getOptionsPrefix()
-opts[f"{option_prefix}ksp_type"] = "gmres"
-opts[f"{option_prefix}ksp_rtol"] = 1e-8
-opts[f"{option_prefix}pc_type"] = "gamg"
-# opts[f"{option_prefix}pc_mat_factor_type"] = "gamg"
-ksp.setFromOptions()
-# -
+# # Set solver options
+# ksp = newton.krylov_solver
+# opts = PETSc.Options()
+# option_prefix = ksp.getOptionsPrefix()
+# opts[f"{option_prefix}ksp_type"] = "gmres"
+# opts[f"{option_prefix}ksp_rtol"] = 1e-8
+# opts[f"{option_prefix}pc_type"] = "gamg"
+# # opts[f"{option_prefix}pc_mat_factor_type"] = "gamg"
+# ksp.setFromOptions()
+# # -
 
 # We loop over an imposed increasing horizontal strain and solve the nonlinear problem. We output the displacement and equivalent plastic strain variables. Finally, we measure the time spent by each rank on the constitutive update and the linear solve and print the average values on rank 0.
 
@@ -219,7 +219,8 @@ for i, exx in enumerate(Exx[1:]):
     uD_x.x.petsc_vec.set(exx * L)
 
     # converged, it = problem.solve(newton)
-
+    old_constitutive_update_time = 0 if i == 0 else timing("Constitutive update")[2]
+    old_snes_time = 0 if i == 0 else timing("SNES: solve")[2]
     converged, it = problem.solve(snes)
 
     # p = qmap.project_on("p", ("DG", 0))
@@ -231,15 +232,21 @@ for i, exx in enumerate(Exx[1:]):
     constitutive_update_time = timing("Constitutive update")[2]
     snes_time = timing("SNES: solve")[2]
     # linear_solve_time = timing("PETSc Krylov solver")[2]
-    if i % 5 == 0:
-        list_timings(MPI.COMM_WORLD, [TimingType.wall, TimingType.user])
+    # if i % 5 == 0:
+    #     list_timings(MPI.COMM_WORLD, [TimingType.wall, TimingType.user])
 
     # Gather all times on rank 0
     all_times = None
     if rank == 0:
         all_times = np.zeros((comm.size, 2))
     comm.Gather(
-        np.array([constitutive_update_time, snes_time - constitutive_update_time]),
+        np.array(
+            [
+                constitutive_update_time - old_constitutive_update_time,
+                (snes_time - old_snes_time)
+                - (constitutive_update_time - old_constitutive_update_time),
+            ]
+        ),
         all_times,
         root=0,
     )
