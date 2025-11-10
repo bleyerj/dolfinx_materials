@@ -27,7 +27,10 @@ from dolfinx.cpp.nls.petsc import NewtonSolver
 from dolfinx_materials.quadrature_map import QuadratureMap
 from dolfinx_materials.jax_materials import LinearElasticIsotropic, FeFpJ2Plasticity
 import jax.numpy as jnp
-from dolfinx_materials.solvers import NonlinearMaterialProblem
+from dolfinx_materials.solvers import (
+    NonlinearMaterialProblem,
+    SNESNonlinearMaterialProblem,
+)
 from dolfinx_materials.utils import nonsymmetric_tensor_to_vector
 
 comm = MPI.COMM_WORLD
@@ -84,6 +87,7 @@ domain, subdomains, facets = io.gmshio.model_to_mesh(gmsh.model, comm, 0)
 
 gmsh.finalize()
 # -
+print(domain.geometry.x.shape)
 
 # Horizontal traction with free transverse displacement is imposed at the rod extremities, symmetry boundary conditions are enforced on other plane surfaces.
 
@@ -138,7 +142,7 @@ E = 70e3
 nu = 0.3
 sig0 = 500.0
 
-b = 10.0
+b = 1e3
 sigu = 750.0
 
 
@@ -169,7 +173,16 @@ qmap.update()
 # As in the MFront demo, we define the custom nonlinear problem, the corresponding Newton solver, the PETSc Krylov solver and its Geometric Algebraic MultiGrid preconditioner.
 
 # +
-problem = NonlinearMaterialProblem(qmap, Res, Jac, u, bcs)
+# problem = NonlinearMaterialProblem(qmap, Res, Jac, u, bcs)
+problem = SNESNonlinearMaterialProblem(qmap, Res, Jac, u, bcs)
+
+
+snes = PETSc.SNES().create()
+
+snes.setTolerances(rtol=1.0e-8, max_it=10)
+snes.getKSP().setType("gmres")
+snes.getKSP().setTolerances(rtol=1.0e-8)
+snes.getKSP().getPC().setType("gamg")
 
 newton = NewtonSolver(comm)
 newton.rtol = 1e-8
@@ -183,6 +196,7 @@ option_prefix = ksp.getOptionsPrefix()
 opts[f"{option_prefix}ksp_type"] = "gmres"
 opts[f"{option_prefix}ksp_rtol"] = 1e-8
 opts[f"{option_prefix}pc_type"] = "gamg"
+# opts[f"{option_prefix}pc_mat_factor_type"] = "gamg"
 ksp.setFromOptions()
 # -
 
@@ -192,7 +206,7 @@ ksp.setFromOptions()
 # # + tags=["hide-output"]
 
 
-from dolfinx.common import timing
+from dolfinx.common import timing, list_timings, TimingType
 
 file_results = io.VTKFile(
     domain.comm,
@@ -205,26 +219,32 @@ Exx = np.linspace(0, 30e-3, N + 1)
 for i, exx in enumerate(Exx[1:]):
     uD_x.x.petsc_vec.set(exx * L)
 
-    converged, it = problem.solve(newton)
+    # converged, it = problem.solve(newton)
 
-    p = qmap.project_on("p", ("DG", 0))
-    p.name = "EquivalentPlasticStrain"
+    converged, it = problem.solve(snes)
 
-    file_results.write_function(u, i + 1)
-    file_results.write_function(p, i + 1)
+    # p = qmap.project_on("p", ("DG", 0))
+    # p.name = "EquivalentPlasticStrain"
+
+    # file_results.write_function(u, i + 1)
+    # file_results.write_function(p, i + 1)
 
     constitutive_update_time = timing("Constitutive update")[2]
-    linear_solve_time = timing("PETSc Krylov solver")[2]
+    snes_time = timing("SNES: solve")[2]
+    # linear_solve_time = timing("PETSc Krylov solver")[2]
+    # list_timings(MPI.COMM_WORLD, [TimingType.wall, TimingType.user])
 
     # Gather all times on rank 0
     all_times = None
     if rank == 0:
         all_times = np.zeros((comm.size, 2))
     comm.Gather(
-        np.array([constitutive_update_time, linear_solve_time]), all_times, root=0
+        np.array([constitutive_update_time, snes_time - constitutive_update_time]),
+        all_times,
+        root=0,
     )
 
-    # Compute the average time on rank 0
+    # # Compute the average time on rank 0
     if rank == 0:
         average_time = np.mean(all_times, axis=0)
         print(
