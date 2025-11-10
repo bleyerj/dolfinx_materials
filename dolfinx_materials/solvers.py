@@ -1,10 +1,12 @@
 from mpi4py import MPI
 from ufl import Form
-from dolfinx.fem import form, apply_lifting, set_bc, Function
+from dolfinx.fem import form, Function
 from dolfinx.fem.bcs import DirichletBC
 from dolfinx.cpp.nls.petsc import NewtonSolver
 from dolfinx.cpp.la.petsc import get_local_vectors
 from dolfinx.fem.petsc import (
+    apply_lifting,
+    set_bc,
     assemble_matrix_block,
     assemble_vector_block,
     create_matrix_block,
@@ -133,11 +135,11 @@ class CustomNewtonProblem:
             if isinstance(self.a, list):
                 for ai in self.a:
                     apply_lifting(
-                        self.b, [ai], [self.bcs], x0=[self.u.x.petsc_vec], scale=1
+                        self.b, [ai], [self.bcs], x0=[self.u.x.petsc_vec], alpha=1
                     )
             else:
                 apply_lifting(
-                    self.b, [self.a], [self.bcs], x0=[self.u.x.petsc_vec], scale=1
+                    self.b, [self.a], [self.bcs], x0=[self.u.x.petsc_vec], alpha=1
                 )
             # Set dx|_bc = u_{i-1}-u_D
             set_bc(self.b, self.bcs, self.u.x.petsc_vec, 1.0)
@@ -287,7 +289,7 @@ class SNESNonlinearMaterialProblem(NonlinearMaterialProblem):
         with F.localForm() as f_local:
             f_local.set(0.0)
         assemble_vector(F, self.L)
-        apply_lifting(F, [self.a], bcs=[self.bcs], x0=[x], scale=-1.0)
+        apply_lifting(F, [self.a], bcs=[self.bcs], x0=[x], alpha=-1.0)
         F.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
         set_bc(F, self.bcs, x, -1.0)
 
@@ -314,10 +316,10 @@ class SNESNonlinearMaterialProblem(NonlinearMaterialProblem):
         it: int
             Number of iterations to convergence
         """
-        solver.setFunction(self.F, self.x.petsc_vec())
+        solver.setFunction(self.F, self.vector())
         solver.setJacobian(self.J, self.matrix())
-
-        solver.solve(None, self.u.x.petsc_vec)
+        with Timer("SNES: solve"):
+            solver.solve(None, self.u.x.petsc_vec)
         converged = solver.getConvergedReason() > 0
         it = solver.getIterationNumber()
         if converged:
