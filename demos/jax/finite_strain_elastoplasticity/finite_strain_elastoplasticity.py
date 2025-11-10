@@ -28,7 +28,6 @@ from dolfinx_materials.quadrature_map import QuadratureMap
 from dolfinx_materials.jax_materials import LinearElasticIsotropic, FeFpJ2Plasticity
 import jax.numpy as jnp
 from dolfinx_materials.solvers import (
-    NonlinearMaterialProblem,
     SNESNonlinearMaterialProblem,
 )
 from dolfinx_materials.utils import nonsymmetric_tensor_to_vector
@@ -232,7 +231,8 @@ for i, exx in enumerate(Exx[1:]):
     constitutive_update_time = timing("Constitutive update")[2]
     snes_time = timing("SNES: solve")[2]
     # linear_solve_time = timing("PETSc Krylov solver")[2]
-    # list_timings(MPI.COMM_WORLD, [TimingType.wall, TimingType.user])
+    if i % 5 == 0:
+        list_timings(MPI.COMM_WORLD, [TimingType.wall, TimingType.user])
 
     # Gather all times on rank 0
     all_times = None
