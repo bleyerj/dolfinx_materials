@@ -82,8 +82,10 @@ if rank == 0:
 
     gmsh.model.mesh.generate(dim)
 
-domain, subdomains, facets = io.gmshio.model_to_mesh(gmsh.model, comm, 0)
-
+mesh_data = io.gmsh.model_to_mesh(gmsh.model, comm, 0)
+domain = mesh_data.mesh
+subdomains = mesh_data.cell_tags
+facets = mesh_data.facet_tags
 gmsh.finalize()
 # -
 print(domain.geometry.x.shape)
@@ -179,9 +181,10 @@ problem = SNESNonlinearMaterialProblem(qmap, Res, Jac, u, bcs)
 snes = PETSc.SNES().create()
 
 snes.setTolerances(rtol=1.0e-8, max_it=10)
-snes.getKSP().setType("gmres")
-snes.getKSP().setTolerances(rtol=1.0e-8)
-snes.getKSP().getPC().setType("gamg")
+snes.getKSP().setType("preonly")
+# snes.getKSP().setTolerances(rtol=1.0e-8)
+snes.getKSP().getPC().setType("lu")
+snes.getKSP().getPC().setFactorSolverType("mumps")
 
 # newton = NewtonSolver(comm)
 # newton.rtol = 1e-8
@@ -205,7 +208,7 @@ snes.getKSP().getPC().setType("gamg")
 # # + tags=["hide-output"]
 
 
-from dolfinx.common import timing, list_timings, TimingType
+from dolfinx.common import timing
 
 file_results = io.VTKFile(
     domain.comm,
@@ -219,18 +222,21 @@ for i, exx in enumerate(Exx[1:]):
     uD_x.x.petsc_vec.set(exx * L)
 
     # converged, it = problem.solve(newton)
-    old_constitutive_update_time = 0 if i == 0 else timing("Constitutive update")[2]
-    old_snes_time = 0 if i == 0 else timing("SNES: solve")[2]
+    old_constitutive_update_time = (
+        0 if i == 0 else timing("Constitutive update")[1].total_seconds()
+    )
+    old_snes_time = 0 if i == 0 else timing("SNES: solve")[1].total_seconds()
+
     converged, it = problem.solve(snes)
 
-    # p = qmap.project_on("p", ("DG", 0))
-    # p.name = "EquivalentPlasticStrain"
+    p = qmap.project_on("p", ("DG", 0))
+    p.name = "EquivalentPlasticStrain"
 
-    # file_results.write_function(u, i + 1)
-    # file_results.write_function(p, i + 1)
+    file_results.write_function(u, i + 1)
+    file_results.write_function(p, i + 1)
 
-    constitutive_update_time = timing("Constitutive update")[2]
-    snes_time = timing("SNES: solve")[2]
+    constitutive_update_time = timing("Constitutive update")[1].total_seconds()
+    snes_time = timing("SNES: solve")[1].total_seconds()
     # linear_solve_time = timing("PETSc Krylov solver")[2]
     # if i % 5 == 0:
     #     list_timings(MPI.COMM_WORLD, [TimingType.wall, TimingType.user])
