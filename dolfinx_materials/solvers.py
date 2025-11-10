@@ -165,7 +165,8 @@ class NonlinearMaterialProblem(NonlinearProblem):
         assign(self.u, self.x)
 
         # Solve problem
-        self.solver.solve(None, self.x)
+        with Timer("SNES: solve"):
+            self.solver.solve(None, self.x)
         dolfinx.la.petsc._ghost_update(self.x, PETSc.InsertMode.INSERT, PETSc.ScatterMode.FORWARD)  # type: ignore[attr-defined]
 
         # Copy solution back to function

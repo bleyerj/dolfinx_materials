@@ -20,6 +20,7 @@
 import jax
 
 jax.config.update("jax_platform_name", "cpu")
+import jax.numpy as jnp
 import numpy as np
 from mpi4py import MPI
 import gmsh
@@ -30,9 +31,10 @@ from dolfinx.common import list_timings, timing
 from dolfinx_materials.quadrature_map import QuadratureMap
 from dolfinx_materials.solvers import NonlinearMaterialProblem
 from dolfinx_materials.utils import nonsymmetric_tensor_to_vector
+from dolfinx_materials.jax_materials import FeFpJ2Plasticity, LinearElasticIsotropic
 
-import jaxmat.materials as jm
-from dolfinx_materials.material.jaxmat import JAXMaterial
+# import jaxmat.materials as jm
+# from dolfinx_materials.material.jaxmat import JAXMaterial
 
 comm = MPI.COMM_WORLD
 rank = comm.rank
@@ -43,7 +45,7 @@ W = 2.0  # rod diameter
 R = 20.0  # notch radius
 d = 0.2  # cross-section reduction
 coarse_size = 1.0
-fine_size = 0.15
+fine_size = 0.2
 
 # -
 
@@ -148,18 +150,23 @@ sig0 = 500.0
 b = 1e3
 sigu = 750.0
 
-# elastic_model = LinearElasticIsotropic(E, nu)
-
-# material = FeFpJ2Plasticity(elastic_model, yield_stress)
+elastic_model = LinearElasticIsotropic(E, nu)
 
 
-elasticity = jm.LinearElasticIsotropic(E=E, nu=nu)
+def yield_stress(p):
+    return sig0 + (sigu - sig0) * (1 - jnp.exp(-b * p))
 
-hardening = jm.VoceHardening(sig0=sig0, sigu=sigu, b=b)
 
-behavior = jm.FeFpJ2Plasticity(elasticity=elasticity, yield_stress=hardening)
+material = FeFpJ2Plasticity(elastic_model, yield_stress)
 
-material = JAXMaterial(behavior)
+
+# elasticity = jm.LinearElasticIsotropic(E=E, nu=nu)
+
+# hardening = jm.VoceHardening(sig0=sig0, sigu=sigu, b=b)
+
+# behavior = jm.FeFpJ2Plasticity(elasticity=elasticity, yield_stress=hardening)
+
+# material = JAXMaterial(behavior)
 
 qmap = QuadratureMap(domain, deg_quad, material)
 qmap.register_gradient("F", F(u))
@@ -230,14 +237,16 @@ for i, exx in enumerate(Exx[1:]):
 
     if i == 0:
         dx_const_time_old = 0
+        dx_snes_time_old = 0
     else:
-        dx_const_time_old = timing("jaxmat: Constitutive update")[1].total_seconds()
+        # dx_const_time_old = timing("jaxmat: Constitutive update")[1].total_seconds()
+        dx_snes_time_old = timing("SNES: solve")[1].total_seconds()
 
-    if i == 5:
-        PETSc.Log.view()
+    # if i == 5:
+    #     PETSc.Log.view()
     problem.solve()
 
-    list_timings(MPI.COMM_WORLD)
+    # list_timings(MPI.COMM_WORLD)
 
     converged = problem.solver.getConvergedReason()
     num_iter = problem.solver.getIterationNumber()
@@ -254,20 +263,25 @@ for i, exx in enumerate(Exx[1:]):
         + PETSc.Log.Event("KSPSolve").getPerfInfo()["time"]
     )
     const_time = PETSc.Log.Event("Constitutive_update").getPerfInfo()["time"]
-    dx_const_time = timing("jaxmat: Constitutive update")[1].total_seconds()
+    # dx_const_time = timing("jaxmat: Constitutive update")[1].total_seconds()
+    dx_snes_time = timing("SNES: solve")[1].total_seconds()
 
     # Get cumulative timing info
     print(f"SNES time = {snes_time -snes_time_old}")
     print(f"KSP time = {ksp_time - ksp_time_old}")
     print(f"Constitutive update time = {const_time-const_time_old}")
 
-    print(f"Dolfinx Constitutive update time = {dx_const_time-dx_const_time_old}")
+    # print(f"Dolfinx Constitutive update time = {dx_const_time-dx_const_time_old}")
+    print(f"Dolfinx SNES time = {dx_snes_time-dx_snes_time_old}")
+    print(
+        f"Pure solver time = {dx_snes_time-dx_snes_time_old-(const_time-const_time_old)}\n"
+    )
 
-    p = qmap.project_on("p", ("DG", 0))
-    p.name = "EquivalentPlasticStrain"
+    # p = qmap.project_on("p", ("DG", 0))
+    # p.name = "EquivalentPlasticStrain"
 
-    file_results.write_function(u, i + 1)
-    file_results.write_function(p, i + 1)
+    # file_results.write_function(u, i + 1)
+    # file_results.write_function(p, i + 1)
 
     # if i == 0:
     #     old_tim = np.asarray(timing("Constitutive update"))
