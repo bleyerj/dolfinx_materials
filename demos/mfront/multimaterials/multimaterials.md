@@ -96,7 +96,7 @@ def create_matrix_inclusion_mesh(L, W, R, hsize):
         gmsh.model.mesh.generate(gdim)
 
     partitioner = cpp.mesh.create_cell_partitioner(mesh.GhostMode.shared_facet)
-    domain, cells, facets = io.gmshio.model_to_mesh(
+    domain, cells, facets = io.gmsh.model_to_mesh(
         gmsh.model, MPI.COMM_WORLD, model_rank, gdim=gdim, partitioner=partitioner
     )
     gmsh.finalize()

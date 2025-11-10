@@ -102,7 +102,7 @@ if rank == 0:
 
     gmsh.model.mesh.generate(dim)
 
-domain, subdomains, facets = io.gmshio.model_to_mesh(gmsh.model, comm, 0)
+domain, subdomains, facets = io.gmsh.model_to_mesh(gmsh.model, comm, 0)
 
 gmsh.finalize()
 ```

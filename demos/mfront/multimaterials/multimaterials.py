@@ -58,6 +58,7 @@ from utils import (
 # ## Meshing and subdomains
 # We first create the mesh and define the different tags for identifying physical domains and interfaces.
 
+
 # + tags=["hide-input"]
 def create_matrix_inclusion_mesh(L, W, R, hsize):
     comm = MPI.COMM_WORLD
@@ -93,7 +94,7 @@ def create_matrix_inclusion_mesh(L, W, R, hsize):
         gmsh.model.mesh.generate(gdim)
 
     partitioner = cpp.mesh.create_cell_partitioner(mesh.GhostMode.shared_facet)
-    domain, cells, facets = io.gmshio.model_to_mesh(
+    domain, cells, facets = io.gmsh.model_to_mesh(
         gmsh.model, MPI.COMM_WORLD, model_rank, gdim=gdim, partitioner=partitioner
     )
     gmsh.finalize()
@@ -198,6 +199,7 @@ dInt = ufl.Measure(
 # \newcommand{\jump}[1]{[\![#1]\!]}$
 # We now define the relevant function spaces. As hinted before, the unknown $\bu$ will consist of two displacements $(\bu^{(1)},\bu^{(2)})$ respectively belonging to a continuous Lagrange space defined on subdomains 1 and 2. We use a `MixedFunctionSpace` for this, meaning that we will end up with a block system. For easier post-processing, the computed displacement will be stored as a `DG` function, with jumps being non zero only at the interface.
 
+
 # +
 def strain(u):
     return ufl.as_vector(
@@ -225,7 +227,7 @@ du1, du2 = ufl.TrialFunctions(W)
 
 # ### Material laws on subdomains
 #
-# Second, we define two different `MFrontMaterial` on the two subdomains. In this example, we use two plastic behaviors with different yield surfaces and hardening laws. In the matrix, a von Mises criterion is used with an exponential Voce hardening whereas in the stiffer inclusions, we use a Hosford criterion and linear isotropic hardening. 
+# Second, we define two different `MFrontMaterial` on the two subdomains. In this example, we use two plastic behaviors with different yield surfaces and hardening laws. In the matrix, a von Mises criterion is used with an exponential Voce hardening whereas in the stiffer inclusions, we use a Hosford criterion and linear isotropic hardening.
 #
 # ```{important}
 # It is perfectly possible to use behaviors with different internal state variables, and even with different gradients/fluxes etc. They are really independent from each other and will only be combined by summing their contribution to the resulting weak form. As a result, we can also combine a MFront implementation and a JAX implementation for instance.
@@ -283,10 +285,12 @@ Res_inclusions = ufl.dot(sig2, strain(v2)) * qmap2.dx(2)
 #
 # where we define the displacement $\jump{\bu} = \bu^{(2)} - \bu^{(1)}$ with $(1)$ denoting subdomain 1 (the matrix) and $(2)$ denoting subdomain 2 (the inclusions). Note that we need to restrict quantities since we work with a facet measure on the interface $\Gamma$. Although only one side exist for each subdomain, cells of a given subdomain from one side have been mapped to the other side, as discussed before. As a result, it does not really matter which side is used here. For consistency, we use the the `"+"` side for subdomain 1 and the `"-"` side for subdomain 2.
 
+
 # +
 def jump(u1, u2):
     # As cell("+") are mapped to cell("-") when defining the cell maps, it does not really matter which side ("+"/"-") is used
     return u2("+") - u1("-")
+
 
 K = fem.Constant(domain, 1e5)
 
@@ -388,7 +392,7 @@ for i, exx in enumerate(Exx[1:]):
 file_results.close()
 # -
 
-# ## Results 
+# ## Results
 #
 # We finally plot the resulting load-displacement curve.
 

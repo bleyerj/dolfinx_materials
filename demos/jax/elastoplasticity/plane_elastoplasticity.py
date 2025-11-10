@@ -26,18 +26,18 @@
 
 import numpy as np
 import matplotlib.pyplot as plt
+import jax
 import jax.numpy as jnp
+
+jax.config.update("jax_platform_name", "cpu")
 from mpi4py import MPI
 import ufl
 from dolfinx import io, fem
-from dolfinx.cpp.nls.petsc import NewtonSolver
-from dolfinx.common import list_timings, TimingType
+from dolfinx_materials.material.jaxmat import JAXMaterial
 from dolfinx_materials.quadrature_map import QuadratureMap
 from dolfinx_materials.solvers import NonlinearMaterialProblem
-from dolfinx_materials.jax_materials import (
-    vonMisesIsotropicHardening,
-    LinearElasticIsotropic,
-)
+
+import jaxmat.materials as jm
 from generate_mesh import generate_perforated_plate
 
 # ## Material definition
@@ -51,19 +51,20 @@ from generate_mesh import generate_perforated_plate
 
 # +
 E, nu = 70e3, 0.3
-elastic_model = LinearElasticIsotropic(E, nu)
 
 
 sig0 = 350.0
 sigu = 500.0
 b = 1e3
 
+elasticity = jm.LinearElasticIsotropic(E=E, nu=nu)
 
-def yield_stress(p):
-    return sig0 + (sigu - sig0) * (1 - jnp.exp(-b * p))
+hardening = jm.VoceHardening(sig0=sig0, sigu=sigu, b=b)
 
+behavior = jm.vonMisesIsotropicHardening(elasticity=elasticity, yield_stress=hardening)
 
-material = vonMisesIsotropicHardening(elastic_model, yield_stress)
+material = JAXMaterial(behavior)
+
 # -
 
 # ## Problem setup
@@ -74,7 +75,11 @@ Lx = 1.0
 Ly = 2.0
 R = 0.2
 mesh_sizes = (0.008, 0.2)
-domain, markers, facets = generate_perforated_plate(Lx, Ly, R, mesh_sizes)
+mesh_data = generate_perforated_plate(Lx, Ly, R, mesh_sizes)
+cell_markers = mesh_data.cell_tags
+facets = mesh_data.facet_tags
+domain = mesh_data.mesh
+
 ds = ufl.Measure("ds", subdomain_data=facets)
 
 # We define the function space for the displacement $\boldsymbol{u}$, interpolated here with quadratic Lagrange elements. We apply prescribed Dirichlet boundary conditions on the bottom and top dofs. For the consitutive equation, we use a quadrature degree equal to twice the degree of the associated strain i.e. `2*(order-1)=2` here.
@@ -126,18 +131,33 @@ qmap.register_gradient(material.gradient_names[0], strain(u))
 du = ufl.TrialFunction(V)
 v = ufl.TestFunction(V)
 
-sig = qmap.fluxes["Stress"]
+sig = qmap.fluxes["stress"]
 Res = ufl.dot(sig, strain(v)) * qmap.dx
 Jac = qmap.derivative(Res, u, du)
 
 # Next, the custom nonlinear problem is defined with the class `NonlinearMaterialProblem` as well as the corresponding Newton solver.
 
-problem = NonlinearMaterialProblem(qmap, Res, Jac, u, bcs)
-newton = NewtonSolver(MPI.COMM_WORLD)
-newton.rtol = 1e-6
-newton.atol = 1e-6
-newton.convergence_criterion = "residual"
-newton.max_it = 20
+petsc_options = {
+    "snes_type": "newtonls",
+    "snes_linesearch_type": "none",
+    "snes_atol": 1e-6,
+    "snes_rtol": 1e-6,
+    "snes_monitor": None,
+    "log_view": None,
+    "ksp_type": "preonly",
+    "pc_type": "lu",
+    "pc_factor_mat_solver_type": "mumps",
+}
+problem = NonlinearMaterialProblem(
+    qmap,
+    Res,
+    u,
+    bcs=bcs,
+    J=Jac,
+    petsc_options_prefix="elastoplasticity",
+    petsc_options=petsc_options,
+)
+
 
 # We then loop over a set of imposed vertical strains, apply the corresponding imposed displacement boundary condition on the top surface, solve the problem and then compute plastic and stress fields projected onto a DG space for visualization. Finally, we use the imposed displacement field to compute the associated resultant force in a consistent manner, see [](https://bleyerj.github.io/comet-fenicsx/tips/computing_reactions/computing_reactions.html) for more details.
 
@@ -153,19 +173,26 @@ for i, eyy in enumerate(Eyy[1:]):
     u_imp = eyy * Ly
     uD_t.x.array[1::2] = u_imp
 
-    converged, it = problem.solve(newton, print_solution=False)
+    problem.solve()
+
+    converged = problem.solver.getConvergedReason()
+    num_iter = problem.solver.getIterationNumber()
+    assert converged > 0, f"Solver did not converge, got {converged}."
+    print(
+        f"Increment {i} converged after {num_iter} iterations with converged reason {converged}."
+    )
 
     p = qmap.project_on("p", ("DG", 0))
-    stress = qmap.project_on("Stress", ("DG", 0))
+    stress = qmap.project_on("stress", ("DG", 0))
 
     Force[i + 1] = fem.assemble_scalar(fem.form(ufl.action(Res, u))) / u_imp
 
     syy = stress.sub(1).collapse()
-    syy.name = "Stress"
-    vtk.write_function(u, i + 1)
-    vtk.write_function(p, i + 1)
-    vtk.write_function(syy, i + 1)
-    nit[i + 1] = it
+    syy.name = "stress"
+    # vtk.write_function(u, i + 1)
+    # vtk.write_function(p, i + 1)
+    # vtk.write_function(syy, i + 1)
+    nit[i + 1] = num_iter
 
 vtk.close()
 # -
@@ -192,7 +219,10 @@ plt.show()
 
 from dolfinx.common import timing
 
+
 constitutive_update_time = timing("Constitutive update")[2]
 linear_solve_time = timing("PETSc Krylov solver")[2]
-print(f"Total time spent in constitutive update {constitutive_update_time:.2f}s")
-print(f"Total time spent in global linear solver {linear_solve_time:.2f}s")
+print(
+    f"Total time spent in constitutive update {constitutive_update_time/np.sum(nit):.2f}s"
+)
+print(f"Total time spent in global linear solver {linear_solve_time/np.sum(nit):.2f}s")
