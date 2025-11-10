@@ -64,7 +64,7 @@ def test_multimaterials():
     x = ufl.SpatialCoordinate(domain)
     exx = fem.Constant(domain, 1e-2)
     E_macro = ufl.as_matrix([[exx, 0], [0, 0]])
-    u_exp = fem.Expression(ufl.dot(E_macro, x), V.element.interpolation_points())
+    u_exp = fem.Expression(ufl.dot(E_macro, x), V.element.interpolation_points)
 
     domain.topology.create_connectivity(gdim - 1, gdim)
     boundary_facets = mesh.exterior_facet_indices(domain.topology)
@@ -147,3 +147,5 @@ def test_multimaterials():
 
         assert np.allclose(sig_l.x.array * sig_r.x.array, np.zeros_like(sig.x.array))
         assert np.allclose(Sig[i + 1, :], sig_l.x.array + sig_r.x.array)
+
+test_multimaterials()
