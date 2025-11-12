@@ -1,7 +1,19 @@
-from jaxmat.tensors import Tensor
-from jaxmat.materials import SmallStrainBehavior, FiniteStrainBehavior
+#!/usr/bin/env python
+# -*-coding:utf-8 -*-
+"""
+Interface to jaxmat behaviors.
+
+@Author  :   Jeremy Bleyer, Ecole Nationale des Ponts et Chaussées, Navier
+@Contact :   jeremy.bleyer@enpc.fr
+@Time    :   01/11/2025
+"""
+from dolfinx.common import Timer
+from dolfinx_materials.material import Material
+import jax
 import equinox as eqx
 import numpy as np
+from jaxmat.tensors import Tensor
+from jaxmat.materials import SmallStrainBehavior, FiniteStrainBehavior
 
 
 def get_shape(val):
@@ -13,11 +25,6 @@ def get_shape(val):
             return 1
         else:
             return shape[0]
-
-
-from dolfinx.common import Timer
-from dolfinx_materials.material import Material
-import jax
 
 
 class DataManager:

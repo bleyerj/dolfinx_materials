@@ -33,7 +33,7 @@ jax.config.update("jax_platform_name", "cpu")
 from mpi4py import MPI
 import ufl
 from dolfinx import io, fem
-from dolfinx_materials.material.jaxmat import JAXMaterial
+from dolfinx_materials.material import JAXMaterial
 from dolfinx_materials.quadrature_map import QuadratureMap
 from dolfinx_materials.solvers import NonlinearMaterialProblem
 
