@@ -62,6 +62,7 @@ def merge_special_key(d: dict, special_key: str) -> dict:
     return out
 
 
+@eqx.filter_jit
 def jaxmat_to_dolfinx_state(jaxmat_state):
     def flatten(x):
         if isinstance(x, Tensor):
@@ -85,7 +86,6 @@ def replace_elem(key_type, val):
         return val
 
 
-@eqx.filter_jit
 def _dolfinx_to_jaxmat_state(dolfinx_state, jaxmat_state):
     for key, val in dolfinx_state.items():
         if hasattr(jaxmat_state, key):
@@ -125,12 +125,15 @@ def eqx_to_flatdict(module):
     return out
 
 
+@eqx.filter_jit
 def dolfinx_to_jaxmat_state(dx_state, jx_state):
     eqx.filter_vmap(_dolfinx_to_jaxmat_state, in_axes=0)(dx_state, jx_state)
     return jx_state
 
 
 class JAXMaterial(Material):
+    """Converts a `jaxmat` behavior into a dolfinx-compatible behavior."""
+
     def __init__(self, behavior, jit=True):
         self.behavior = behavior
         self.material_properties = eqx_to_flatdict(self.behavior)
@@ -200,6 +203,7 @@ class JAXMaterial(Material):
             state = self.get_initial_state_dict()
             jx_state = self.data_manager.jaxmat_state
             jx_state = dolfinx_to_jaxmat_state(state, jx_state)
+
         if self._first_pass:
             timer_name = "jaxmat: First pass"
             self._first_pass = False

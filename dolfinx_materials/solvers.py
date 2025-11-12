@@ -152,7 +152,7 @@ class NonlinearMaterialProblem(NonlinearProblem):
         )
 
     def _constitutive_update(self):
-        with PETSc.Log.Event("Constitutive_update"):
+        with Timer("Constitutive update"):
             for qmap in self.quadrature_maps:
                 qmap.update()
 
