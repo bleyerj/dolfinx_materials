@@ -126,8 +126,6 @@ def build_cell_to_dofs_map(V):
         return dofs.copy()
 
     # Vector/tensor space: expand each scalar DOF into block components.
-    # Vectorized equivalent of np.kron for all rows.
-    # shape (num_cells, dofs_per_cell * bs)
     expanded = (
         (dofs[:, :, None] * bs + np.arange(bs)).reshape(num_cells, -1).astype(np.int32)
     )

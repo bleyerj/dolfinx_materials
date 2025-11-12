@@ -33,8 +33,8 @@ class DataManager:
         num_fluxes = sum([v for v in material.fluxes.values()])
         self.K = np.zeros((num_fluxes, num_gradients))
         self.jaxmat_state = material.behavior.init_state(ngauss)
-        self.s0 = {}  # material.behavior.init_state(ngauss)
-        self.s1 = {}  # material.behavior.init_state(ngauss)
+        self.s0 = {}
+        self.s1 = {}
 
     def update(self):
         self.s0 = self.s1
