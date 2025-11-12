@@ -12,4 +12,4 @@ from .viscoelasticity import *
 from .elastoplasticity import *
 from .nonlinear_elasticity import *
 from .hyperelasticity import *
-from .finite_strain_elastoplasticity import *
+from .fe_fp_elastoplasticity import *

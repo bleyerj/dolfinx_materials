@@ -3,7 +3,7 @@ from dolfinx_materials.jax_materials import (
     LinearElasticIsotropic,
 )
 from dolfinx_materials.jax_materials.tensors import to_vect
-from dolfinx_materials.jax_materials.finite_strain_elastoplasticity import (
+from dolfinx_materials.jax_materials.fe_fp_elastoplasticity import (
     FeFpJ2Plasticity,
 )
 import matplotlib.pyplot as plt
