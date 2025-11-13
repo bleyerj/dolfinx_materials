@@ -20,11 +20,9 @@ from dolfinx.mesh import EntityMap as _EntityMap
 from dolfinx_materials.quadrature_map import QuadratureMap
 
 from dolfinx.common import Timer
+from dolfinx.mesh import EntityMap as _EntityMap
 
-
-def mpiprint(s):
-    if MPI.COMM_WORLD.rank == 0:
-        print(s)
+from dolfinx_materials.quadrature_map import QuadratureMap
 
 
 def assemble_residual_with_callback(
