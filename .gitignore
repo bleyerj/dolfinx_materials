@@ -25,6 +25,7 @@ venv*
 *.pyc
 .ipynb_checkpoints
 .pytest_cache
+/demos/**/*.ipynb
 
 # Build #
 #########
@@ -69,7 +70,7 @@ docs/_build
 docs/_static
 docs/_templates
 # ignore copied medias from notebooks
-docss/*.gif
+docs/*.gif
 docs/*.png
 docs/demos
 docs/**/_autosummary
