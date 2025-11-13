@@ -13,11 +13,11 @@ It enables the user to define **complex material constitutive behaviors** which 
 
 ## Features
 
-Current version supports FEniCSx version `0.8.0`.
+Current version supports FEniCSx version `0.10.0`.
 
 The library supports in particular:
 
-- [JAX](https://jax.readthedocs.io)-based implementations of constitutive relations
+- [JAX](https://jax.readthedocs.io)-based implementations of constitutive relations using the [](https://github.com/bleyerj/jaxmat) library
 - Python-based constitutive relations, using `numpy/scipy` (*slow*)
 - [MFront](https://tfel.sourceforge.net/) constitutive behaviors compiled with the `generic` interface, relying on the [MFrontGenericInterfaceSupport](https://github.com/thelfer/MFrontGenericInterfaceSupport) project
 - constitutive relations based on inference of trained Neural Networks
@@ -35,13 +35,14 @@ This library should also help you in:
 ## Prerequisites
 
 **dolfinx_materials** requires: 
-* **FEniCSx** (v.0.8), see [installation instructions here](https://fenicsproject.org/download/).
-* **jax** for  JAX-based materials. JAX can be simply installed via `pip`:
+* **FEniCSx** (v.0.10), see [installation instructions here](https://fenicsproject.org/download/).
+* **jax** and `jaxmat` for  JAX-based materials. `jaxmat` can be simply installed via `pip`:
 
 ```
-pip install jax --user
+pip install jaxmat[gpu] --user
 ```
-See [JAX installation instructions](https://jax.readthedocs.io/en/latest/installation.html) for more details about GPU acceleration.
+
+See also [JAX installation instructions](https://jax.readthedocs.io/en/latest/installation.html) for more details about GPU acceleration.
 
 ### Optional for MFront behaviors
 
@@ -68,7 +69,7 @@ All this work is licensed under the [Creative Commons Attribution-ShareAlike 4.0
 
 The project can be cited from Zenodo:
 
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.13882184.svg)](https://doi.org/10.5281/zenodo.13882184)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.13882183.svg)](https://doi.org/10.5281/zenodo.13882183)
 ```
 @software{bleyer2024dolfinx_materials,
   author       = {Bleyer, Jeremy},
@@ -113,7 +114,7 @@ Papers related to the MFront and MGIS projects can be cited as:
 
 ## About the author
 
-[Jeremy Bleyer](https://bleyerj.github.io/) is a researcher in Solid and Structural Mechanics at [Laboratoire Navier](https://navier-lab.fr), a joint research  (UMR 8205) of [Ecole Nationale des Ponts et Chaussées](http://www.enpc.fr),
+[Jeremy Bleyer](https://bleyerj.github.io/) is a researcher in Solid and Structural Mechanics at [Laboratoire Navier](https://navier-lab.fr), a joint research  (UMR 8205) of [Ecole Nationale des Ponts et Chaussées](http://www.enpc.fr), [IP Paris](https://www.ip-paris.fr/),
 [Université Gustave Eiffel](https://www.univ-gustave-eiffel.fr/) and [CNRS](http://www.cnrs.fr).
 
 [{fas}`at` jeremy.bleyer@enpc.fr](mailto:jeremy.bleyer@enpc.fr)

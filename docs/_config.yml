@@ -60,7 +60,6 @@ sphinx:
   - 'sphinx.ext.napoleon'
   - 'sphinx.ext.viewcode'
   - 'sphinx.ext.autosummary'
-  - 'docs.remove_docstring' # remove module docstring
     
 parse:
   myst_enable_extensions:
