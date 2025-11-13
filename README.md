@@ -17,7 +17,7 @@ Current version supports FEniCSx version `0.10.0`.
 
 The library supports in particular:
 
-- [JAX](https://jax.readthedocs.io)-based implementations of constitutive relations using the [](https://github.com/bleyerj/jaxmat) library
+- [JAX](https://jax.readthedocs.io)-based implementations of constitutive relations using the `jaxmat` library: https://github.com/bleyerj/jaxmat
 - Python-based constitutive relations, using `numpy/scipy` (*slow*)
 - [MFront](https://tfel.sourceforge.net/) constitutive behaviors compiled with the `generic` interface, relying on the [MFrontGenericInterfaceSupport](https://github.com/thelfer/MFrontGenericInterfaceSupport) project
 - constitutive relations based on inference of trained Neural Networks

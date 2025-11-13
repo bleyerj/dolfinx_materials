@@ -1,11 +1,11 @@
 ---
 jupytext:
-  formats: md:myst,py
+  formats: md:myst,py:percent
   text_representation:
     extension: .md
     format_name: myst
     format_version: 0.13
-    jupytext_version: 1.16.1
+    jupytext_version: 1.18.1
 kernelspec:
   display_name: Python 3
   language: python
@@ -58,7 +58,7 @@ where the thermal conductivity $k$ is initially assumed to be given by:
 $$
 k\left(T\right)=\begin{cases}
 k_s & \text{if }T < T_m \\
-k_l & \text{if }T > T_m 
+k_l & \text{if }T > T_m
 \end{cases}
 $$
 where $k_s$ (resp. $k_l$) denotes the solid (resp. liquid) phase conductivity and $T_m$ is the solid/liquid transition temperature.
@@ -68,7 +68,7 @@ The enthalpy is assumed to be given by:
 $$
 h\left(T\right)=\begin{cases}
 c_sT & \text{if }T < T_m \\
-c_l(T-T_m)+c_sT_m+\Delta h_{s/l} & \text{if }T > T_m 
+c_l(T-T_m)+c_sT_m+\Delta h_{s/l} & \text{if }T > T_m
 \end{cases}
 $$
 where $c_s=\rho_sC_{p,s}$ (resp. $c_l=\rho_lC_{p,l}$) is the volumic heat capacity of the solid (resp. liquid) phase. It can be observed that the enthalpy exhibits a discontinuity at the phase transition equal to $\Delta h_{s/l}$ which represents the latent heat of fusion per unit volume.
@@ -86,7 +86,7 @@ $$
 k\left(T\right)=\begin{cases}
 k_s & \text{if }T < T_s \\
 k_s + (k_l-k_s)\dfrac{T-T_s}{T_\text{smooth}} & \text{if } T_s \leq T \leq T_l\\
-k_l & \text{if }T > T_l 
+k_l & \text{if }T > T_l
 \end{cases}
 $$
 
@@ -96,7 +96,7 @@ $$
 h\left(T\right)=\begin{cases}
 c_sT & \text{if }T < T_s \\
 c_sT_s+\left(\dfrac{cs+cl}{2}+\dfrac{\Delta h_{s/l}}{T_\text{smooth}}\right)(T-T_s) & \text{if } T_s \leq T \leq T_l \\
-c_l(T-T_l)+c_sT_s+\dfrac{cs+cl}{2}T_\text{smooth}+\Delta h_{s/l} & \text{if }T > T_l 
+c_l(T-T_l)+c_sT_s+\dfrac{cs+cl}{2}T_\text{smooth}+\Delta h_{s/l} & \text{if }T > T_l
 \end{cases}
 $$
 
@@ -130,7 +130,7 @@ h.setEntryName("Enthalpy"); //per unit of volume
 ```
 ### Material parameters and local variables
 
-We now declare the various material properties corresponding to those of aluminum. The material parameters are assumed to be uniform for both phases. Finally, we also introduce the smoothing temperature width $T_\text{smooth}$. 
+We now declare the various material properties corresponding to those of aluminum. The material parameters are assumed to be uniform for both phases. Finally, we also introduce the smoothing temperature width $T_\text{smooth}$.
 
 ```
 @Parameter Tₘ = 933.15;        // [K]
@@ -308,7 +308,7 @@ qmap.register_external_state_variable("Temperature", T)
 j = qmap.fluxes["HeatFlux"]
 h = qmap.internal_state_variables["Enthalpy"]
 
-qmap.update() # call a first time the behavior law to update the value of the internal state variables
+qmap.update()  # call a first time the behavior law to update the value of the internal state variables
 
 j_old = j.copy()
 h_old = h.copy()

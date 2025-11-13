@@ -61,6 +61,7 @@ _minted*
 *.vtu
 *.pvtu
 *.pvd
+**/results
 
 # Vscode
 .vscode

@@ -1,39 +1,54 @@
 # ---
 # jupyter:
 #   jupytext:
+#     default_lexer: ipython3
+#     formats: md:myst,py:percent,ipynb
 #     text_representation:
 #       extension: .py
-#       format_name: light
-#       format_version: '1.5'
-#       jupytext_version: 1.16.1
+#       format_name: percent
+#       format_version: '1.3'
+#       jupytext_version: 1.18.1
 #   kernelspec:
-#     display_name: Python 3
+#     display_name: fenicsx-v0.10
 #     language: python
 #     name: python3
 # ---
 
+# %% [markdown]
 # # Finite-strain $\boldsymbol{F}^\text{e}\boldsymbol{F}^\text{p}$ plasticity
 #
-# $\newcommand{\bF}{\boldsymbol{F}}\newcommand{\bFe}{\boldsymbol{F}^\text{e}}\newcommand{\bFp}{\boldsymbol{F}^\text{p}}$ In this example, we show how to use a JAX implementation of finite-strain plasticity using the $\bFe\bFp$ formalism. The setup of the FEniCSx variational problem is quite similar to the MFront [](/demos/mfront/hyperelasticity/hyperelasticity.md) demo.
+# $\newcommand{\bF}{\boldsymbol{F}}\newcommand{\bFe}{\boldsymbol{F}^\text{e}}\newcommand{\bFp}{\boldsymbol{F}^\text{p}}$ 
+#
+# In this example, we show how to use a JAX implementation of finite-strain plasticity using the $\bFe\bFp$ formalism. The material behavior is described in the [`jaxmat` documentation](https://bleyerj.github.io/jaxmat/demos/quickstart/performance.html#material-model).
+#
+# The setup of the FEniCSx variational problem is quite similar to the MFront [](demos/mfront/hyperelasticity/hyperelasticity) demo.
+#
+# This demo runs in parallel. By default, JAX will allocate the full GPU memory for each process, which will fail when running with more than 1 MPI processor. Thus we first deallocate automatic GPU memory preallocation. The relevant packages are then imported.
 
-# +
+# %%
+import os
+from mpi4py import MPI
+
+# Avoid JAX preallocating all GPU memory
+os.environ["XLA_PYTHON_CLIENT_PREALLOCATE"] = "true"
+
+# --- Import JAX AFTER setting env vars ---
 import jax
 
+
 jax.config.update("jax_platform_name", "gpu")
-import jax.numpy as jnp
 import numpy as np
-from mpi4py import MPI
+from pathlib import Path
 import gmsh
 import ufl
-from petsc4py import PETSc
 from dolfinx import fem, io
-from dolfinx.common import list_timings, timing
+from dolfinx.common import timing
 from dolfinx_materials.quadrature_map import QuadratureMap
 from dolfinx_materials.solvers import NonlinearMaterialProblem
 from dolfinx_materials.utils import nonsymmetric_tensor_to_vector
 
 import jaxmat.materials as jm
-from dolfinx_materials.material import JAXMaterial
+from dolfinx_materials.material.jaxmat import JAXMaterial
 
 comm = MPI.COMM_WORLD
 rank = comm.rank
@@ -43,15 +58,13 @@ L = 10.0  # rod half-length
 W = 2.0  # rod diameter
 R = 20.0  # notch radius
 d = 0.2  # cross-section reduction
-coarse_size = 1.0
-fine_size = 0.15
+coarse_size = 0.5
+fine_size = 0.2
 
-# -
-
+# %% [markdown]
 # The mesh consists of a quarter of cylindrical rod with a slightly reduced cross-section at its center to induce necking. The geometry is defined with `gmsh` API and the Open-Cascade kernel.
 
-# +
-# # + tags=["hide-input"]
+# %% tags=["hide-input"]
 gmsh.initialize()
 gmsh.option.setNumber("General.Terminal", 0)  # to disable meshing info
 
@@ -91,11 +104,11 @@ facets = mesh_data.facet_tags
 domain = mesh_data.mesh
 
 gmsh.finalize()
-# -
 
+# %% [markdown]
 # Horizontal traction with free transverse displacement is imposed at the rod extremities, symmetry boundary conditions are enforced on other plane surfaces.
 
-# +
+# %%
 fdim = dim - 1
 domain.topology.create_connectivity(fdim, dim)
 
@@ -122,11 +135,11 @@ bcs = [
     fem.dirichletbc(u0_z, side_z_dofs, V.sub(2)),
     fem.dirichletbc(uD_x, top_x_dofs, V.sub(0)),
 ]
-# -
 
-# As in the MFront hyperelastic demo, the nonlinear residual based on PK1 stress is used. The JAX `FeFpJ2Plasticity` is defined based on an elastic material and a user-defined yield stress function.
+# %% [markdown]
+# As in the MFront hyperelastic demo, the nonlinear residual based on PK1 stress is used. The `jaxmat` `FeFpJ2Plasticity` behavior is defined based on an elastic material and a Voce isotropic hardening.
 
-# +
+# %%
 Id = ufl.Identity(dim)
 
 
@@ -163,31 +176,27 @@ qmap.register_gradient("F", F(u))
 P = qmap.fluxes["PK1"]
 Res = ufl.dot(P, dF(u, v)) * qmap.dx
 Jac = qmap.derivative(Res, u, du)
-# -
 
-# This material model relies on an elastic left Cauchy-Green internal state variable $\overline{\boldsymbol{b}}^\text{e}$ describing the intermediate elastic configuration. The latter must be initialized with the identity tensor to specify a natural unstressed elastic configuration. We use a first call to the material update function to enforce compilation of the JAX behavior.
+# %% [markdown]
+# This material model relies on an elastic left Cauchy-Green internal state variable $\overline{\boldsymbol{b}}^\text{e}$ describing the intermediate elastic configuration. The latter is automatically initialized with the identity tensor to specify a natural unstressed elastic configuration. We use a first call to the material update function to enforce compilation of the JAX behavior.
 
-qmap.initialize_state()
-qmap.update_initial_state("be_bar", fem.Constant(domain, (1.0, 1.0, 1.0, 0, 0, 0)))
+# %%
 qmap.update()
-num_QP = qmap.num_cells * len(qmap.quadrature_points)
 
+# %% [markdown]
 # ## Resolution
 #
-# As in the MFront demo, we define the custom nonlinear problem, the corresponding Newton solver, the PETSc Krylov solver and its Geometric Algebraic MultiGrid preconditioner.
+# We now define a custom nonlinear problem and pass the corresponding SNES options. We use a GMRES Krylov solver and a Geometric Algebraic MultiGrid preconditioner.
 
-
+# %%
 petsc_options = {
     "snes_type": "newtonls",
     "snes_linesearch_type": "none",
-    "snes_atol": 1e-6,
-    "snes_rtol": 1e-6,
-    # "snes_monitor": None,
-    # "log_view": None,/
+    "snes_atol": 1e-8,
+    "snes_rtol": 1e-8,
     "ksp_type": "gmres",
     "ksp_rtol": 1e-8,
     "pc_type": "gamg",
-    # "pc_factor_mat_solver_type": "mumps",
 }
 problem = NonlinearMaterialProblem(
     qmap,
@@ -200,84 +209,71 @@ problem = NonlinearMaterialProblem(
 )
 # -
 
-# We loop over an imposed increasing horizontal strain and solve the nonlinear problem. We output the displacement and equivalent plastic strain variables. Finally, we measure the time spent by each rank on the constitutive update and the linear solve and print the average values on rank 0.
+# %% [markdown]
+# We loop over an imposed increasing horizontal strain and solve the nonlinear problem. We output the displacement and equivalent plastic strain variables. Finally, we measure the time spent by each rank on the constitutive update and the SNES solver and print the average values on rank 0.
 
-# +
-# # + tags=["hide-output"]
+# %% tags=["hide-output"]
+results_folder = Path("results")
+results_folder.mkdir(exist_ok=True, parents=True)
+filename = results_folder / "finite_strain_plasticity"
+V0 = fem.functionspace(domain, ("DG", 0))
+p = fem.Function(V0, name="p")
+vtx = io.VTXWriter(domain.comm, filename.with_suffix(".bp"), [u, p])
 
-
-file_results = io.VTKFile(
-    domain.comm,
-    f"results/{material.name}.pvd",
-    "w",
-)
-
-
-N = 40
+N = 20
 Exx = np.linspace(0, 30e-3, N + 1)
+average_stats = np.zeros((N, 3))
 for i, exx in enumerate(Exx[1:]):
     uD_x.x.petsc_vec.set(exx * L)
-
-    dx_const_time_old = (
-        0 if i == 0 else timing("Constitutive update")[1].total_seconds()
-    )
-    dx_snes_time_old = 0 if i == 0 else timing("SNES: solve")[1].total_seconds()
 
     problem.solve()
 
     converged = problem.solver.getConvergedReason()
     num_iter = problem.solver.getIterationNumber()
     assert converged > 0, f"Solver did not converge, got {converged}."
-    print(
-        f"Increment {i} converged after {num_iter} iterations with converged reason {converged}.\n"
+
+    constitutive_update_time = timing("Constitutive update")[1].total_seconds()
+    snes_time = timing("SNES: solve")[1].total_seconds()
+
+    all_stats = None
+    if rank == 0:
+        all_stats = np.zeros((comm.size, 3))
+    comm.Gather(
+        np.array([constitutive_update_time, snes_time, num_iter]), all_stats, root=0
     )
-    # PETSc.Log.view()
 
-    # Get events
-    dx_const_time = timing("Constitutive update")[1].total_seconds()
-    dx_snes_time = timing("SNES: solve")[1].total_seconds()
+    if rank == 0:
+        average_stats[i, :] = np.mean(all_stats, axis=0)
+        print(
+            f"Increment {i} converged after {num_iter} iterations with converged reason {converged}.\n"
+        )
 
-    # print(f"Dolfinx Constitutive update time = {dx_const_time-dx_const_time_old}")
-    print(f"Dolfinx SNES time = {dx_snes_time-dx_snes_time_old:.3f}")
-    print(
-        f"Pure solver time = {dx_snes_time-dx_snes_time_old-(dx_const_time-dx_const_time_old):.3f}"
+        print(f"Dolfinx SNES time = {average_stats[i, 1]:.3f}")
+        print(f"Pure solver time = {average_stats[i, 1]-average_stats[i, 0]:.3f}")
+        print(f"Constitutive update time = {average_stats[i, 0]:.3f}\n")
+
+    qmap.project_on("p", ("DG", 0), fun=p)
+
+    vtx.write(i + 1)
+    np.savetxt(
+        filename.with_suffix(".csv"),
+        average_stats,
+        delimiter=",",
+        header="Constitutive update time, SNES solve, num iterations",
     )
-    # print(f"Jaxmat conversion time = {jxmat_conversion-jxmat_conversion_old:.3f}")
-    print(f"Constitutive update time = {(dx_const_time-dx_const_time_old):.3f}\n")
 
-    p = qmap.project_on("p", ("DG", 0))
-    p.name = "EquivalentPlasticStrain"
+vtx.close()
 
-    file_results.write_function(u, i + 1)
-    file_results.write_function(p, i + 1)
+# %%
+import matplotlib.pyplot as plt
 
-    # if i == 0:
-    #     old_tim = np.asarray(timing("Constitutive update"))
-    #     dtim = np.zeros_like(old_tim)
-    # else:
-    #     dtim = np.asarray(timing("Constitutive update")) - old_tim
-    #     old_tim = np.asarray(timing("Constitutive update"))
-    #     print("Difference", dtim)
-    # if i > 0:
-    #     print("Constitutive eval/GP", dtim[1] / dtim[0] / num_QP)
-    # constitutive_update_time = timing("Constitutive update")[1]
-    # print(f"Constitutive update = {constitutive_update_time}\n")
-
-    # # Gather all times on rank 0
-    # all_times = None
-    # if rank == 0:
-    #     all_times = np.zeros((comm.size, 2))
-    # comm.Gather(np.array([constitutive_update_time, ksp_time]), all_times, root=0)
-
-    # # Compute the average time on rank 0
-    # if rank == 0:
-    #     average_time = np.mean(all_times, axis=0)
-    #     print(
-    #         f"Increment {i}\nAverage wall time for constitutive update {average_time[0]:.2f}s"
-    #     )
-    #     print(f"Average wall time for global linear solver {average_time[1]:.2f}s\n")
-
-file_results.close()
-# -
-
-# JAX AD avoids us to compute explicitly the consistent tangent operator which is particularly nasty for such $\bFe\bFp$ models. We observe that the Newton method converges within a few iterations in general.
+num_iter = average_stats[:, 2]
+constitutive_time = np.diff(average_stats[:, 0],prepend=average_stats[0, 0])/num_iter
+solver_time = np.diff(average_stats[:, 1],prepend=average_stats[0, 1])/num_iter
+plt.bar(np.arange(N), constitutive_time, color="crimson", label="Constitutive update")
+plt.bar(np.arange(N), solver_time, bottom=constitutive_time, color='royalblue', label="Global solver")
+plt.xlabel("Loading step")
+plt.ylabel("Wall clock time per global iteration [s]")
+plt.xlim(0, N)
+plt.legend()
+plt.show()

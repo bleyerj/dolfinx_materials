@@ -1,15 +1,14 @@
 ---
 jupytext:
   cell_metadata_filter: -all
-  formats: md:myst,ipynb
-  main_language: python
+  formats: md:myst,py,ipynb
   text_representation:
     extension: .md
     format_name: myst
     format_version: 0.13
-    jupytext_version: 1.16.1
+    jupytext_version: 1.18.1
 kernelspec:
-  display_name: Python 3 (ipykernel)
+  display_name: fenicsx-v0.10
   language: python
   name: python3
 ---
@@ -28,18 +27,22 @@ We start by loading the relevant modules. In particular, we will make use of the
 ```{code-cell} ipython3
 import numpy as np
 import matplotlib.pyplot as plt
+import jax
 import jax.numpy as jnp
+```
+
+```{code-cell} ipython3
+jax.config.update("jax_platform_name", "cpu")
 from mpi4py import MPI
 import ufl
 from dolfinx import io, fem
-from dolfinx.cpp.nls.petsc import NewtonSolver
-from dolfinx.common import list_timings, TimingType
+from dolfinx_materials.material import JAXMaterial
 from dolfinx_materials.quadrature_map import QuadratureMap
 from dolfinx_materials.solvers import NonlinearMaterialProblem
-from dolfinx_materials.jax_materials import (
-    vonMisesIsotropicHardening,
-    LinearElasticIsotropic,
-)
+```
+
+```{code-cell} ipython3
+import jaxmat.materials as jm
 from generate_mesh import generate_perforated_plate
 ```
 
@@ -54,17 +57,19 @@ where $\sigma_0$ and $\sigma_u$ are the initial and final yield stresses respect
 
 ```{code-cell} ipython3
 E, nu = 70e3, 0.3
-elastic_model = LinearElasticIsotropic(E, nu)
 
 
 sig0 = 350.0
 sigu = 500.0
-b = 100
-def yield_stress(p):
-    return sig0 + (sigu - sig0) * (1 - jnp.exp(-b * p))
+b = 1e3
 
+elasticity = jm.LinearElasticIsotropic(E=E, nu=nu)
 
-material = vonMisesIsotropicHardening(elastic_model, yield_stress)
+hardening = jm.VoceHardening(sig0=sig0, sigu=sigu, b=b)
+
+behavior = jm.vonMisesIsotropicHardening(elasticity=elasticity, yield_stress=hardening)
+
+material = JAXMaterial(behavior)
 ```
 
 ## Problem setup
@@ -76,7 +81,13 @@ Lx = 1.0
 Ly = 2.0
 R = 0.2
 mesh_sizes = (0.008, 0.2)
-domain, markers, facets = generate_perforated_plate(Lx, Ly, R, mesh_sizes)
+mesh_data = generate_perforated_plate(Lx, Ly, R, mesh_sizes)
+cell_markers = mesh_data.cell_tags
+facets = mesh_data.facet_tags
+domain = mesh_data.mesh
+```
+
+```{code-cell} ipython3
 ds = ufl.Measure("ds", subdomain_data=facets)
 ```
 
@@ -111,6 +122,7 @@ def strain(u):
         ]
     )
 
+
 u = fem.Function(V, name="Displacement")
 
 qmap = QuadratureMap(domain, deg_quad, material)
@@ -125,49 +137,69 @@ We can then use the abstract flux field `"Stress"` to define the weak formulatio
 du = ufl.TrialFunction(V)
 v = ufl.TestFunction(V)
 
-sig = qmap.fluxes["Stress"]
+sig = qmap.fluxes["stress"]
 Res = ufl.dot(sig, strain(v)) * qmap.dx
 Jac = qmap.derivative(Res, u, du)
+
+# Next, the custom nonlinear problem is defined with the class `NonlinearMaterialProblem` as well as the corresponding Newton solver.
+
+petsc_options = {
+    "snes_type": "newtonls",
+    "snes_linesearch_type": "none",
+    "snes_atol": 1e-6,
+    "snes_rtol": 1e-6,
+    "snes_monitor": None,
+    "log_view": None,
+    "ksp_type": "preonly",
+    "pc_type": "lu",
+    "pc_factor_mat_solver_type": "mumps",
+}
+problem = NonlinearMaterialProblem(
+    qmap,
+    Res,
+    u,
+    bcs=bcs,
+    J=Jac,
+    petsc_options_prefix="elastoplasticity",
+    petsc_options=petsc_options,
+)
+
+
+# We then loop over a set of imposed vertical strains, apply the corresponding imposed displacement boundary condition on the top surface, solve the problem and then compute plastic and stress fields projected onto a DG space for visualization. Finally, we use the imposed displacement field to compute the associated resultant force in a consistent manner, see [](https://bleyerj.github.io/comet-fenicsx/tips/computing_reactions/computing_reactions.html) for more details.
 ```
-
-Next, the custom nonlinear problem is defined with the class `NonlinearMaterialProblem` as well as the corresponding Newton solver.
-
-```{code-cell} ipython3
-problem = NonlinearMaterialProblem(qmap, Res, Jac, u, bcs)
-newton = NewtonSolver(MPI.COMM_WORLD)
-newton.rtol = 1e-6
-newton.atol = 1e-6
-newton.convergence_criterion = "residual"
-newton.max_it = 20
-```
-
-We then loop over a set of imposed vertical strains, apply the corresponding imposed displacement boundary condition on the top surface, solve the problem and then compute plastic and stress fields projected onto a DG space for visualization. Finally, we use the imposed displacement field to compute the associated resultant force in a consistent manner, see [](https://bleyerj.github.io/comet-fenicsx/tips/computing_reactions/computing_reactions.html) for more details.
 
 ```{code-cell} ipython3
 out_file = "elastoplasticity.pvd"
 vtk = io.VTKFile(domain.comm, out_file, "w")
 
 N = 15
-Eyy = np.linspace(0, 15e-3, N + 1)
+Eyy = np.linspace(0, 10e-3, N + 1)
 Force = np.zeros_like(Eyy)
 nit = np.zeros_like(Eyy)
 for i, eyy in enumerate(Eyy[1:]):
-    u_imp = eyy*Ly
+    u_imp = eyy * Ly
     uD_t.x.array[1::2] = u_imp
 
-    converged, it = problem.solve(newton, print_solution=False)
+    problem.solve()
+
+    converged = problem.solver.getConvergedReason()
+    num_iter = problem.solver.getIterationNumber()
+    assert converged > 0, f"Solver did not converge, got {converged}."
+    print(
+        f"Increment {i} converged after {num_iter} iterations with converged reason {converged}."
+    )
 
     p = qmap.project_on("p", ("DG", 0))
-    stress = qmap.project_on("Stress", ("DG", 0))
+    stress = qmap.project_on("stress", ("DG", 0))
 
     Force[i + 1] = fem.assemble_scalar(fem.form(ufl.action(Res, u))) / u_imp
 
     syy = stress.sub(1).collapse()
-    syy.name = "Stress"
-    vtk.write_function(u, i + 1)
-    vtk.write_function(p, i + 1)
-    vtk.write_function(syy, i + 1)
-    nit[i+1] = it
+    syy.name = "stress"
+    # vtk.write_function(u, i + 1)
+    # vtk.write_function(p, i + 1)
+    # vtk.write_function(syy, i + 1)
+    nit[i + 1] = num_iter
 
 vtk.close()
 ```
@@ -177,7 +209,7 @@ vtk.close()
 We plot the evolution of the apparent vertical stress as a function of the imposed apparent strain. We observe a progressive onset of plasticity after a first elastic phase. The apparent stress then saturates, reaching a perfectly plastic plateau associated with plastic collapse of the plate.
 
 ```{code-cell} ipython3
-plt.plot(Eyy, Force/Lx, "-oC3")
+plt.plot(Eyy, Force / Lx, "-oC3")
 plt.xlabel("Apparent strain")
 plt.ylabel("Apparent stress [MPa]")
 plt.ylim(0, 400)
@@ -190,7 +222,7 @@ We report below the evolution of the number of Newton iterations for each load s
 plt.bar(np.arange(N + 1), nit, color="C2")
 plt.xlabel("Loading step")
 plt.ylabel("Number of iterations")
-plt.xlim(0, N+1)
+plt.xlim(0, N + 1)
 plt.show()
 ```
 
@@ -198,8 +230,13 @@ We list the total timings. We can check that the constitutive update represents 
 
 ```{code-cell} ipython3
 from dolfinx.common import timing
+```
+
+```{code-cell} ipython3
 constitutive_update_time = timing("Constitutive update")[2]
 linear_solve_time = timing("PETSc Krylov solver")[2]
-print(f"Total time spent in constitutive update {constitutive_update_time:.2f}s")
-print(f"Total time spent in global linear solver {linear_solve_time:.2f}s")
+print(
+    f"Total time spent in constitutive update {constitutive_update_time/np.sum(nit):.2f}s"
+)
+print(f"Total time spent in global linear solver {linear_solve_time/np.sum(nit):.2f}s")
 ```

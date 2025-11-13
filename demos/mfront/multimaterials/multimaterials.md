@@ -5,7 +5,7 @@ jupytext:
     extension: .md
     format_name: myst
     format_version: 0.13
-    jupytext_version: 1.16.1
+    jupytext_version: 1.18.1
 kernelspec:
   display_name: Python 3
   language: python
@@ -240,7 +240,6 @@ It is perfectly possible to use behaviors with different internal state variable
 ```
 
 ```{code-cell} ipython3
-
 material1 = MFrontMaterial(
     "src/libBehaviour.so",
     "IsotropicPlasticMisesFlowVoce",
@@ -307,7 +306,6 @@ Res_interface = K * ufl.dot(jump(u1, u2), jump(v1, v2)) * dInt
 Finally, the total residual is the sum of all three residuals. Since we work with a `MixedFunctionSpace`, we use `ufl.extract_blocks` to extract the blocks corresponding to both `u1` and `u2`. We then compute the corresponding Jacobian with both `qmap.derivative` in the corresponding trial functions. Both the residual and tangent blocked forms are compiled by passing the `entity_maps` dictionary to `fem.form`.
 
 ```{code-cell} ipython3
-
 Res = Res_matrix + Res_inclusions + Res_interface
 Res_blocked_compiled = fem.form(ufl.extract_blocks(Res), entity_maps=entity_maps)
 
@@ -357,7 +355,7 @@ newton.max_it = 20
 
 ### Time-stepping
 
-Upon time-stepping, post-processing steps are needed. First, the subdomain displacements `u1` and `u2` are reconstructed into a single `DG` displacement field `u` which is more convenient to handle in Paraview. Note that although this field is discontinuous on the whole mesh, non-zero jumps will occur only at the interface. Second, we recover plastic strain variables in both subdomains as `DG0` fields. Since this step involves a projection, we need to pass the `entity_maps` dictionary to the `project_on` method to compute the corresponding forms of the projection subproblem. Note that both plastic strains are not recombined into a single field, although it is possible in the present case.  
+Upon time-stepping, post-processing steps are needed. First, the subdomain displacements `u1` and `u2` are reconstructed into a single `DG` displacement field `u` which is more convenient to handle in Paraview. Note that although this field is discontinuous on the whole mesh, non-zero jumps will occur only at the interface. Second, we recover plastic strain variables in both subdomains as `DG0` fields. Since this step involves a projection, we need to pass the `entity_maps` dictionary to the `project_on` method to compute the corresponding forms of the projection subproblem. Note that both plastic strains are not recombined into a single field, although it is possible in the present case.
 
 ```{code-cell} ipython3
 :tags: [hide-output]

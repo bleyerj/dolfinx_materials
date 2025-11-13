@@ -1,18 +1,19 @@
 # ---
 # jupyter:
 #   jupytext:
-#     formats: md:myst,py
+#     formats: md:myst,py:percent
 #     text_representation:
 #       extension: .py
-#       format_name: light
-#       format_version: '1.5'
-#       jupytext_version: 1.16.1
+#       format_name: percent
+#       format_version: '1.3'
+#       jupytext_version: 1.18.1
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
 #     name: python3
 # ---
 
+# %% [markdown]
 # # Stationary nonlinear heat transfer
 #
 # This demo shows how to use a simple `MFront` behavior to solve a non-linear stationary heat transfer equation with `dolfinx_materials`.
@@ -189,13 +190,13 @@
 # @TangentOperator {
 #   ∂j∕∂Δ∇T = -k ⋅ tmatrix<N, N, real>::Id();
 #   ∂j∕∂ΔT  =  B ⋅ k ⋅ k ⋅ (∇T + Δ∇T);
-# } // end of @TangentOperator
+# } // end of @TangentOperator 
 # ```
 # ## `FEniCSx` implementation
 #
 # We consider a rectanglar domain with imposed temperatures `Tl` (resp. `Tr`) on the left (resp. right) boundaries. We want to solve for the temperature field `T` inside the domain using a $P^1$-interpolation. We initialize the temperature at value `Tl` throughout the domain.
 
-# +
+# %%
 import numpy as np
 import matplotlib.pyplot as plt
 import ufl
@@ -234,50 +235,54 @@ left_dofs = fem.locate_dofs_geometrical(V, left)
 right_dofs = fem.locate_dofs_geometrical(V, right)
 
 bcs = [fem.dirichletbc(Tl, left_dofs, V), fem.dirichletbc(Tr, right_dofs, V)]
-# -
 
+# %% [markdown]
 # ### Loading the material behavior
 #
 # We use the `MFrontMaterial` class for describing the material behavior. The first argument corresponds to the path where material libraries have been compiled, the second correspond to the name of the behavior (declared with `@Behaviour`). Finally, the modelling hypothesis is specified (default behavior is `"3d"`).
 
+# %%
 material = MFrontMaterial(
     os.path.join(current_path, "src/libBehaviour.so"),
     "StationaryHeatTransfer",
     hypothesis="plane_strain",
 )
 
+# %% [markdown]
 # The `MFront` behavior declares the field `"TemperatureGradient"` as a Gradient variable, with its associated Flux called `"HeatFlux"`. We can check that the `material` object retrieves `MFront`'s gradient and flux names, as well as the different tangent operator blocks which have been defined, namely `dj_ddgT` and `dj_ddT` in the present case:
 
-# +
+# %%
 print(material.gradients)
 print(material.fluxes)
 
 print(["d{}_d{}".format(*t) for t in material.tangent_blocks])
-# -
 
+# %% [markdown]
 # ### Non-linear problem definition
 #
 # We now define the non-linear residual form that we want to solve. After defining test and trial functions, we instantiate the `QuadratureMap` object which will handle the *black-box* constitutive equation based on the `material` object. We must provide the requested quadrature degree which will control the number of quadrature points used in each cell to compute the non-linear constitutive law. Here, we specify a quadrature of degree 2 (i.e. 3 Gauss points for a triangular element).
 
-# +
+# %%
 T_ = ufl.TestFunction(V)
 dT = ufl.TrialFunction(V)
 
 deg_quad = 2
 qmap = QuadratureMap(domain, deg_quad, material)
-# -
 
+# %% [markdown]
 # #### Variable registration
 #
-# The `MFront` behavior implicitly declares the temperature as an external state variable called `"Temperature"`. We must therefore associate this external state variable to a known mechanical field. This can be achieved explicitly using the `register_external_state_variable` method.
+# The `MFront` behavior implicitly declares the temperature as an external state variable called `"Temperature"`. We must therefore associate this external state variable to a known mechanical field. This can be achieved explicitly using the `register_external_state_variable` method. 
 #
 # For problems in which the temperature only acts as a parameter (no jacobian blocks with respect to the temperature), the temperature can be automatically registered as a constant value ($293.15 \text{ K}$ by default) or to any other (`dolfin.Constant`, `float` or `dolfin.Function`) value using the `register_external_state_variable` method.
 #
 # Finally, we need to associate to `MFront` gradient object the corresponding UFL expression as a function of the unknown field `T`. To do so, we use the `register_gradient` method linking `MFront` `"TemperatureGradient"` object to the UFL expression `grad(T)`.
 
+# %%
 qmap.register_external_state_variable("Temperature", T)
 qmap.register_gradient("TemperatureGradient", ufl.grad(T))
 
+# %% [markdown]
 # #### Nonlinear variational formulation
 #
 # We are now in position of defining the nonlinear variational formulation corresponding to the stationary nonlinear heat transfer. Without any external loading, the nonlinear residual reads as:
@@ -294,7 +299,7 @@ qmap.register_gradient("TemperatureGradient", ufl.grad(T))
 #
 # The resulting nonlinear problem is managed by the `NonlinearMaterialProblem` class. It is solved using a Newton non-linear solver. The `solve` method returns the converged status and the number of Newton iterations.
 
-# +
+# %%
 j = qmap.fluxes["HeatFlux"]
 
 F = ufl.dot(j, ufl.grad(T_)) * qmap.dx
@@ -308,10 +313,11 @@ converged, it = problem.solve(newton)
 
 # Problem is weakly nonlinear, it should converge in a few iterations
 assert converged and it < 10
-# -
 
+# %% [markdown]
 # We finally check that the thermal conductivity coefficient $k$, computed from the ratio between the horizontal heat flux and temperature gradient matches the temperature-dependent expressions implemented in the `MFront` behavior.
 
+# %%
 j_vals = j.x.array
 g_vals = qmap.gradients["TemperatureGradient"].function.x.array
 k_gauss = -j_vals[::2] / g_vals[::2]

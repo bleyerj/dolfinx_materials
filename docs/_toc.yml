@@ -16,9 +16,9 @@ parts:
   - caption: JAX demos
     chapters:
       - file: jax_elastoplasticity.md
-      - file: demos/jax/elastoplasticity/Hosford_yield_surface.md
-      - file: demos/jax/elastoplasticity/plane_elastoplasticity.md
-      - file: demos/jax/finite_strain_elastoplasticity/finite_strain_elastoplasticity.md
+      # - file: demos/jax/elastoplasticity/Hosford_yield_surface.md
+      - file: demos/jax/elastoplasticity/plane_elastoplasticity.ipynb
+      - file: demos/jax/finite_strain_elastoplasticity/finite_strain_elastoplasticity.ipynb
   - caption: MFront demos
     chapters:
       - file: demos/mfront/finite_strain_elastoplasticity/finite_strain_elastoplasticity.md
@@ -30,6 +30,6 @@ parts:
     chapters:
       - file: cvxpy.md
       - file: demos/cvxpy/cvxpy_return_mapping.md
-  - caption: API
-    chapters:
-      - file: api/api.rst
+  # - caption: API
+  #   chapters:
+  #     - file: api/api.rst
