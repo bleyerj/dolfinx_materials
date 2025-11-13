@@ -1,18 +1,19 @@
 # ---
 # jupyter:
 #   jupytext:
-#     formats: md:myst,py
+#     formats: md:myst,py:percent
 #     text_representation:
 #       extension: .py
-#       format_name: light
-#       format_version: '1.5'
-#       jupytext_version: 1.16.1
+#       format_name: percent
+#       format_version: '1.3'
+#       jupytext_version: 1.18.1
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
 #     name: python3
 # ---
 
+# %% [markdown]
 # # Transient heat equation with phase change
 #
 # $\newcommand{\bj}{\mathbf{j}}
@@ -103,6 +104,7 @@
 #
 # where $T_{smooth}=T_l-T_s$ is a small transition temperature interval between $T_s=T_m-T_\text{smooth}/2$ the solidus temperature and $T_l=T_m+T_\text{smooth}/2$ the liquidus temperature.
 
+# %% [markdown]
 # ## `MFront` implementation
 #
 # ### Gradient, flux and tangent operator blocks
@@ -156,6 +158,7 @@
 # @LocalVariable real ∂k∕∂T;
 # ```
 
+# %% [markdown]
 # ### Integration of the behavior
 #
 # Again, the behavior integration is straightforward: after computing the temperature at the end of the time step `T_`, we compute the thermal
@@ -204,7 +207,7 @@
 #
 # We consider a rectangular domain of length 0.1 with imposed temperatures `T0` (resp. `Ti`) on the left (resp. right) boundaries. We look here for the temperature field `T` using a $P^2$-interpolation which is initially at the uniform temperature `Ti`.
 
-# +
+# %%
 import numpy as np
 import matplotlib.pyplot as plt
 import ufl
@@ -254,10 +257,11 @@ right_dofs = fem.locate_dofs_geometrical(V, right)
 bottom_dofs = fem.locate_dofs_geometrical(V, bottom)  # used for postprocessing
 
 bcs = [fem.dirichletbc(Tl, left_dofs, V), fem.dirichletbc(Tr, right_dofs, V)]
-# -
 
+# %% [markdown]
 # We now load the material behavior `HeatTransferPhaseChange` and also change the default value of `Tsmooth` to a slightly larger one (but still sufficiently small). Note that the mesh must be sufficiently refined to use a smaller value. Indeed, the spatial resolution must be able to capture with a few elements the sharp transition which will occur during the phase change. We also verify that 3 different tangent blocks have indeed been defined, the last one involving the internal state variable `Enthalpy` with respect to the temperature.
 
+# %%
 material = MFrontMaterial(
     os.path.join(current_path, "src/libBehaviour.so"),
     "HeatTransferPhaseChange",
@@ -266,6 +270,7 @@ material = MFrontMaterial(
 )
 print(["d{}_d{}".format(*t) for t in material.tangent_blocks])
 
+# %% [markdown]
 # ### Time discretization of the heat equation
 #
 # The heat equation must also be discretized in time. We use here the $\theta$-method and approximate:
@@ -292,7 +297,7 @@ print(["d{}_d{}".format(*t) for t in material.tangent_blocks])
 #
 # We then compute the corresponding jacobian form with `qmap.derivative`.
 
-# +
+# %%
 T_ = ufl.TestFunction(V)
 dT = ufl.TrialFunction(V)
 
@@ -316,20 +321,23 @@ j_theta = theta * j + (1 - theta) * j_old
 
 Res = (T_ * (h - h_old) - dt * ufl.dot(ufl.grad(T_), j_theta)) * qmap.dx
 Jac = qmap.derivative(Res, T, dT)
-# -
 
+# %% [markdown]
 # We then set up the corresponding nonlinear problem and solver objects.
 
+# %%
 problem = NonlinearMaterialProblem(qmap, Res, Jac, T, bcs)
 newton = NewtonSolver(MPI.COMM_WORLD)
 newton.rtol = 1e-6
 newton.atol = 1e-6
 newton.convergence_criterion = "incremental"
 
+# %% [markdown]
 # ### Time-stepping loop and comparison with *code_Aster* results
 #
 # We now implement the time-stepping loop which simply solves the non-linear problem and update the fields corresponding to the values at the previous time step. We also load the values of the one-dimensional temperature field $T(x, t)$ given in the *code_Aster* test-case and compare them with what we obtain every second.
 
+# %%
 cA_results = np.loadtxt(
     os.path.join(current_path, "results_code_Aster.csv"), delimiter=","
 )

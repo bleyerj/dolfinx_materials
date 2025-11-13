@@ -5,7 +5,7 @@ jupytext:
     extension: .md
     format_name: myst
     format_version: 0.13
-    jupytext_version: 1.16.1
+    jupytext_version: 1.18.1
 kernelspec:
   display_name: Python 3
   language: python
@@ -110,7 +110,7 @@ if rank == 0:
 
     gmsh.model.mesh.generate(dim)
 
-domain, subdomains, facets = io.gmshio.model_to_mesh(gmsh.model, comm, 0)
+domain, subdomains, facets = io.gmsh.model_to_mesh(gmsh.model, comm, 0)
 
 gmsh.finalize()
 ```

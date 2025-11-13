@@ -11,7 +11,7 @@ import ufl
 import numpy as np
 from dolfinx import fem
 from dolfinx.common import Timer
-from .utils import cell_to_dofs, create_quadrature_functionspace
+from .utils import build_cell_to_dofs_map, create_quadrature_functionspace
 
 
 def create_quadrature_function(name, shape, mesh, quadrature_degree):
@@ -32,7 +32,7 @@ class QuadratureExpression:
         map_c = mesh.topology.index_map(mesh.topology.dim)
         num_cells = map_c.size_local + map_c.num_ghosts
         self._mesh_cells = np.arange(0, num_cells, dtype=np.int32)
-        self.eval(None)
+        self.total_dofs = build_cell_to_dofs_map(self._function_space)
 
     def initialize_function(self, mesh, quadrature_degree):
         self.quadrature_degree = quadrature_degree
@@ -48,7 +48,7 @@ class QuadratureExpression:
         with Timer("dx_mat:Function eval"):
             expr_eval = self.expression.eval(self.mesh, cells)
         with Timer("dx_mat:Prepare dofs"):
-            dofs = cell_to_dofs(cells, self._function_space)
+            dofs = self.total_dofs[cells].ravel()
         self.function.x.array[dofs] = expr_eval.flatten()[:]
 
     def variation(self, u, v):

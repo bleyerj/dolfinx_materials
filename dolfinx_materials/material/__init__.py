@@ -12,3 +12,8 @@ try:
     from .mfront import MFrontMaterial
 except ImportError:
     print("MGIS is not available. MFront behaviors cannot be used.")
+
+try:
+    from .jaxmat import JAXMaterial
+except ImportError:
+    print("jax or jaxmat is not available. MFront behaviors cannot be used.")

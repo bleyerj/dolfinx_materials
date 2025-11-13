@@ -1,19 +1,24 @@
-from functools import partial
 from typing import Sequence, Callable
+from functools import partial
 from mpi4py import MPI
 from petsc4py import PETSc
+
 import ufl
-from ufl import Form
 import dolfinx
-from dolfinx.fem import Function
+
 from dolfinx.fem.bcs import DirichletBC
 from dolfinx.fem.petsc import (
     assign,
+    assemble_vector,
     apply_lifting,
     set_bc,
-    assemble_vector,
     NonlinearProblem,
 )
+from dolfinx.fem.forms import Form
+from dolfinx.fem.function import Function as _Function
+from dolfinx.mesh import EntityMap as _EntityMap
+from dolfinx_materials.quadrature_map import QuadratureMap
+
 from dolfinx.common import Timer
 from dolfinx.mesh import EntityMap as _EntityMap
 
@@ -21,7 +26,7 @@ from dolfinx_materials.quadrature_map import QuadratureMap
 
 
 def assemble_residual_with_callback(
-    u: Function,
+    u: _Function,
     F: Form,
     J: Form,
     bcs: Sequence[DirichletBC],
@@ -88,7 +93,7 @@ class NonlinearMaterialProblem(NonlinearProblem):
         self,
         qmap: QuadratureMap,
         F: ufl.form.Form | Sequence[ufl.form.Form],
-        u: Function | Sequence[Function],
+        u: _Function | Sequence[_Function],
         *,
         petsc_options_prefix: str,
         bcs: Sequence[DirichletBC] | None = None,

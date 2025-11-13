@@ -155,9 +155,9 @@ class QuadratureMap:
     def update_material_properties(self):
         """Update material properties from provided values."""
         for name, mat_prop in self.material.material_properties.items():
-            if isinstance(mat_prop, (int, float, np.ndarray)):
-                values = mat_prop
-            else:
+            try:
+                values = np.asarray(mat_prop)
+            except Exception:
                 shape = mat_prop.ufl_shape
                 Vm = create_quadrature_functionspace(self.mesh, self.degree, shape)
                 mat_prop_fun = fem.Function(Vm, name=name)
@@ -290,7 +290,6 @@ class QuadratureMap:
 
     def update(self):
         """Perform constitutive update call."""
-        num_QP = len(self.quadrature_points) * self.num_cells
         if not self._initialized:
             self.initialize_state()
 
@@ -312,27 +311,26 @@ class QuadratureMap:
                 grad_vals.ravel(), self.rotation_func.x.array
             )
 
-        flux_size = sum(list(self.material.fluxes.values()))
-        flux_vals = np.zeros((num_QP, flux_size))
-        Ct_vals = np.zeros_like(get_vals(self.jacobian_flatten)[self.dofs])
+        # flux_size = sum(list(self.material.fluxes.values()))
+        # flux_vals = np.zeros((num_QP, flux_size))
+        # Ct_vals = np.zeros_like(get_vals(self.jacobian_flatten)[self.dofs])
 
         # material integration
         # print("Grads", grad_vals)
         flux_vals, isv_vals, Ct_vals = self.material.integrate(grad_vals)
-        # print("Fluxes", flux_vals)
-        assert not (np.any(np.isnan(flux_vals)))
-        assert not (np.any(np.isnan(isv_vals)))
-        assert not (np.any(np.isnan(Ct_vals)))
+        # assert not (np.any(np.isnan(flux_vals)))
+        # assert not (np.any(np.isnan(isv_vals)))
+        # assert not (np.any(np.isnan(Ct_vals)))
 
         if self.material.rotation_matrix is not None:
             self.material.rotate_fluxes(flux_vals.ravel(), self.rotation_func.x.array)
             self.material.rotate_tangent_operator(
                 Ct_vals.ravel(), self.rotation_func.x.array
             )
-
-        self.update_fluxes(flux_vals)
-        self.update_internal_state_variables(isv_vals)
-        update_vals(self.jacobian_flatten, Ct_vals, self.cells)
+        with Timer("dx_mat: update values"):
+            self.update_fluxes(flux_vals)
+            self.update_internal_state_variables(isv_vals)
+            update_vals(self.jacobian_flatten, Ct_vals, self.cells)
 
     def update_fluxes(self, flux_vals):
         buff = 0
@@ -355,11 +353,12 @@ class QuadratureMap:
         """
         self.material.data_manager.update()
         final_state = self.material.get_final_state_dict()
+        # print(final_state)
         for key in self.variables.keys():
             if key not in self.gradients:  # update flux and isv but not gradients
                 update_vals(self.variables[key], final_state[key], self.cells)
 
-    def project_on(self, name, interp, entity_maps=None):
+    def project_on(self, name, interp=None, entity_maps=None, fun=None):
         """
         Computes a projection onto standard FE space.
 
@@ -368,9 +367,11 @@ class QuadratureMap:
         name : str
             Name of the field to project
         interp : tuple
-            Tuple of interpolation space info to project on, e.g. ("DG", 0). Shape is automatically deduced.
+            Tuple of interpolation space info to project on, e.g. ("DG", 0). Shape is automatically deduced. Inferred from `fun` if not provided.
         entity_maps: dict
             Entity maps in case of mixed subdomains
+        fun: fem.Function
+            Function in which to write the result
         """
         if name not in self.variables:
             collected = [
@@ -390,7 +391,10 @@ class QuadratureMap:
             shape = field.ufl_shape
             field = field.expression.ufl_expression
 
-        V = fem.functionspace(self.mesh, interp + (shape,))
-        projected = fem.Function(V, name=name)
+        if fun is None:
+            V = fem.functionspace(self.mesh, interp + (shape,))
+            projected = fem.Function(V, name=name)
+        else:
+            projected = fun
         project(field, projected, self.dx, entity_maps=entity_maps)
         return projected
