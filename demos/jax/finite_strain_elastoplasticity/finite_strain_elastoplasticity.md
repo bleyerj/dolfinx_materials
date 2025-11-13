@@ -14,7 +14,7 @@ kernelspec:
 
 # Finite-strain $\boldsymbol{F}^\text{e}\boldsymbol{F}^\text{p}$ plasticity
 
-$\newcommand{\bF}{\boldsymbol{F}}\newcommand{\bFe}{\boldsymbol{F}^\text{e}}\newcommand{\bFp}{\boldsymbol{F}^\text{p}}$ 
+$\newcommand{\bF}{\boldsymbol{F}}\newcommand{\bFe}{\boldsymbol{F}^\text{e}}\newcommand{\bFp}{\boldsymbol{F}^\text{p}}$
 
 In this example, we show how to use a JAX implementation of finite-strain plasticity using the $\bFe\bFp$ formalism. The material behavior is described in the [`jaxmat` documentation](https://bleyerj.github.io/jaxmat/demos/quickstart/performance.html#material-model).
 
@@ -270,10 +270,16 @@ vtx.close()
 import matplotlib.pyplot as plt
 
 num_iter = average_stats[:, 2]
-constitutive_time = np.diff(average_stats[:, 0],prepend=average_stats[0, 0])/num_iter
-solver_time = np.diff(average_stats[:, 1],prepend=average_stats[0, 1])/num_iter
+constitutive_time = np.diff(average_stats[:, 0], prepend=average_stats[0, 0]) / num_iter
+solver_time = np.diff(average_stats[:, 1], prepend=average_stats[0, 1]) / num_iter
 plt.bar(np.arange(N), constitutive_time, color="crimson", label="Constitutive update")
-plt.bar(np.arange(N), solver_time, bottom=constitutive_time, color='royalblue', label="Global solver")
+plt.bar(
+    np.arange(N),
+    solver_time,
+    bottom=constitutive_time,
+    color="royalblue",
+    label="Global solver",
+)
 plt.xlabel("Loading step")
 plt.ylabel("Wall clock time per global iteration [s]")
 plt.xlim(0, N)

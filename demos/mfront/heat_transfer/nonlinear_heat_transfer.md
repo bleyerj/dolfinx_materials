@@ -1,6 +1,6 @@
 ---
 jupytext:
-  formats: md:myst,py,ipynb
+  formats: md:myst,py:percent,ipynb
   text_representation:
     extension: .md
     format_name: myst
@@ -44,20 +44,18 @@ conductivity.
 As discussed below, the consistent linearisation of the heat transfer
 equilibrium requires to compute:
 
--   the derivative
-    ${\displaystyle \frac{\displaystyle \partial \mathbf{j}}{\displaystyle \partial \mathbf{\nabla} T}}$
-    of the heat flux with respect to the temperature gradient.
-    ${\displaystyle \frac{\displaystyle \partial \mathbf{j}}{\displaystyle \partial \mathbf{\nabla} T}}$
-    is given by: $$
-      {\displaystyle \frac{\displaystyle \partial \mathbf{j}}{\displaystyle \partial \mathbf{\nabla} T}}=-k\left(T\right)\,\matrix{I}
-    $$
--   the derivative
-    ${\displaystyle \frac{\displaystyle \partial \mathbf{j}}{\displaystyle \partial T}}$
-    of the heat flux with respect to the temperature.
-    ${\displaystyle \frac{\displaystyle \partial \mathbf{j}}{\displaystyle \partial T}}$
-    is given by: $$
-      {\displaystyle \frac{\displaystyle \partial \mathbf{j}}{\displaystyle \partial T}}=-{\displaystyle \frac{\displaystyle \partial k\left(T\right)}{\displaystyle \partial T}}\,\mathbf{\nabla} T=B\,k^{2}\,\mathbf{\nabla} T
-    $$
+- the derivative
+  ${\displaystyle \frac{\displaystyle \partial \mathbf{j}}{\displaystyle \partial \mathbf{\nabla} T}}$ of the heat flux with respect to the temperature gradient. ${\displaystyle \frac{\displaystyle \partial \mathbf{j}}{\displaystyle \partial \mathbf{\nabla} T}}$ is given by:
+
+  $$
+    {\displaystyle \frac{\displaystyle \partial \mathbf{j}}{\displaystyle \partial \mathbf{\nabla} T}}=-k\left(T\right)\,\matrix{I}
+  $$
+
+- the derivative ${\displaystyle \frac{\displaystyle \partial \mathbf{j}}{\displaystyle \partial T}}$ of the heat flux with respect to the temperature. ${\displaystyle \frac{\displaystyle \partial \mathbf{j}}{\displaystyle \partial T}}$ is given by:
+
+  $$
+    {\displaystyle \frac{\displaystyle \partial \mathbf{j}}{\displaystyle \partial T}}=-{\displaystyle \frac{\displaystyle \partial k\left(T\right)}{\displaystyle \partial T}}\,\mathbf{\nabla} T=B\,k^{2}\,\mathbf{\nabla} T
+  $$
 
 ## `MFront`’ implementation
 
@@ -76,7 +74,7 @@ In the case of this non linear transfer behaviour, the heat flux is
 explicitly computed from the temperature and the temperature gradient.
 The `DefaultGenericBehaviour` is the most suitable choice:
 
-``` cpp
+```
 @DSL DefaultGenericBehaviour;
 ```
 
@@ -85,7 +83,7 @@ The `DefaultGenericBehaviour` is the most suitable choice:
 The following lines define the name of the behaviour, the name of the
 author and the date of its writing:
 
-``` cpp
+```
 @Behaviour StationaryHeatTransfer;
 @Author Thomas Helfer;
 @Date 15/02/2019;
@@ -99,7 +97,7 @@ assumed to be conjugated with the first declared fluxes and so on…
 
 The temperature gradient is declared as follows (note that Unicode characters are supported):
 
-``` cpp
+```
 @Gradient TemperatureGradient ∇T;
 ∇T.setGlossaryName("TemperatureGradient");
 ```
@@ -109,12 +107,12 @@ This is helpful for the calling code.
 
 After this declaration, the following variables will be defined:
 
--   The temperature gradient `∇T` at the beginning of the time step.
--   The increment of the temperature gradient `Δ∇T` over the time step.
+- The temperature gradient `∇T` at the beginning of the time step.
+- The increment of the temperature gradient `Δ∇T` over the time step.
 
 The heat flux is then declared as follows:
 
-``` cpp
+```
 @Flux HeatFlux j;
 j.setGlossaryName("HeatFlux");
 ```
@@ -132,7 +130,7 @@ of the thermal equilibrium requires to return the derivate of the heat
 flux with respect to the increment of the temperature (or equivalently
 with respect to the temperature at the end of the time step).
 
-``` cpp
+```
 @AdditionalTangentOperatorBlock ∂j∕∂ΔT;
 ```
 
@@ -141,7 +139,7 @@ with respect to the temperature at the end of the time step).
 The `A` and `B` coefficients that appears in the definition of the
 thermal conductivity are declared as parameters:
 
-``` cpp
+```
 @Parameter real A = 0.0375;
 @Parameter real B = 2.165e-4;
 ```
@@ -158,7 +156,7 @@ Here, we declare the thermal conductivity `k` as a local variable in
 order to be able to compute its value during the behaviour integration
 and to reuse this value when computing the tangent operator.
 
-``` cpp
+```
 @LocalVariable thermalconductivity k;
 ```
 
@@ -169,7 +167,7 @@ temperature at the end of the time step, then we compute the thermal
 conductivity (at the end of the time step) and the heat flux using the
 temperature gradient (at the end of the time step).
 
-``` cpp
+```
 @Integrator{
   // temperature at the end of the time step
   const auto T_ = T + ΔT;
@@ -184,12 +182,13 @@ temperature gradient (at the end of the time step).
 
 The computation of the tangent operator blocks is equally simple:
 
-``` cpp
+```
 @TangentOperator {
   ∂j∕∂Δ∇T = -k ⋅ tmatrix<N, N, real>::Id();
   ∂j∕∂ΔT  =  B ⋅ k ⋅ k ⋅ (∇T + Δ∇T);
-} // end of @TangentOperator 
+} // end of @TangentOperator
 ```
+
 ## `FEniCSx` implementation
 
 We consider a rectanglar domain with imposed temperatures `Tl` (resp. `Tr`) on the left (resp. right) boundaries. We want to solve for the temperature field `T` inside the domain using a $P^1$-interpolation. We initialize the temperature at value `Tl` throughout the domain.
@@ -270,7 +269,7 @@ qmap = QuadratureMap(domain, deg_quad, material)
 
 #### Variable registration
 
-The `MFront` behaviour implicitly declares the temperature as an external state variable called `"Temperature"`. We must therefore associate this external state variable to a known mechanical field. This can be achieved explicitly using the `register_external_state_variable` method. 
+The `MFront` behaviour implicitly declares the temperature as an external state variable called `"Temperature"`. We must therefore associate this external state variable to a known mechanical field. This can be achieved explicitly using the `register_external_state_variable` method.
 
 For problems in which the temperature only acts as a parameter (no jacobian blocks with respect to the temperature), the temperature can be automatically registered as a constant value ($293.15 \text{ K}$ by default) or to any other (`dolfin.Constant`, `float` or `dolfin.Function`) value using the `register_external_state_variable` method.
 
@@ -316,7 +315,7 @@ problem = NonlinearMaterialProblem(
     T,
     bcs=bcs,
     J=Jac,
-    petsc_options_prefix="elastoplasticity",
+    petsc_options_prefix="heat_transfer",
     petsc_options=petsc_options,
 )
 

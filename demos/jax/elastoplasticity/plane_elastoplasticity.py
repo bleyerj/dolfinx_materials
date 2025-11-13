@@ -110,6 +110,7 @@ bcs = [fem.dirichletbc(uD_t, top_dofs), fem.dirichletbc(uD_b, bottom_dofs)]
 # %% [markdown]
 # Now, we define the `QuadratureMap` object associated with the elastoplastic `material`. We check that the material has only one gradient field, here the field `"Strain"` and one flux field, here the field `"Stress"`. We register the UFL object `strain(u)` corresponding to the vectorial Mandel representation of the strain components.
 
+
 # %%
 def strain(u):
     return ufl.as_vector(

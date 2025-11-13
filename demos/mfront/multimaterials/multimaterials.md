@@ -233,7 +233,7 @@ du1, du2 = ufl.TrialFunctions(W)
 
 ### Material laws on subdomains
 
-Second, we define two different `MFrontMaterial` on the two subdomains. In this example, we use two plastic behaviors with different yield surfaces and hardening laws. In the matrix, a von Mises criterion is used with an exponential Voce hardening whereas in the stiffer inclusions, we use a Hosford criterion and linear isotropic hardening. 
+Second, we define two different `MFrontMaterial` on the two subdomains. In this example, we use two plastic behaviors with different yield surfaces and hardening laws. In the matrix, a von Mises criterion is used with an exponential Voce hardening whereas in the stiffer inclusions, we use a Hosford criterion and linear isotropic hardening.
 
 ```{important}
 It is perfectly possible to use behaviors with different internal state variables, and even with different gradients/fluxes etc. They are really independent from each other and will only be combined by summing their contribution to the resulting weak form. As a result, we can also combine a MFront implementation and a JAX implementation for instance.
@@ -295,6 +295,7 @@ where we define the displacement $\jump{\bu} = \bu^{(2)} - \bu^{(1)}$ with $(1)$
 def jump(u1, u2):
     # As cell("+") are mapped to cell("-") when defining the cell maps, it does not really matter which side ("+"/"-") is used
     return u2("+") - u1("-")
+
 
 K = fem.Constant(domain, 1e5)
 
@@ -398,7 +399,7 @@ for i, exx in enumerate(Exx[1:]):
 file_results.close()
 ```
 
-## Results 
+## Results
 
 We finally plot the resulting load-displacement curve.
 

@@ -1,13 +1,13 @@
 ---
 jupytext:
-  formats: md:myst,py:percent
+  formats: md:myst,py:percent,ipynb
   text_representation:
     extension: .md
     format_name: myst
     format_version: 0.13
     jupytext_version: 1.18.1
 kernelspec:
-  display_name: Python 3
+  display_name: fenicsx-v0.10
   language: python
   name: python3
 ---
@@ -16,12 +16,11 @@ kernelspec:
 
 $\newcommand{\bj}{\mathbf{j}}
 \renewcommand{\div}{\operatorname{div}}$
-In this demo, we expand on the [stationary nonlinear heat transfer demo](nonlinear_heat_transfer.md) and consider a transient heat equation with non-linear heat transfer law including solid/liquid phase change. This demo corresponds to the [TTNL02 elementary test case](https://code-aster.org/doc/v12/fr/man_v/v4/v4.22.002.pdf) of the [*Code_Aster* finite-element software](https://www.code-aster.org).
-
+In this demo, we expand on the [stationary nonlinear heat transfer demo](nonlinear_heat_transfer.ipynb) and consider a transient heat equation with non-linear heat transfer law including solid/liquid phase change. This demo corresponds to the [TTNL02 elementary test case](https://www.code-aster.org/V2/doc/default/fr/man_v/v4/v4.22.002.pdf) of the [*Code_Aster* finite-element software](https://www.code-aster.org).
 
 ```{image} solidification_front.gif
-:width: 600px
 :align: center
+:width: 600
 ```
 
 ## Transient heat equation using an enthalpy formulation
@@ -38,6 +37,7 @@ In the case of phase changes, the heat capacity exhibits large discontinuities n
 $$
 h(T) = \int_{T_0}^{T} \rho C_p dT
 $$
+
 yielding the following heat equation:
 
 $$
@@ -71,11 +71,12 @@ c_sT & \text{if }T < T_m \\
 c_l(T-T_m)+c_sT_m+\Delta h_{s/l} & \text{if }T > T_m
 \end{cases}
 $$
-where $c_s=\rho_sC_{p,s}$ (resp. $c_l=\rho_lC_{p,l}$) is the volumic heat capacity of the solid (resp. liquid) phase. It can be observed that the enthalpy exhibits a discontinuity at the phase transition equal to $\Delta h_{s/l}$ which represents the latent heat of fusion per unit volume.
+where $c_s=\rho_sC_{p,s}$ (resp. $c_l=\rho_lC_{p,l}$) is the volumetric heat capacity of the solid (resp. liquid) phase. It can be observed that the enthalpy exhibits a discontinuity at the phase transition equal to $\Delta h_{s/l}$ which represents the latent heat of fusion per unit volume.
+
 
 ```{image} phase_change_law.svg
-:width: 500px
 :align: center
+:width: 500
 ```
 
 ## A smoothed version
@@ -89,7 +90,6 @@ k_s + (k_l-k_s)\dfrac{T-T_s}{T_\text{smooth}} & \text{if } T_s \leq T \leq T_l\\
 k_l & \text{if }T > T_l
 \end{cases}
 $$
-
 and
 
 $$
@@ -99,16 +99,13 @@ c_sT_s+\left(\dfrac{cs+cl}{2}+\dfrac{\Delta h_{s/l}}{T_\text{smooth}}\right)(T-T
 c_l(T-T_l)+c_sT_s+\dfrac{cs+cl}{2}T_\text{smooth}+\Delta h_{s/l} & \text{if }T > T_l
 \end{cases}
 $$
-
 where $T_{smooth}=T_l-T_s$ is a small transition temperature interval between $T_s=T_m-T_\text{smooth}/2$ the solidus temperature and $T_l=T_m+T_\text{smooth}/2$ the liquidus temperature.
-
-+++
 
 ## `MFront` implementation
 
 ### Gradient, flux and tangent operator blocks
 
-Similarly to the [stationary nonlinear heat transfer demo](nonlinear_heat_transfer.md), the `MFront` implementation relies on  the `DefaultGenericBehaviour` DSL and declares the pair of temperature gradient and heat flux. In addition, the volumic enthalpy $h$ is also declared as an internal state variable. In addition to the two tangent operator blocks `∂j∕∂Δ∇T` and `∂j∕∂ΔT` already discussed in the first demo, we also declare the additional block `∂h∕∂ΔT`, referring to the fact that the enthalpy will vary with the temperature and will enter the transient heat equation.
+Similarly to the [stationary nonlinear heat transfer demo](nonlinear_heat_transfer.ipynb), the `MFront` implementation relies on  the `DefaultGenericBehaviour` DSL and declares the pair of temperature gradient and heat flux. In addition, the volumic enthalpy $h$ is also declared as an internal state variable. In addition to the two tangent operator blocks `∂j∕∂Δ∇T` and `∂j∕∂ΔT` already discussed in the first demo, we also declare the additional block `∂h∕∂ΔT`, referring to the fact that the enthalpy will vary with the temperature and will enter the transient heat equation.
 
 ```
 @DSL DefaultGenericBehaviour;
@@ -131,7 +128,6 @@ h.setEntryName("Enthalpy"); //per unit of volume
 ### Material parameters and local variables
 
 We now declare the various material properties corresponding to those of aluminum. The material parameters are assumed to be uniform for both phases. Finally, we also introduce the smoothing temperature width $T_\text{smooth}$.
-
 ```
 @Parameter Tₘ = 933.15;        // [K]
 Tₘ.setEntryName("MeltingTemperature");
@@ -149,7 +145,7 @@ cₗ.setEntryName("LiquidHeatCapacity");
 Tₛₘₒₒₜₕ.setEntryName("Tsmooth");
 ```
 
-We define some local variables corresponding to the values of the conductivity $k$, the volumic heat capacity $c$ and the derivative of the heat conductivity with respect to the temperature.
+We define some local variables corresponding to the values of the conductivity $k$, the volumetric heat capacity $c$ and the derivative of the heat conductivity with respect to the temperature.
 
 ```
 @LocalVariable thermalconductivity k;
@@ -159,10 +155,10 @@ We define some local variables corresponding to the values of the conductivity $
 
 +++
 
-### Integration of the behavior
+### Integration of the behaviour
 
-Again, the behavior integration is straightforward: after computing the temperature at the end of the time step `T_`, we compute the thermal
-conductivity, its derivative with respect to the temperature, the volumic enthalpy and the volumic heat capacity depending on whether `T_` belongs to the solid state ($T\leq T_s$), the liquid state ($T\geq T_l$) or to the transition region ($T_s \leq T \leq T_l$). We finish by computing the heat flux.
+Again, the behaviour integration is straightforward: after computing the temperature at the end of the time step `T_`, we compute the thermal
+conductivity, its derivative with respect to the temperature, the volumetric enthalpy and the volumetric heat capacity depending on whether `T_` belongs to the solid state ($T\leq T_s$), the liquid state ($T\geq T_l$) or to the transition region ($T_s \leq T \leq T_l$). We finish by computing the heat flux.
 
 ```
 @Integrator {
@@ -205,16 +201,15 @@ The computation of the tangent operator blocks is then straightforward:
 
 ### Geometry and material
 
-We consider a rectangular domain of length 0.1 with imposed temperatures `T0` (resp. `Ti`) on the left (resp. right) boundaries. We look here for the temperature field `T` using a $P^2$-interpolation which is initially at the uniform temperature `Ti`.
+We consider a rectanglar domain of length 0.1 with imposed temperatures `T0` (resp. `Ti`) on the left (resp. right) boundaries. We look here for the temperature field `T` using a $P^2$-interpolation which is initially at the uniform temperature `Ti`.
 
-```{code-cell}
+```{code-cell} ipython3
 import numpy as np
 import matplotlib.pyplot as plt
 import ufl
 import os
 from mpi4py import MPI
 from dolfinx import fem, mesh
-from dolfinx.cpp.nls.petsc import NewtonSolver
 from dolfinx_materials.quadrature_map import QuadratureMap
 from dolfinx_materials.solvers import NonlinearMaterialProblem
 from dolfinx_materials.material.mfront import MFrontMaterial
@@ -259,9 +254,9 @@ bottom_dofs = fem.locate_dofs_geometrical(V, bottom)  # used for postprocessing
 bcs = [fem.dirichletbc(Tl, left_dofs, V), fem.dirichletbc(Tr, right_dofs, V)]
 ```
 
-We now load the material behavior `HeatTransferPhaseChange` and also change the default value of `Tsmooth` to a slightly larger one (but still sufficiently small). Note that the mesh must be sufficiently refined to use a smaller value. Indeed, the spatial resolution must be able to capture with a few elements the sharp transition which will occur during the phase change. We also verify that 3 different tangent blocks have indeed been defined, the last one involving the internal state variable `Enthalpy` with respect to the temperature.
+We now load the material behaviour `HeatTransferPhaseChange` and also change the default value of `Tsmooth` to a slightly larger one (but still sufficiently small). Note that the mesh must be sufficiently refined to use a smaller value. Indeed, the spatial resolution must be able to capture with a few elements the sharp transition which will occur during the phase change. We also verify that 3 different tangent blocks have indeed been defined, the last one involving the internal state variable `Enthalpy` with respect to the temperature.
 
-```{code-cell}
+```{code-cell} ipython3
 material = MFrontMaterial(
     os.path.join(current_path, "src/libBehaviour.so"),
     "HeatTransferPhaseChange",
@@ -291,13 +286,13 @@ in which, at time $t_{n+1}$, both the enthalpy $h_{t=t_{n+1}}$ and the heat flux
 
 To write the above non-linear time-dependent weak formulation, we first need to register to the `QuadratureMap` object the corresponding gradient and external state variable. Then we can get the heat flux `j` (as a *flux*) and the enthalpy `h` (as an *internal state variable*).
 
-Note that without explicitly calling the behavior law or setting its value, the enthalpy function `h` will be initially of value 0. To initialize its value, we write `qmap.update()` which calls the behavior integration and updates the internal state variable and flux values.
+Note that without explicitly calling the behaviour law or setting its value, the enthalpy function `h` will be initially of value 0. To initialize its value, we write `qmap.update()` which calls the behaviour integration and updates the internal state variable and flux values.
 
 To implement the $\theta$ time discretization scheme, we will also need to keep track of the enthalpy and heat flux values at the previous time step. We can simply define these new functions as copies of `h` and `j`. Doing so, `h_old` and `j_old` will also be Quadrature functions.
 
 We then compute the corresponding jacobian form with `qmap.derivative`.
 
-```{code-cell}
+```{code-cell} ipython3
 T_ = ufl.TestFunction(V)
 dT = ufl.TrialFunction(V)
 
@@ -308,7 +303,7 @@ qmap.register_external_state_variable("Temperature", T)
 j = qmap.fluxes["HeatFlux"]
 h = qmap.internal_state_variables["Enthalpy"]
 
-qmap.update()  # call a first time the behavior law to update the value of the internal state variables
+qmap.update()  # call a first time the behaviour law to update the value of the internal state variables
 
 j_old = j.copy()
 h_old = h.copy()
@@ -323,21 +318,34 @@ Res = (T_ * (h - h_old) - dt * ufl.dot(ufl.grad(T_), j_theta)) * qmap.dx
 Jac = qmap.derivative(Res, T, dT)
 ```
 
-We then set up the corresponding nonlinear problem and solver objects.
+We then set up the corresponding nonlinear problem and solver options.
 
-```{code-cell}
-problem = NonlinearMaterialProblem(qmap, Res, Jac, T, bcs)
-newton = NewtonSolver(MPI.COMM_WORLD)
-newton.rtol = 1e-6
-newton.atol = 1e-6
-newton.convergence_criterion = "incremental"
+```{code-cell} ipython3
+petsc_options = {
+    "snes_type": "newtonls",
+    "snes_linesearch_type": "none",
+    "snes_atol": 1e-6,
+    "snes_rtol": 1e-6,
+    "ksp_type": "preonly",
+    "pc_type": "lu",
+    "pc_factor_mat_solver_type": "mumps",
+}
+problem = NonlinearMaterialProblem(
+    qmap,
+    Res,
+    T,
+    bcs=bcs,
+    J=Jac,
+    petsc_options_prefix="phase_change",
+    petsc_options=petsc_options,
+)
 ```
 
 ### Time-stepping loop and comparison with *code_Aster* results
 
 We now implement the time-stepping loop which simply solves the non-linear problem and update the fields corresponding to the values at the previous time step. We also load the values of the one-dimensional temperature field $T(x, t)$ given in the *code_Aster* test-case and compare them with what we obtain every second.
 
-```{code-cell}
+```{code-cell} ipython3
 cA_results = np.loadtxt(
     os.path.join(current_path, "results_code_Aster.csv"), delimiter=","
 )
@@ -348,10 +356,13 @@ x = V.tabulate_dof_coordinates()[bottom_dofs, 0]  # x position of dofs
 for t, delta_t in zip(times[1:], np.diff(times)):
     dt.value = delta_t
 
-    converged, it = problem.solve(newton, print_solution=False)
+    problem.solve()
+    converged = problem.solver.getConvergedReason()
+    num_iter = problem.solver.getIterationNumber()
+    assert converged
 
-    h.x.petsc_vec.copy(h_old.x.petsc_vec)  # update enthalpy
-    j.x.petsc_vec.copy(j_old.x.petsc_vec)  # update heat flux
+    fem.petsc.assign(h.x.petsc_vec, h_old)  # update enthalpy
+    fem.petsc.assign(j.x.petsc_vec, j_old)  # update heat flux
 
     sol_time = np.isclose(t, code_Aster_times)
     if any(sol_time):
@@ -376,7 +387,6 @@ for t, delta_t in zip(times[1:], np.diff(times)):
         Tm = material.get_parameter("MeltingTemperature") - 273.15
         ax1.plot(x, Tm + 0 * x, "--k")
         ax1.annotate("liquid\nsolid", xy=(0.08, Tm), fontsize=16, va="center")
-        ax1.set_ylim(500, 750)
         plt.legend()
         plt.show()
 ```

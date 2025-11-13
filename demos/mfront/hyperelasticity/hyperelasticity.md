@@ -93,14 +93,16 @@ if rank == 0:
     gmsh.model.occ.synchronize()
 
     gmsh.model.addPhysicalGroup(dim, [vol_dimTag[1]], 1, name="Matrix")
-    gmsh.model.addPhysicalGroup(dim, [tag for (d, tag) in incl_dimTags], 2, name="Inclusions")
-    eps = 1e-3*L
+    gmsh.model.addPhysicalGroup(
+        dim, [tag for (d, tag) in incl_dimTags], 2, name="Inclusions"
+    )
+    eps = 1e-3 * L
     left = gmsh.model.getEntitiesInBoundingBox(
-        -eps, -eps, -eps, eps, L + eps, L+eps, dim=dim-1
+        -eps, -eps, -eps, eps, L + eps, L + eps, dim=dim - 1
     )
 
     right = gmsh.model.getEntitiesInBoundingBox(
-        L-eps, -eps, -eps, L+eps, L + eps, L+eps, dim=dim - 1
+        L - eps, -eps, -eps, L + eps, L + eps, L + eps, dim=dim - 1
     )
     gmsh.model.addPhysicalGroup(dim - 1, [tag for (d, tag) in left], 1, name="Left")
     gmsh.model.addPhysicalGroup(dim - 1, [tag for (d, tag) in right], 2, name="Right")
@@ -125,7 +127,7 @@ domain.topology.create_connectivity(fdim, dim)
 
 order = 2
 V = fem.functionspace(domain, ("P", order, (3,)))
-deg_quad = 2 * (order-1)
+deg_quad = 2 * (order - 1)
 
 left_dofs = fem.locate_dofs_topological(V, fdim, facets.find(1))
 right_dofs = fem.locate_dofs_topological(V, fdim, facets.find(2))
@@ -157,7 +159,7 @@ Id = ufl.Identity(dim)
 
 def GL_strain(u):
     F = Id + ufl.grad(u)
-    eGL = (F.T*F - Id)/2
+    eGL = (F.T * F - Id) / 2
     return symmetric_tensor_to_vector(eGL)
 
 
@@ -171,6 +173,7 @@ def F(u):
 
 def dF(u, v):
     return ufl.derivative(F(u), u, v)
+
 
 du = ufl.TrialFunction(V)
 v = ufl.TestFunction(V)
@@ -243,14 +246,14 @@ Exx = np.linspace(0, 20e-2, N + 1)
 
 file_results.write_function(u, 0)
 for i, exx in enumerate(Exx[1:]):
-    uD.value[0] = exx*L
+    uD.value[0] = exx * L
 
     if rank == 0:
         print(f"Increment {i}")
 
     converged, it = problem.solve(newton)
 
-    file_results.write_function(u, i+1)
+    file_results.write_function(u, i + 1)
 
 
 file_results.close()
@@ -287,14 +290,14 @@ import matplotlib.pyplot as plt
 data = np.loadtxt("timing_results.csv", delimiter=",", skiprows=2)
 ranks = data[:, 0]
 x = np.arange(len(ranks), dtype=int)
-bar_width = 0.5 
+bar_width = 0.5
 
 plt.figure(figsize=(12, 5))
 for i in range(2):
-    plt.subplot(1, 2, i+1)
+    plt.subplot(1, 2, i + 1)
 
-    y1 = data[:, 2*i+1]
-    y2 = data[:, 2*i+2] 
+    y1 = data[:, 2 * i + 1]
+    y2 = data[:, 2 * i + 2]
     plt.bar(x, y1, bar_width, label="Constitutive update", color="lightcoral")
     plt.bar(x, y2, bar_width, bottom=y1, label="Linear Solve", color="skyblue")
 

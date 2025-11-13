@@ -232,7 +232,7 @@ During the load incrementation, we monitor the evolution of the maximum vertical
 The load-displacement curve exhibits a classical elastoplastic behavior rapidly followed by a stiffening behavior due to membrane catenary effects.
 
 ```{code-cell} ipython3
-if rank==0:
+if rank == 0:
     plt.figure()
     plt.plot(results[:, 0], results[:, 1], "-oC3")
     plt.xlabel("Displacement")
