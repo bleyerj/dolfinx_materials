@@ -119,6 +119,8 @@ class NonlinearMaterialProblem(NonlinearProblem):
         bcs : list
             list of fem.dirichletbc
         """
+        if J is None:
+            J = qmap.derivative(u, ufl.TrialFunction(u.function_space))
         super().__init__(
             F,
             u,
