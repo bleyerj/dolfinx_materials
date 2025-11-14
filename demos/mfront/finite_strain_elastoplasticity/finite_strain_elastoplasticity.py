@@ -1,17 +1,20 @@
 # ---
 # jupyter:
 #   jupytext:
+#     default_lexer: ipython3
+#     formats: md:myst,py:percent,ipynb
 #     text_representation:
 #       extension: .py
-#       format_name: light
-#       format_version: '1.5'
-#       jupytext_version: 1.16.1
+#       format_name: percent
+#       format_version: '1.3'
+#       jupytext_version: 1.18.1
 #   kernelspec:
-#     display_name: Python 3
+#     display_name: fenicsx-v0.10
 #     language: python
 #     name: python3
 # ---
 
+# %% [markdown]
 # # Finite-strain elastoplasticity within the logarithmic strain framework
 #
 # This demo is dedicated to the resolution of a finite-strain elastoplastic problem using the logarithmic strain framework proposed in {cite:p}`miehe2002anisotropic`.
@@ -71,7 +74,7 @@
 # :width: 500px
 # ```
 
-# +
+# %%
 import numpy as np
 import matplotlib.pyplot as plt
 import os
@@ -79,7 +82,6 @@ import ufl
 from petsc4py import PETSc
 from mpi4py import MPI
 from dolfinx import fem, mesh, io
-from dolfinx.cpp.nls.petsc import NewtonSolver
 from dolfinx_materials.quadrature_map import QuadratureMap
 from dolfinx_materials.material.mfront import MFrontMaterial
 from dolfinx_materials.solvers import NonlinearMaterialProblem
@@ -131,10 +133,11 @@ selfweight = fem.Constant(domain, np.zeros((gdim,)))
 du = ufl.TrialFunction(V)
 v = ufl.TestFunction(V)
 u = fem.Function(V, name="Displacement")
-# -
 
+# %% [markdown]
 # The `MFrontMaterial` instance is loaded from the `MFront` `LogarithmicStrainPlasticity` behavior. This behavior is a finite-strain behavior (`material.is_finite_strain=True`) which relies on a kinematic description using the total deformation gradient $\boldsymbol{F}$. By default, a `MFront` behavior always returns the Cauchy stress as the stress measure after integration. However, the stress variable dual to the deformation gradient is the first Piola-Kirchhoff (PK1) stress. An internal option of the MGIS interface is therefore used in the finite-strain context to return the PK1 stress as the "flux" associated to the "gradient" $\boldsymbol{F}$. Both quantities are non-symmetric tensors, aranged as a 9-dimensional vector in 3D following [`MFront` conventions on tensors](https://thelfer.github.io/tfel/web/tensors.html).
 
+# %%
 material = MFrontMaterial(
     os.path.join(current_path, "src/libBehaviour.so"),
     "LogarithmicStrainPlasticity",
@@ -147,10 +150,11 @@ if rank == 0:
     print(material.flux_names, material.flux_sizes)
 
 
+# %% [markdown]
 # In this large-strain setting, the `QuadratureMapping` acts from the deformation gradient $\boldsymbol{F}=\boldsymbol{I}+\nabla\boldsymbol{u}$ to the first Piola-Kirchhoff stress $\boldsymbol{P}$. We must therefore register the deformation gradient as `Identity(3)+grad(u)`.
 
 
-# +
+# %%
 def F(u):
     return nonsymmetric_tensor_to_vector(ufl.Identity(gdim) + ufl.grad(u))
 
@@ -161,8 +165,8 @@ def dF(u):
 
 qmap = QuadratureMap(domain, 2, material)
 qmap.register_gradient("DeformationGradient", F(u))
-# -
 
+# %% [markdown]
 # We will work in a Total Lagrangian formulation, writing the weak form of equilibrium on the reference configuration $\Omega_0$, thereby defining the nonlinear residual weak form as:
 # Find $\boldsymbol{u}\in V$ such that:
 #
@@ -173,29 +177,34 @@ qmap.register_gradient("DeformationGradient", F(u))
 #
 # The corresponding Jacobian form is computed via automatic differentiation. As for the [small-strain elastoplasticity example](https://thelfer.github.io/mgis/web/mgis_fenics_small_strain_elastoplasticity.html), state variables include the `ElasticStrain` and `EquivalentPlasticStrain` since the same behavior is used as in the small-strain case with the only difference that the total strain is now given by the Hencky strain measure. In particular, the `ElasticStrain` is still a symmetric tensor (vector of dimension 6). Note that it has not been explicitly defined as a state variable in the `MFront` behavior file since this is done automatically when using the `IsotropicPlasticMisesFlow` parser.
 
+# %%
 PK1 = qmap.fluxes["FirstPiolaKirchhoffStress"]
 Res = (ufl.dot(PK1, dF(v)) - ufl.dot(selfweight, v)) * qmap.dx
 Jac = qmap.derivative(Res, u, du)
 
+# %% [markdown]
 # Finally, we setup the nonlinear problem, the corresponding Newton solver and solve the load-stepping problem.
 
-# + tags=["hide-output"]
-problem = NonlinearMaterialProblem(qmap, Res, Jac, u, bcs)
+# %% tags=["hide-output"]
 
-newton = NewtonSolver(comm)
-newton.rtol = 1e-4
-newton.atol = 1e-4
-newton.convergence_criterion = "residual"
-newton.report = True
-
-# Set solver options
-ksp = newton.krylov_solver
-opts = PETSc.Options()
-option_prefix = ksp.getOptionsPrefix()
-opts[f"{option_prefix}ksp_type"] = "preonly"
-opts[f"{option_prefix}pc_type"] = "lu"
-opts[f"{option_prefix}pc_factor_mat_solver_type"] = "mumps"
-ksp.setFromOptions()
+petsc_options = {
+    "snes_type": "newtonls",
+    "snes_linesearch_type": "none",
+    "snes_atol": 1e-8,
+    "snes_rtol": 1e-8,
+    "ksp_type": "preonly",
+    "pc_type": "lu",
+    "pc_factor_mat_solver_type": "mumps",
+}
+problem = NonlinearMaterialProblem(
+    qmap,
+    Res,
+    u,
+    bcs=bcs,
+    J=Jac,
+    petsc_options_prefix="elastoplasticity",
+    petsc_options=petsc_options,
+)
 
 Nincr = 30
 load_steps = np.linspace(0.0, 1.0, Nincr + 1)
@@ -205,10 +214,12 @@ results = np.zeros((Nincr + 1, 2))
 for i, t in enumerate(load_steps[1:]):
     selfweight.value[-1] = -50e6 * t
 
-    converged, it = problem.solve(newton, print_solution=False)
+    problem.solve()
+    converged = problem.solver.getConvergedReason()
+    num_iter = problem.solver.getIterationNumber()
 
     if rank == 0:
-        print(f"Increment {i+1} converged in {it} iterations.")
+        print(f"Increment {i+1} converged in {num_iter} iterations.")
 
     p0 = qmap.project_on("EquivalentPlasticStrain", ("DG", 0))
 
@@ -218,15 +229,16 @@ for i, t in enumerate(load_steps[1:]):
     w = u.sub(2).collapse()
     local_max = max(np.abs(w.x.array))
     # Perform the reduction to get the global maximum on rank 0
-    global_max = MPI.COMM_WORLD.reduce(local_max, op=MPI.MAX, root=0)
+    global_max = comm.reduce(local_max, op=MPI.MAX, root=0)
     results[i + 1, 0] = global_max
     results[i + 1, 1] = t
 vtk.close()
-# -
 
+# %% [markdown]
 # During the load incrementation, we monitor the evolution of the maximum vertical downwards displacement.
 # The load-displacement curve exhibits a classical elastoplastic behavior rapidly followed by a stiffening behavior due to membrane catenary effects.
 
+# %%
 if rank == 0:
     plt.figure()
     plt.plot(results[:, 0], results[:, 1], "-oC3")
@@ -234,6 +246,18 @@ if rank == 0:
     plt.ylabel("Load")
     plt.show()
 
+# %% [markdown]
+# Finally, we report the total time spent in the nonlinear solver against the time spent inside the constitutive update function.
+
+# %%
+from dolfinx.common import timing
+
+snes_solve = timing("SNES: solve")[1].total_seconds()
+print(f"Total solving time {snes_solve:.2f}s")
+constitutive_update_time = timing("SNES: constitutive update")[1].total_seconds()
+print(f"Total time spent in constitutive update {constitutive_update_time:.2f}s")
+
+# %% [markdown]
 # ## References
 #
 # ```{bibliography}

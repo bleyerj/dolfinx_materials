@@ -1,13 +1,13 @@
 ---
 jupytext:
-  formats: md:myst,ipynb
+  formats: md:myst,py:percent,ipynb
   text_representation:
     extension: .md
     format_name: myst
     format_version: 0.13
     jupytext_version: 1.18.1
 kernelspec:
-  display_name: Python 3
+  display_name: fenicsx-v0.10
   language: python
   name: python3
 ---
@@ -79,7 +79,6 @@ import ufl
 from petsc4py import PETSc
 from mpi4py import MPI
 from dolfinx import fem, mesh, io
-from dolfinx.cpp.nls.petsc import NewtonSolver
 from dolfinx_materials.quadrature_map import QuadratureMap
 from dolfinx_materials.material.mfront import MFrontMaterial
 from dolfinx_materials.solvers import NonlinearMaterialProblem
@@ -184,22 +183,25 @@ Finally, we setup the nonlinear problem, the corresponding Newton solver and sol
 ```{code-cell} ipython3
 :tags: [hide-output]
 
-problem = NonlinearMaterialProblem(qmap, Res, Jac, u, bcs)
 
-newton = NewtonSolver(comm)
-newton.rtol = 1e-4
-newton.atol = 1e-4
-newton.convergence_criterion = "residual"
-newton.report = True
-
-# Set solver options
-ksp = newton.krylov_solver
-opts = PETSc.Options()
-option_prefix = ksp.getOptionsPrefix()
-opts[f"{option_prefix}ksp_type"] = "preonly"
-opts[f"{option_prefix}pc_type"] = "lu"
-opts[f"{option_prefix}pc_factor_mat_solver_type"] = "mumps"
-ksp.setFromOptions()
+petsc_options = {
+    "snes_type": "newtonls",
+    "snes_linesearch_type": "none",
+    "snes_atol": 1e-8,
+    "snes_rtol": 1e-8,
+    "ksp_type": "preonly",
+    "pc_type": "lu",
+    "pc_factor_mat_solver_type": "mumps",
+}
+problem = NonlinearMaterialProblem(
+    qmap,
+    Res,
+    u,
+    bcs=bcs,
+    J=Jac,
+    petsc_options_prefix="elastoplasticity",
+    petsc_options=petsc_options,
+)
 
 Nincr = 30
 load_steps = np.linspace(0.0, 1.0, Nincr + 1)
@@ -209,10 +211,12 @@ results = np.zeros((Nincr + 1, 2))
 for i, t in enumerate(load_steps[1:]):
     selfweight.value[-1] = -50e6 * t
 
-    converged, it = problem.solve(newton, print_solution=False)
+    problem.solve()
+    converged = problem.solver.getConvergedReason()
+    num_iter = problem.solver.getIterationNumber()
 
     if rank == 0:
-        print(f"Increment {i+1} converged in {it} iterations.")
+        print(f"Increment {i+1} converged in {num_iter} iterations.")
 
     p0 = qmap.project_on("EquivalentPlasticStrain", ("DG", 0))
 
@@ -238,6 +242,17 @@ if rank == 0:
     plt.xlabel("Displacement")
     plt.ylabel("Load")
     plt.show()
+```
+
+Finally, we report the total time spent in the nonlinear solver against the time spent inside the constitutive update function.
+
+```{code-cell} ipython3
+from dolfinx.common import timing
+
+snes_solve = timing("SNES: solve")[1].total_seconds()
+print(f"Total solving time {snes_solve:.2f}s")
+constitutive_update_time = timing("SNES: constitutive update")[1].total_seconds()
+print(f"Total time spent in constitutive update {constitutive_update_time:.2f}s")
 ```
 
 ## References
