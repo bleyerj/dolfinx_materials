@@ -39,7 +39,7 @@ def test_initialization():
     x = ufl.SpatialCoordinate(domain)
     exx = fem.Constant(domain, 1e-2)
     E_macro = ufl.as_matrix([[exx, 0], [0, 0]])
-    u_exp = fem.Expression(ufl.dot(E_macro, x), V.element.interpolation_points())
+    u_exp = fem.Expression(ufl.dot(E_macro, x), V.element.interpolation_points)
 
     mat_prop = {
         "YoungModulus": 70e3,
@@ -94,3 +94,6 @@ def test_initialization():
     # with numpy array
     qmap.update_initial_state("Stress", 2 * s0)
     assert np.allclose(sig.x.array, np.tile(2 * s0, 4))
+
+
+test_initialization()
