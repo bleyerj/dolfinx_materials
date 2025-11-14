@@ -15,7 +15,7 @@ kernelspec:
 
 # Finite-element simulations of JAX elastoplasticity
 
-In this example, we show how to use an elastoplastic `JAXMaterial` within a `FEniCSx` finite-element simulation. We use a von Mises elastoplastic material with a general isotropic hardening model. The JAX implementation of such a behavior is described in [](/jax_elastoplasticity.md#generic-elastoplasticity-with-isotropic-hardening).
+In this example, we show how to use an elastoplastic `JAXMaterial` within a `FEniCSx` finite-element simulation. We use a von Mises elastoplastic material with a general isotropic hardening model.
 
 ```{image} /images/elastoplasticity.gif
 :align: center
@@ -33,7 +33,7 @@ jax.config.update("jax_platform_name", "cpu")
 from mpi4py import MPI
 import ufl
 from dolfinx import io, fem
-from dolfinx.common import timing
+from dolfinx.common import timing, list_timings
 from dolfinx_materials.material import JAXMaterial
 from dolfinx_materials.quadrature_map import QuadratureMap
 from dolfinx_materials.solvers import NonlinearMaterialProblem
@@ -78,7 +78,7 @@ We then generate the mesh of a rectangular plate of dimensions $L_x\times L_y$ p
 Lx = 1.0
 Ly = 2.0
 R = 0.2
-mesh_sizes = (0.005, 0.1)
+mesh_sizes = (0.008, 0.2)
 mesh_data = generate_perforated_plate(Lx, Ly, R, mesh_sizes)
 cell_markers = mesh_data.cell_tags
 facets = mesh_data.facet_tags
@@ -136,6 +136,12 @@ v = ufl.TestFunction(V)
 sig = qmap.fluxes["stress"]
 Res = ufl.dot(sig, strain(v)) * qmap.dx
 Jac = qmap.derivative(Res, u, du)
+```
+
+Below, we will measure various timings. As JIT compilation induces a compilation time overhead, we first call the `qmap.update()` method to run a dummy constitutive model evaluation which triggers JIT compilation. Note that this is not needed in general and done only for having an accurate timing measurement without including jitting cost.
+
+```{code-cell} ipython3
+qmap.update()
 ```
 
 Next, the custom nonlinear problem is defined with the class `NonlinearMaterialProblem` as well as the corresponding Newton solver.
@@ -213,7 +219,7 @@ plt.ylim(0, 400)
 plt.show()
 ```
 
-We report below the evolution of the number of Newton iterations for each load step. We can see that in the first iterations, convergence is reached in 1 iteration only, corresponding to the elastic stage. The number of iterations then increases, the final stages corresponding to the plastic collapse needing around 10 iterations to converge.
+We report below the evolution of the number of Newton iterations for each load step. We can see that in the first iterations, convergence is reached in 1 iteration only, corresponding to the elastic stage. The number of iterations then increases during the plastic stage.
 
 ```{code-cell} ipython3
 plt.bar(np.arange(N + 1), nit, color="C2")
@@ -223,13 +229,17 @@ plt.xlim(0, N + 1)
 plt.show()
 ```
 
-We list the total timings. We can check that the constitutive update represents only a small fraction of the total computing time which is mostly dominated by the cost of solving the global linear system at each global Newton iteration.
+We measure below the time spent in the full SNES solve and the time spent only in the constitutive integration part. We can check that the latter represents only a small fraction of the total computing time which is mostly dominated by the cost of solving the global linear system at each global Newton iteration.
 
 ```{code-cell} ipython3
-constitutive_update_time = timing("Constitutive update")[1].total_seconds()
 snes_solve = timing("SNES: solve")[1].total_seconds()
+print(f"Total solving time {snes_solve:.2f}s")
+constitutive_update_time = timing("SNES: constitutive update")[1].total_seconds()
 print(f"Total time spent in constitutive update {constitutive_update_time:.2f}s")
-print(
-    f"Total time spent in global linear solver {snes_solve-constitutive_update_time:.2f}s"
-)
+```
+
+We can list below the breakdown of the different timings.
+
+```{code-cell} ipython3
+list_timings(MPI.COMM_WORLD)
 ```
