@@ -8,12 +8,12 @@ Interface to jaxmat behaviors.
 @Time    :   01/11/2025
 """
 from dolfinx.common import Timer
-from dolfinx_materials.material import Material
+from dolfinx_materials.generic import Material
 import jax
 import equinox as eqx
 import numpy as np
 from jaxmat.tensors import Tensor
-from jaxmat.materials import SmallStrainBehavior, FiniteStrainBehavior
+from jaxmat.materials.behavior import SmallStrainBehavior, FiniteStrainBehavior
 
 
 def get_shape(val):

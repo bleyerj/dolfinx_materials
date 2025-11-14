@@ -12,7 +12,7 @@ import ufl
 from mpi4py import MPI
 from dolfinx import fem, mesh
 from dolfinx_materials.quadrature_map import QuadratureMap
-from dolfinx_materials.material.mfront import MFrontMaterial
+from dolfinx_materials.mfront import MFrontMaterial
 from dolfinx_materials.utils import (
     symmetric_tensor_to_vector,
 )

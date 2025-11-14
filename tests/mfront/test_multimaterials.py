@@ -14,7 +14,7 @@ from dolfinx import fem, mesh
 from dolfinx.cpp.nls.petsc import NewtonSolver
 from dolfinx_materials.solvers import NonlinearMaterialProblem
 from dolfinx_materials.quadrature_map import QuadratureMap
-from dolfinx_materials.material.mfront import MFrontMaterial
+from dolfinx_materials.mfront import MFrontMaterial
 from dolfinx_materials.utils import (
     symmetric_tensor_to_vector,
 )
@@ -147,5 +147,6 @@ def test_multimaterials():
 
         assert np.allclose(sig_l.x.array * sig_r.x.array, np.zeros_like(sig.x.array))
         assert np.allclose(Sig[i + 1, :], sig_l.x.array + sig_r.x.array)
+
 
 test_multimaterials()

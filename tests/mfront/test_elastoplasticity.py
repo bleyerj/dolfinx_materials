@@ -3,7 +3,7 @@ import numpy as np
 import sys
 import pytest
 import ufl
-from dolfinx_materials.material.mfront import MFrontMaterial
+from dolfinx_materials.mfront import MFrontMaterial
 
 path = pathlib.Path(__file__).parent.absolute()
 

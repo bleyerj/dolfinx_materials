@@ -1,37 +1,40 @@
----
-jupytext:
-  formats: md:myst,py,ipynb
-  text_representation:
-    extension: .md
-    format_name: myst
-    format_version: 0.13
-    jupytext_version: 1.18.1
-kernelspec:
-  display_name: Python 3
-  language: python
-  name: python3
----
+# ---
+# jupyter:
+#   jupytext:
+#     default_lexer: ipython3
+#     formats: md:myst,py:percent,ipynb
+#     text_representation:
+#       extension: .py
+#       format_name: percent
+#       format_version: '1.3'
+#       jupytext_version: 1.18.1
+#   kernelspec:
+#     display_name: Python 3
+#     language: python
+#     name: python3
+# ---
 
-# Hyperelastic heterogeneous material
+# %% [markdown]
+# # Hyperelastic heterogeneous material
+#
+# In this demo, we show how to define a problem containing a call to a MFront behavior on a subset of cells while defining the behavior on the remaining part of the domain using UFL.
+#
+# ```{tip}
+# This demo also works in parallel.
+# ```
+#
+# We consider a unit square consisting of circular inclusions of radius $R=0.4$ located at the 8 vertices of the unit cube. The matrix domain $\Omega_\text{m}$ (tagged `1`) consists of a Ogden hyperelastic material implemented with MFront. The inclusions domain $\Omega_\text{i}$ (tagged `2`) is assumed to be much stiffer and will be described by a Saint-Venant Kirchhoff (SVK) material of modulus $E_\text{pen} = 10^3$ GPa and Poisson ratio $\nu=0$. This behavior will be implemented in pure UFL.
+#
+# ```{image} hyperelasticity.gif
+# :align: center
+# :width: 500px
+# ```
+#
+# ## Meshing
+#
+# We start by importing the relevant modules and defining the geometrical characteristics.
 
-In this demo, we show how to define a problem containing a call to a MFront behavior on a subset of cells while defining the behavior on the remaining part of the domain using UFL.
-
-```{tip}
-This demo also works in parallel.
-```
-
-We consider a unit square consisting of circular inclusions of radius $R=0.4$ located at the 8 vertices of the unit cube. The matrix domain $\Omega_\text{m}$ (tagged `1`) consists of a Ogden hyperelastic material implemented with MFront. The inclusions domain $\Omega_\text{i}$ (tagged `2`) is assumed to be much stiffer and will be described by a Saint-Venant Kirchhoff (SVK) material of modulus $E_\text{pen} = 10^3$ GPa and Poisson ratio $\nu=0$. This behavior will be implemented in pure UFL.
-
-```{image} hyperelasticity.gif
-:align: center
-:width: 500px
-```
-
-## Meshing
-
-We start by importing the relevant modules and defining the geometrical characteristics.
-
-```{code-cell} ipython3
+# %%
 import numpy as np
 from mpi4py import MPI
 import gmsh
@@ -66,13 +69,11 @@ centers = np.array(
         [L, L, L],
     ]
 )
-```
 
-We then define the mesh using `gmsh`.
+# %% [markdown]
+# We then define the mesh using `gmsh`.
 
-```{code-cell} ipython3
-:tags: [hide-input]
-
+# %% tags=["hide-input"]
 gmsh.initialize()
 gmsh.option.setNumber("General.Terminal", 0)  # to disable meshing info
 
@@ -116,13 +117,13 @@ subdomains = mesh_data.cell_tags
 facets = mesh_data.facet_tags
 domain = mesh_data.mesh
 gmsh.finalize()
-```
 
-## Problem position
+# %% [markdown]
+# ## Problem position
+#
+# Next, we define fixed displacement boundary conditions on the left boundary and will impose a uniform horizontal displacement on the right surface. For this problem, we use $\mathbb{P}_2$ Lagrange elements and a quadrature rule degree of 2.
 
-Next, we define fixed displacement boundary conditions on the left boundary and will impose a uniform horizontal displacement on the right surface. For this problem, we use $\mathbb{P}_2$ Lagrange elements and a quadrature rule degree of 2.
-
-```{code-cell} ipython3
+# %%
 fdim = dim - 1
 domain.topology.create_connectivity(fdim, dim)
 
@@ -139,22 +140,22 @@ bcs = [
     fem.dirichletbc(np.zeros((dim,)), left_dofs, V),
     fem.dirichletbc(uD, right_dofs, V),
 ]
-```
 
-The weak form writes in the present case as follows:
+# %% [markdown]
+# The weak form writes in the present case as follows:
+#
+# $$
+# \newcommand{\be}{\boldsymbol{e}}
+# \newcommand{\bu}{\boldsymbol{u}}
+# \newcommand{\bv}{\boldsymbol{v}}
+# \newcommand{\dOm}{\,\text{d}\Omega}
+# \int_{\Omega_\text{m}}\boldsymbol{P}(\bu):\nabla\bv \dOm + \int_{\Omega_\text{i}}\boldsymbol{S}(\bu):\delta\be_\text{GL}(\bu;\bv) \dOm = 0 \quad \forall\bv\in V
+# $$
+# where $\boldsymbol{P}(\bu)$ denotes the matrix first Piola-Kirchhoff stress obtained from the MFront Ogden material, $\boldsymbol{S}(\bu) = E_\text{pen}\be_\text{GL}(\bu)$ denotes the second Piola-Kirchhoff stress associated with the quasi-rigid SVK material, $\be_\text{GL}(\bu)$ is the Green-Lagrange strain and $\delta\be_\text{GL}(\bu;\bv)$ its variation in direction $\bv$.
+#
+# We define below helper functions for implementing the weak form. Note that we use the `symmetric_tensor_to_vector` and `nonsymmetric_tensor_to_vector` functions from `dolfinx_material.utils` to convert tensors to vectorial representation following [](tensors_conventions). We first implement the inclusions contribution to the total residual weak form using pure UFL.
 
-$$
-\newcommand{\be}{\boldsymbol{e}}
-\newcommand{\bu}{\boldsymbol{u}}
-\newcommand{\bv}{\boldsymbol{v}}
-\newcommand{\dOm}{\,\text{d}\Omega}
-\int_{\Omega_\text{m}}\boldsymbol{P}(\bu):\nabla\bv \dOm + \int_{\Omega_\text{i}}\boldsymbol{S}(\bu):\delta\be_\text{GL}(\bu;\bv) \dOm = 0 \quad \forall\bv\in V
-$$
-where $\boldsymbol{P}(\bu)$ denotes the matrix first Piola-Kirchhoff stress obtained from the MFront Ogden material, $\boldsymbol{S}(\bu) = E_\text{pen}\be_\text{GL}(\bu)$ denotes the second Piola-Kirchhoff stress associated with the quasi-rigid SVK material, $\be_\text{GL}(\bu)$ is the Green-Lagrange strain and $\delta\be_\text{GL}(\bu;\bv)$ its variation in direction $\bv$.
-
-We define below helper functions for implementing the weak form. Note that we use the `symmetric_tensor_to_vector` and `nonsymmetric_tensor_to_vector` functions from `dolfinx_material.utils` to convert tensors to vectorial representation following [](tensors_conventions). We first implement the inclusions contribution to the total residual weak form using pure UFL.
-
-```{code-cell} ipython3
+# %%
 Id = ufl.Identity(dim)
 
 
@@ -184,11 +185,11 @@ dx = ufl.dx(subdomain_data=subdomains)
 
 E_pen = fem.Constant(domain, 1e12)
 Res_inclusions = ufl.dot(E_pen * GL_strain(u), dGL_strain(u, v)) * dx(2)
-```
 
-Second, we define the Ogden `MFrontMaterial` instance and implement the matrix contribution to the weak form residual. Note that we enforce `cells=cells_matrix`, asking the `QuadratureMap` to call the constitutive update only at quadrature points located within these matrix cells.
+# %% [markdown]
+# Second, we define the Ogden `MFrontMaterial` instance and implement the matrix contribution to the weak form residual. Note that we enforce `cells=cells_matrix`, asking the `QuadratureMap` to call the constitutive update only at quadrature points located within these matrix cells.
 
-```{code-cell} ipython3
+# %%
 material = MFrontMaterial(
     "src/libBehaviour.so",
     "Ogden",
@@ -201,21 +202,21 @@ qmap.dx = qmap.dx(subdomain_data=subdomains)
 
 PK1 = qmap.fluxes["FirstPiolaKirchhoffStress"]
 Res_matrix = ufl.dot(PK1, dF(u, v)) * dx(1)
-```
 
-Finally, the total residual is the sum of both residuals. We also include a normalizing factor since all stress quantities are expressed in Pa units.
+# %% [markdown]
+# Finally, the total residual is the sum of both residuals. We also include a normalizing factor since all stress quantities are expressed in Pa units.
 
-```{code-cell} ipython3
+# %%
 normalization_factor = fem.Constant(domain, 1e-6)
 Res = normalization_factor * (Res_matrix + Res_inclusions)
 Jac = qmap.derivative(Res, u, du)
-```
 
-## Resolution
+# %% [markdown]
+# ## Resolution
+#
+# Next, we define the custom nonlinear problem, the corresponding Newton solver and the PETSc Krylov solver used to solve the linear systems within Newton's method. We use here a GMRES iterative solver preconditioned with a Geometric Algebraic MultiGrid preconditioner.
 
-Next, we define the custom nonlinear problem, the corresponding Newton solver and the PETSc Krylov solver used to solve the linear systems within Newton's method. We use here a GMRES iterative solver preconditioned with a Geometric Algebraic MultiGrid preconditioner.
-
-```{code-cell} ipython3
+# %%
 petsc_options = {
     "snes_type": "newtonls",
     "snes_linesearch_type": "none",
@@ -235,11 +236,8 @@ problem = NonlinearMaterialProblem(
     petsc_options_prefix="hyperelasticity",
     petsc_options=petsc_options,
 )
-```
 
-```{code-cell} ipython3
-:tags: [hide-output]
-
+# %% tags=["hide-output"]
 file_results = io.VTKFile(
     domain.comm,
     f"{material.name}_results.pvd",
@@ -262,13 +260,13 @@ for i, exx in enumerate(Exx[1:]):
 
 
 file_results.close()
-```
 
-## Timings
+# %% [markdown]
+# ## Timings
+#
+# We list the total timings by gathering all times spent on each rank and compute the average per rank. We can check that the constitutive update represents only a small fraction of the total computing time which is mostly dominated by the cost of solving the global linear system at each global Newton iteration.
 
-We list the total timings by gathering all times spent on each rank and compute the average per rank. We can check that the constitutive update represents only a small fraction of the total computing time which is mostly dominated by the cost of solving the global linear system at each global Newton iteration.
-
-```{code-cell} ipython3
+# %%
 from dolfinx.common import timing
 
 constitutive_update_time = timing("SNES: constitutive update")[1].total_seconds()
@@ -285,11 +283,11 @@ if rank == 0:
     average_time = np.mean(all_times, axis=0)
     print(f"Average total time spent in constitutive update {average_time[0]:.2f}s")
     print(f"Average time spent in global solver {average_time[1]:.2f}s")
-```
 
-The figure below represents a very basic scaling study from 1 to 8 ranks for two different mesh sizes.
+# %% [markdown]
+# The figure below represents a very basic scaling study from 1 to 8 ranks for two different mesh sizes.
 
-```{code-cell} ipython3
+# %%
 import matplotlib.pyplot as plt
 
 data = np.loadtxt("timing_results.csv", delimiter=",", skiprows=2)
@@ -315,4 +313,3 @@ for i in range(2):
 
 # Show plot
 plt.show()
-```

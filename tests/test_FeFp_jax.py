@@ -1,5 +1,5 @@
 import jax.numpy as jnp
-from dolfinx_materials.material import JAXMaterial
+from dolfinx_materials.jaxmat import JAXMaterial
 import jaxmat.materials as jm
 
 

@@ -142,9 +142,10 @@ def update_vals(fun, array, cells=None):
     if cells is None:
         fun.x.array[:] = array.ravel()
     else:
-        bs = len(fun.x.array) // len(cells)
+        arr = array.ravel()
+        bs = len(arr) // len(cells)
         dofs = np.add.outer(cells * bs, np.arange(bs)).ravel()
-        fun.x.array[dofs] = array.ravel()
+        fun.x.array[dofs] = arr
 
 
 def symmetric_tensor_to_vector(T, T22=0):

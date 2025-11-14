@@ -45,7 +45,7 @@ from dolfinx_materials.solvers import NonlinearMaterialProblem
 from dolfinx_materials.utils import nonsymmetric_tensor_to_vector
 
 import jaxmat.materials as jm
-from dolfinx_materials.material.jaxmat import JAXMaterial
+from dolfinx_materials.jaxmat import JAXMaterial
 
 comm = MPI.COMM_WORLD
 rank = comm.rank

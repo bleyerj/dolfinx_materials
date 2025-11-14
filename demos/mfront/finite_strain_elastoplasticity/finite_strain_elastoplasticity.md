@@ -80,7 +80,7 @@ from petsc4py import PETSc
 from mpi4py import MPI
 from dolfinx import fem, mesh, io
 from dolfinx_materials.quadrature_map import QuadratureMap
-from dolfinx_materials.material.mfront import MFrontMaterial
+from dolfinx_materials.mfront import MFrontMaterial
 from dolfinx_materials.solvers import NonlinearMaterialProblem
 from dolfinx_materials.utils import (
     nonsymmetric_tensor_to_vector,
