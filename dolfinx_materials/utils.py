@@ -134,8 +134,7 @@ def build_cell_to_dofs_map(V):
 
 
 def cell_to_dofs(cells, V):
-    with Timer("dx_mat:cell_to_dofs"):
-        dofmap = build_cell_to_dofs_map(V)
+    dofmap = build_cell_to_dofs_map(V)
     return dofmap[cells].ravel()
 
 

@@ -212,7 +212,7 @@ class JAXMaterial(Material):
             jx_state = dolfinx_to_jaxmat_state(state, jx_state)
 
         if self._first_pass:
-            timer_name = "jaxmat: First pass"
+            timer_name = "jaxmat: First pass (includes jit compilation)"
             self._first_pass = False
         else:
             timer_name = "jaxmat: Constitutive update"

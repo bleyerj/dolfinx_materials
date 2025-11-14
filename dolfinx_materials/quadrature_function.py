@@ -45,10 +45,9 @@ class QuadratureExpression:
     def eval(self, cells):
         if cells is None:
             cells = self._mesh_cells
-        with Timer("dx_mat:Function eval"):
+        with Timer("dx_mat: Quadrature Expression evaluation"):
             expr_eval = self.expression.eval(self.mesh, cells)
-        with Timer("dx_mat:Prepare dofs"):
-            dofs = self.total_dofs[cells].ravel()
+        dofs = self.total_dofs[cells].ravel()
         self.function.x.array[dofs] = expr_eval.flatten()[:]
 
     def variation(self, u, v):

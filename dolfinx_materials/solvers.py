@@ -150,7 +150,7 @@ class NonlinearMaterialProblem(NonlinearProblem):
         )
 
     def _constitutive_update(self):
-        with Timer("Constitutive update"):
+        with Timer("SNES: constitutive update"):
             for qmap in self.quadrature_maps:
                 qmap.update()
 
