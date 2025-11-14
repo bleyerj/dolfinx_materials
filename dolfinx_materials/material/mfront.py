@@ -9,9 +9,8 @@ Laboratoire Navier (ENPC,IFSTTAR,CNRS UMR 8205)
 """
 import mgis.behaviour as mgis_bv
 from dolfinx_materials import PerformanceWarning
-import subprocess
-import os
 import warnings
+import numpy as np
 
 
 # we filter out brackets from MFront variable names as it messes up with FFCx
@@ -107,8 +106,12 @@ class MFrontMaterial:
 
     def update_material_property(self, name, values):
         for s in [self.data_manager.s0, self.data_manager.s1]:
-            if type(values) in [int, float]:
-                mgis_bv.setMaterialProperty(s, name, values)
+            if np.ndim(np.asarray(values)) == 0:
+                mgis_bv.setMaterialProperty(
+                    s,
+                    name,
+                    float(values),
+                )
             else:
                 mgis_bv.setMaterialProperty(
                     s,
@@ -118,8 +121,8 @@ class MFrontMaterial:
                 )
 
     def _set_external_state_variable(self, state, name, values):
-        if type(values) in [int, float]:
-            mgis_bv.setExternalStateVariable(state, name, values)
+        if np.ndim(np.asarray(values)) == 0:
+            mgis_bv.setExternalStateVariable(state, name, float(values))
         else:
             mgis_bv.setExternalStateVariable(
                 state,
