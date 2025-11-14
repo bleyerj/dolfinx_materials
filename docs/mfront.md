@@ -63,7 +63,7 @@ Installing these projects requires the Boost and Boost-Python libraries.
 Both projects are now available via `conda` packages:
 
 ```bash
-conda install -c conda-forge mfront mgis
+conda install -c conda-forge mfront
 ```
 ```
 
