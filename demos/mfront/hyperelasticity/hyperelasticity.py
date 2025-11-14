@@ -9,7 +9,7 @@
 #       format_version: '1.3'
 #       jupytext_version: 1.18.1
 #   kernelspec:
-#     display_name: Python 3
+#     display_name: fenicsx-v0.10
 #     language: python
 #     name: python3
 # ---
@@ -302,7 +302,7 @@ for i in range(2):
     y1 = data[:, 2 * i + 1]
     y2 = data[:, 2 * i + 2]
     plt.bar(x, y1, bar_width, label="Constitutive update", color="lightcoral")
-    plt.bar(x, y2, bar_width, bottom=y1, label="Linear Solve", color="skyblue")
+    plt.bar(x, y2, bar_width, bottom=y1, label="Linear solve", color="skyblue")
 
     plt.xlabel("Number of ranks")
     plt.ylabel("Average time per rank")

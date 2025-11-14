@@ -6,8 +6,6 @@ from dolfinx import fem, mesh, io
 from dolfinx_materials.quadrature_map import QuadratureMap
 
 from dolfinx_materials.solvers import NonlinearMaterialProblem
-from dolfinx.cpp.nls.petsc import NewtonSolver  # noqa
-
 
 def uniaxial_tension_2D(material, Exx, N=1, order=1, save_fields=None, angle=None):
     domain = mesh.create_unit_square(MPI.COMM_WORLD, N, N, mesh.CellType.quadrilateral)

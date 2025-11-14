@@ -202,7 +202,6 @@ import matplotlib.pyplot as plt
 import ufl
 from mpi4py import MPI
 from dolfinx import fem, mesh
-from dolfinx.cpp.nls.petsc import NewtonSolver
 from dolfinx_materials.quadrature_map import QuadratureMap
 from dolfinx_materials.solvers import NonlinearMaterialProblem
 from dolfinx_materials.mfront import MFrontMaterial

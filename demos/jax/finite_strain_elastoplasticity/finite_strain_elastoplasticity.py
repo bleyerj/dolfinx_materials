@@ -232,7 +232,7 @@ for i, exx in enumerate(Exx[1:]):
     num_iter = problem.solver.getIterationNumber()
     assert converged > 0, f"Solver did not converge, got {converged}."
 
-    constitutive_update_time = timing("Constitutive update")[1].total_seconds()
+    constitutive_update_time = timing("SNES: constitutive update")[1].total_seconds()
     snes_time = timing("SNES: solve")[1].total_seconds()
 
     all_stats = None
