@@ -106,7 +106,7 @@ class MFrontMaterial:
 
     def update_material_property(self, name, values):
         for s in [self.data_manager.s0, self.data_manager.s1]:
-            if np.ndim(np.asarray(values)) == 0:
+            if isinstance(values, (int, float, np.ndarray)):
                 mgis_bv.setMaterialProperty(
                     s,
                     name,
@@ -121,7 +121,7 @@ class MFrontMaterial:
                 )
 
     def _set_external_state_variable(self, state, name, values):
-        if np.ndim(np.asarray(values)) == 0:
+        if isinstance(values, (int, float, np.ndarray)):
             mgis_bv.setExternalStateVariable(state, name, float(values))
         else:
             mgis_bv.setExternalStateVariable(

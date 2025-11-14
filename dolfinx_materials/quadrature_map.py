@@ -176,7 +176,7 @@ class QuadratureMap:
         ext_state_var : float, np.ndarray, UFL expression
             Constant or UFL expression to register, e.g. fem.Function(V, name="Temperature")
         """
-        if np.ndim(np.asarray(ext_state_var)) == 0:
+        if isinstance(ext_state_var, (int, float, np.ndarray)):
             ext_state_var = fem.Constant(self.mesh, ext_state_var)
         state_var = QuadratureExpression(
             name,
@@ -262,14 +262,16 @@ class QuadratureMap:
             field = self.internal_state_variables[field_name]
         else:
             raise ValueError("Can only initialize a flux or internal state variables.")
-        # if a value is provided we update the field with t
+        # if a value is provided we update the field with it
         values = get_vals(field)[self.dofs]
-        if np.ndim(np.asarray(value)) == 0:
-            values = np.full_like(values, value)
-            update_vals(field, values, self.cells)
-        elif value is not None:
-            self.eval_quadrature(value, field)
-            values = get_vals(field)[self.dofs]
+        print(value, values, field_name)
+        if value is not None:
+            if isinstance(value, (int, float, np.ndarray)):
+                values = np.full_like(values, value)
+                update_vals(field, values, self.cells)
+            else:
+                self.eval_quadrature(value, field)
+                values = get_vals(field)[self.dofs]
         self.material.set_initial_state_dict({field_name: values})
 
     def initialize_state(self):
