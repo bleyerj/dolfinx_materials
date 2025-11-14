@@ -59,6 +59,14 @@ To be able to work with a `MFrontMaterial` you must therefore:
 Installing these projects requires the Boost and Boost-Python libraries.
 ```
 
+```{tip}
+Both projects are now available via `conda` packages:
+
+```bash
+conda install -c conda-forge mfront mgis
+```
+```
+
 ### Compilation with the `generic` interface
 
 To be used a MFront behavior must first be compiled using here the `generic` interface:
