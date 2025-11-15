@@ -101,66 +101,82 @@ def transfer_meshtags_to_submesh(
     return tags, sub_to_parent_entity_map
 
 
-def interpolate_submesh_to_parent(u_parent, u_sub, sub_to_parent_cells):
+def interpolate_submesh_to_parent(
+    u_parent: dolfinx.fem.Function,
+    u_sub: dolfinx.fem.Function,
+    entity_map: dolfinx.mesh.EntityMap,
+):
     """
-    Interpolate results from functions defined in submeshes to a function defined on the parent mesh.
+    Copy DOFs from a function on a submesh into a function on the parent mesh,
+    assuming identical function spaces and identical local DOF layout.
 
     Parameters
     ----------
     u_parent : dolfinx.fem.Function
-        Parent function to interpolate to.
-    u_sub : list[dolfinx.fem.Function]
-        _description_
-    sub_to_parent_cells : list
-        Submesh cells to parent cells mapping
+        Function on the parent mesh (output).
+    u_sub : dolfinx.fem.Function
+        Function on the submesh (input).
+    entity_map : dolfinx.mesh.EntityMap
+        Maps submesh cells → parent mesh cells.
     """
-    V_parent = u_parent.function_space
-    V_sub = u_sub.function_space
-    for i, cell in enumerate(sub_to_parent_cells):
-        bs = V_parent.dofmap.bs
-        bs_sub = V_sub.dofmap.bs
-        assert bs == bs_sub
-        parent_dofs = V_parent.dofmap.cell_dofs(cell)
-        sub_dofs = V_sub.dofmap.cell_dofs(i)
-        for p_dof, s_dof in zip(parent_dofs, sub_dofs):
-            for j in range(bs):
-                u_parent.x.array[p_dof * bs + j] = u_sub.x.array[s_dof * bs + j]
+
+    Vp = u_parent.function_space
+    Vs = u_sub.function_space
+
+    assert Vp.dofmap.bs == Vs.dofmap.bs, "Block sizes must match."
+
+    bs = Vp.dofmap.bs
+
+    # Number of local submesh cells
+    tdim = Vs.mesh.topology.dim
+    nc_sub = Vs.mesh.topology.index_map(tdim).size_local
+
+    # Submesh cell indices: 0 .. nc_sub-1
+    sub_cells = np.arange(nc_sub, dtype=np.int32)
+
+    # Map to parent cells
+    # entity_map outputs parent cell indices for each sub cell
+    parent_cells = entity_map.sub_topology_to_topology(sub_cells, inverse=False)
+
+    # Copy DOFs cell-wise
+    for s_cell, p_cell in zip(sub_cells, parent_cells):
+
+        # Could be -1 in parallel if parent cell is remote; skip those.
+        if p_cell < 0:
+            continue
+
+        sub_dofs = Vs.dofmap.cell_dofs(s_cell)
+        parent_dofs = Vp.dofmap.cell_dofs(p_cell)
+
+        # Cell layout is guaranteed identical → direct copy OK
+        if bs == 1:
+            u_parent.x.array[parent_dofs] = u_sub.x.array[sub_dofs]
+        else:
+            for pd, sd in zip(parent_dofs, sub_dofs):
+                u_parent.x.array[pd * bs : (pd + 1) * bs] = u_sub.x.array[
+                    sd * bs : (sd + 1) * bs
+                ]
 
 
 def interface_int_entities(
-    msh,
-    interface_facets,
-    domain_to_domain_0,
-    domain_to_domain_1,
+    msh: dolfinx.mesh.Mesh, interface_facets: np.ndarray, marker: np.ndarray
 ):
     """
-    This function computes the integration entities (as a list of pairs of
-    (cell, local facet index) pairs) required to assemble mixed domain forms
-    over the interface. It assumes there is a domain with two sub-domains,
-    domain_0 and domain_1, that have a common interface. Cells in domain_0
-    correspond to the "+" restriction and cells in domain_1 correspond to
-    the "-" restriction.
+    This helper function computes the integration entities for
+    interior facet integrals (i.e. a list of (cell_0, local_facet_0,
+    cell_1, local_facet_1)) over an interface. The integration
+    entities are ordered consistently such that cells for which
+    `marker[cell] != 0` correspond to the "+" restriction, and cells
+    for which `marker[cell] == 0` correspond to the "-" restriction.
 
     Parameters:
-        interface_facets: A list of facets on the interface
-        domain_0_cells: A list of cells in domain_0
-        domain_1_cells: A list of cells in domain_1
-        c_to_f: The cell to facet connectivity for the domain mesh
-        f_to_c: the facet to cell connectivity for the domain mesh
-        facet_imap: The facet index_map for the domain mesh
-        domain_to_domain_0: A map from cells in domain to cells in domain_0
-        domain_to_domain_1: A map from cells in domain to cells in domain_1
-
-    Returns:
-        A tuple containing:
-            1) The integration entities
-            2) A modified map (see HACK below)
-            3) A modified map (see HACK below)
+        msh: the mesh
+        interface_facets: Facet indices of interior facets on an
+            interface
+        marker: If `marker[cell] != 0`, then that cell corresponds
+            to a "+" restriction. Otherwise, it corresponds to a
+            negative restriction.
     """
-    # Create measure for integration. Assign the first (cell, local facet)
-    # pair to the cell in domain_0, corresponding to the "+" restriction.
-    # Assign the second pair to the domain_1 cell, corresponding to the "-"
-    # restriction.
     tdim = msh.topology.dim
     fdim = tdim - 1
     msh.topology.create_connectivity(tdim, fdim)
@@ -168,29 +184,17 @@ def interface_int_entities(
     facet_imap = msh.topology.index_map(fdim)
     c_to_f = msh.topology.connectivity(tdim, fdim)
     f_to_c = msh.topology.connectivity(fdim, tdim)
-    # FIXME This can be done more efficiently
+
     interface_entities = []
-    domain_to_domain_0_new = np.array(domain_to_domain_0)
-    domain_to_domain_1_new = np.array(domain_to_domain_1)
     for facet in interface_facets:
         # Check if this facet is owned
         if facet < facet_imap.size_local:
             cells = f_to_c.links(facet)
             assert len(cells) == 2
-            if domain_to_domain_0[cells[0]] > 0:
-                cell_plus = cells[0]
-                cell_minus = cells[1]
+            if marker[cells[0]] == 0:
+                cell_plus, cell_minus = cells[1], cells[0]
             else:
-                cell_plus = cells[1]
-                cell_minus = cells[0]
-            assert (
-                domain_to_domain_0[cell_plus] >= 0
-                and domain_to_domain_0[cell_minus] < 0
-            )
-            assert (
-                domain_to_domain_1[cell_minus] >= 0
-                and domain_to_domain_1[cell_plus] < 0
-            )
+                cell_plus, cell_minus = cells[0], cells[1]
 
             local_facet_plus = np.where(c_to_f.links(cell_plus) == facet)[0][0]
             local_facet_minus = np.where(c_to_f.links(cell_minus) == facet)[0][0]
@@ -199,18 +203,4 @@ def interface_int_entities(
                 [cell_plus, local_facet_plus, cell_minus, local_facet_minus]
             )
 
-            # FIXME HACK cell_minus does not exist in the left submesh, so it
-            # will be mapped to index -1. This is problematic for the
-            # assembler, which assumes it is possible to get the full macro
-            # dofmap for the trial and test functions, despite the restriction
-            # meaning we don't need the non-existant dofs. To fix this, we just
-            # map cell_minus to the cell corresponding to cell plus. This will
-            # just add zeros to the assembled system, since there are no
-            # u("-") terms. Could map this to any cell in the submesh, but
-            # I think using the cell on the other side of the facet means a
-            # facet space coefficient could be used
-            domain_to_domain_0_new[cell_minus] = domain_to_domain_0[cell_plus]
-            # Same hack for the right submesh
-            domain_to_domain_1_new[cell_plus] = domain_to_domain_1[cell_minus]
-
-    return interface_entities, domain_to_domain_0_new, domain_to_domain_1_new
+    return interface_entities

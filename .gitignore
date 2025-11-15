@@ -60,6 +60,7 @@ _minted*
 *.json
 *.vtu
 *.pvtu
+*.bp
 *.pvd
 **/results
 

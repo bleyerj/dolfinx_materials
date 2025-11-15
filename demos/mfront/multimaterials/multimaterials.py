@@ -146,33 +146,21 @@ subdomain2_facet_tags, subdomain2_facet_map = transfer_meshtags_to_submesh(
 # #
 # # Similarly to the previous CZM tour, *entity maps* must be defined to link integration of quantities defined on the subdomains.
 
-# # +
-# cell_imap = domain.topology.index_map(tdim)
-# num_cells = cell_imap.size_local + cell_imap.num_ghosts
-# domain_to_subdomain1 = np.full(num_cells, -1, dtype=np.int32)
-# domain_to_subdomain1[subdomain1_cell_map] = np.arange(
-#     len(subdomain1_cell_map), dtype=np.int32
-# )
-# domain_to_subdomain2 = np.full(num_cells, -1, dtype=np.int32)
-# domain_to_subdomain2[subdomain2_cell_map] = np.arange(
-#     len(subdomain2_cell_map), dtype=np.int32
-# )
 
 subdomain1.topology.create_connectivity(fdim, tdim)
 subdomain2.topology.create_connectivity(fdim, tdim)
 
-# facet_imap = domain.topology.index_map(facets.dim)
-# num_facets = facet_imap.size_local + facet_imap.num_ghosts
-# domain_to_interface = np.full(num_facets, -1)
-# domain_to_interface[interface_cell_map] = np.arange(len(interface_cell_map))
-# # -
+# # Before setting up the `entity_maps` dictionary, we need a specific treatment for integrating terms on the interface.
+# The `interface_int_integration` manually defines integration quantities on the interface. Besides, interface terms
+# seen from one specific subdomain only exist on one side. As the assembler complains about this, there is a specific
+#  tweak to map cells from one side of the interface to the other side, thereby modifying the `domain_to_subdomain` maps. Most importantly, cells in subdomain 1 correspond to the `"+"` side of the interface and cells in subdomain 2 to the `"-"` side.
 
-# # Before setting up the `entity_maps` dictionary, we need a specific treatment for integrating terms on the interface. The `interface_int_integration` manually defines integration quantities on the interface. Besides, interface terms seen from one specific subdomain only exist on one side. As the assembler complains about this, there is a specific tweak to map cells from one side of the interface to the other side, thereby modifying the `domain_to_subdomain` maps. Most importantly, cells in subdomain 1 correspond to the `"+"` side of the interface and cells in subdomain 2 to the `"-"` side.
-
-# # +
-# interface_entities, domain_to_subdomain1, domain_to_subdomain2 = interface_int_entities(
-#     domain, interface_facets, domain_to_subdomain1, domain_to_subdomain2
-# )
+# Create a marker to identify cells on the "+" side of the interface
+cell_imap = domain.topology.index_map(tdim)
+num_cells = cell_imap.size_local + cell_imap.num_ghosts
+marker = np.zeros(num_cells)
+marker[cells.find(INCL_TAG)] = 1
+interface_entities = interface_int_entities(domain, interface_facets, marker)
 
 entity_maps = [subdomain1_cell_map, subdomain2_cell_map, interface_cell_map]
 # -
@@ -185,7 +173,7 @@ dx_int = ufl.Measure("dx", domain=interface_mesh)
 dInt = ufl.Measure(
     "dS",
     domain=domain,
-    subdomain_data=facets,
+    subdomain_data=[(INT_TAG, interface_entities)],
     subdomain_id=INT_TAG,
 )
 
@@ -362,22 +350,25 @@ problem = NonlinearMaterialProblem(
 # Upon time-stepping, post-processing steps are needed. First, the subdomain displacements `u1` and `u2` are reconstructed into a single `DG` displacement field `u` which is more convenient to handle in Paraview. Note that although this field is discontinuous on the whole mesh, non-zero jumps will occur only at the interface. Second, we recover plastic strain variables in both subdomains as `DG0` fields. Since this step involves a projection, we need to pass the `entity_maps` dictionary to the `project_on` method to compute the corresponding forms of the projection subproblem. Note that both plastic strains are not recombined into a single field, although it is possible in the present case.
 
 # + tags=["hide-output"]
-file_results = io.VTKFile(
-    domain.comm,
-    f"multimaterials_results.pvd",
-    "w",
-)
+# file_results = io.VTKFile(
+#     domain.comm,
+#     f"multimaterials_results.pvd",
+#     "w",
+# )
 
 N = 30
 Exx = np.linspace(0, 15e-3, N + 1)
 
-file_results.write_function(u, 0)
 p1 = qmap1.project_on("EquivalentPlasticStrain", ("DG", 0), entity_maps=entity_maps)
 p1.name = "PlasticStrain1"
-file_results.write_function(p1, 0)
 p2 = qmap2.project_on("EquivalentPlasticStrain", ("DG", 0), entity_maps=entity_maps)
 p2.name = "PlasticStrain2"
-file_results.write_function(p2, 0)
+
+
+file1 = io.VTXWriter(domain.comm, f"multimaterials_domain1.bp", output=[u1, p1])
+file1.write(0)
+file2 = io.VTXWriter(domain.comm, f"multimaterials_domain2.bp", output=[u2, p2])
+file2.write(0)
 
 Force = np.zeros_like(Exx)
 for i, exx in enumerate(Exx[1:]):
@@ -388,17 +379,20 @@ for i, exx in enumerate(Exx[1:]):
 
     interpolate_submesh_to_parent(u, u1, subdomain1_cell_map)
     interpolate_submesh_to_parent(u, u2, subdomain2_cell_map)
-    file_results.write_function(u, i + 1)
-    p1 = qmap1.project_on("EquivalentPlasticStrain", ("DG", 0), entity_maps=entity_maps)
-    p1.name = "PlasticStrain1"
-    file_results.write_function(p1, i + 1)
-    p2 = qmap2.project_on("EquivalentPlasticStrain", ("DG", 0), entity_maps=entity_maps)
-    p2.name = "PlasticStrain2"
-    file_results.write_function(p2, i + 1)
+    qmap1.project_on(
+        "EquivalentPlasticStrain", ("DG", 0), fun=p1, entity_maps=entity_maps
+    )
+    p2 = qmap2.project_on(
+        "EquivalentPlasticStrain", ("DG", 0), fun=p2, entity_maps=entity_maps
+    )
+
+    file1.write(i + 1)
+    file2.write(i + 1)
 
     Force[i + 1] = fem.assemble_scalar(virtual_work_form)
 
-file_results.close()
+file1.close()
+file2.close()
 # -
 
 # ## Results
