@@ -42,12 +42,10 @@ import gmsh
 import ufl
 from petsc4py import PETSc
 from dolfinx import fem, io, mesh, cpp
-from dolfinx.cpp.nls.petsc import NewtonSolver
 from dolfinx_materials.quadrature_map import QuadratureMap
 from dolfinx_materials.mfront import MFrontMaterial
-from dolfinx_materials.solvers import (
-    BlockedNonlinearMaterialProblem,
-)
+from dolfinx_materials.solvers import NonlinearMaterialProblem
+
 from utils import (
     interface_int_entities,
     transfer_meshtags_to_submesh,
@@ -94,9 +92,12 @@ def create_matrix_inclusion_mesh(L, W, R, hsize):
         gmsh.model.mesh.generate(gdim)
 
     partitioner = cpp.mesh.create_cell_partitioner(mesh.GhostMode.shared_facet)
-    domain, cells, facets = io.gmsh.model_to_mesh(
+    mesh_data = io.gmsh.model_to_mesh(
         gmsh.model, MPI.COMM_WORLD, model_rank, gdim=gdim, partitioner=partitioner
     )
+    cells = mesh_data.cell_tags
+    facets = mesh_data.facet_tags
+    domain = mesh_data.mesh
     gmsh.finalize()
     return (domain, cells, facets)
 
@@ -338,15 +339,25 @@ virtual_work_form = fem.form(
 # Next, we define the custom nonlinear problem. Here, we work with a blocked system and thus rely on `BlockedNonlinearMaterialProblem` which expects a list of behaviors to update and a list of functions corresponding to the blocked solution. We then define a classical Newton solver.
 
 # +
-problem = BlockedNonlinearMaterialProblem(
-    [qmap1, qmap2], Res_blocked_compiled, Jac_blocked_compiled, [u1, u2], bcs
+petsc_options = {
+    "snes_type": "newtonls",
+    "snes_linesearch_type": "none",
+    "snes_atol": 1e-6,
+    "snes_rtol": 1e-6,
+    "ksp_type": "preonly",
+    "pc_type": "lu",
+    "pc_factor_mat_solver_type": "mumps",
+}
+problem = NonlinearMaterialProblem(
+    [qmap1, qmap2],
+    Res_blocked_compiled,
+    [u1, u2],
+    bcs=bcs,
+    J=Jac_blocked_compiled,
+    petsc_options_prefix="multimaterials",
+    petsc_options=petsc_options,
 )
 
-newton = NewtonSolver(MPI.COMM_WORLD)
-newton.rtol = 1e-5
-newton.atol = 1e-5
-newton.convergence_criterion = "residual"
-newton.max_it = 20
 # -
 
 # ### Time-stepping
@@ -375,7 +386,8 @@ Force = np.zeros_like(Exx)
 for i, exx in enumerate(Exx[1:]):
     Uimp.value[0] = exx * length
 
-    converged, it = problem.solve(newton)
+    problem.solve()
+    assert problem.solver.getConvergedReason()
 
     interpolate_submesh_to_parent(u, u1, subdomain1_cell_map)
     interpolate_submesh_to_parent(u, u2, subdomain2_cell_map)
