@@ -3,12 +3,30 @@ import numpy.typing as npt
 import dolfinx
 
 
+def get_entity_map(
+    entity_map: dolfinx.mesh.EntityMap, inverse: bool = False
+) -> npt.NDArray[np.int32]:
+    """Get an entity map from the sub-topology to the topology.
+
+    Args:
+        entity_map: An `EntityMap` object or a numpy array representing the mapping.
+        inverse: If `True`, return the inverse mapping.
+    Returns:
+        Mapped indices of entities.
+    """
+    sub_top = entity_map.sub_topology
+    assert isinstance(sub_top, dolfinx.mesh.Topology)
+    sub_map = sub_top.index_map(entity_map.dim)
+    indices = np.arange(sub_map.size_local + sub_map.num_ghosts, dtype=np.int32)
+    return entity_map.sub_topology_to_topology(indices, inverse=inverse)
+
+
 def transfer_meshtags_to_submesh(
     mesh: dolfinx.mesh.Mesh,
     entity_tag: dolfinx.mesh.MeshTags,
     submesh: dolfinx.mesh.Mesh,
-    sub_vertex_to_parent: npt.NDArray[np.int32],
-    sub_cell_to_parent: npt.NDArray[np.int32],
+    vertex_entity_map: dolfinx.mesh.EntityMap,
+    cell_entity_map: dolfinx.mesh.EntityMap,
 ) -> tuple[dolfinx.mesh.MeshTags, npt.NDArray[np.int32]]:
     """
     Transfer a meshtag from a parent mesh to a sub-mesh.
@@ -27,14 +45,17 @@ def transfer_meshtags_to_submesh(
 
     """
 
-    tdim = mesh.topology.dim
-    cell_imap = mesh.topology.index_map(entity_tag.dim)
-    num_cells = cell_imap.size_local + cell_imap.num_ghosts
-    mesh_to_submesh = np.full(num_cells, -1)
+    sub_cell_to_parent = get_entity_map(cell_entity_map, inverse=False)
+    sub_vertex_to_parent = get_entity_map(vertex_entity_map, inverse=False)
+
+    num_cells = (
+        mesh.topology.index_map(mesh.topology.dim).size_local
+        + mesh.topology.index_map(mesh.topology.dim).num_ghosts
+    )
+    mesh_to_submesh = np.full(num_cells, -1, dtype=np.int32)
     mesh_to_submesh[sub_cell_to_parent] = np.arange(
         len(sub_cell_to_parent), dtype=np.int32
     )
-    sub_vertex_to_parent = np.asarray(sub_vertex_to_parent)
 
     submesh.topology.create_connectivity(entity_tag.dim, 0)
 
@@ -70,7 +91,6 @@ def transfer_meshtags_to_submesh(
                         child_markers[child_facet] = value
                         facet_found = True
                         sub_to_parent_entity_map[child_facet] = facet
-
     tags = dolfinx.mesh.meshtags(
         submesh,
         entity_tag.dim,

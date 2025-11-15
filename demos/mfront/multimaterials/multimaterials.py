@@ -142,43 +142,39 @@ subdomain2_facet_tags, subdomain2_facet_map = transfer_meshtags_to_submesh(
     domain, facets, subdomain2, subdomain2_vertex_map, subdomain2_cell_map
 )
 
-# ### Entity map and integration measures
-#
-# Similarly to the previous CZM tour, *entity maps* must be defined to link integration of quantities defined on the subdomains.
+# # ### Entity map and integration measures
+# #
+# # Similarly to the previous CZM tour, *entity maps* must be defined to link integration of quantities defined on the subdomains.
 
-# +
-cell_imap = domain.topology.index_map(tdim)
-num_cells = cell_imap.size_local + cell_imap.num_ghosts
-domain_to_subdomain1 = np.full(num_cells, -1, dtype=np.int32)
-domain_to_subdomain1[subdomain1_cell_map] = np.arange(
-    len(subdomain1_cell_map), dtype=np.int32
-)
-domain_to_subdomain2 = np.full(num_cells, -1, dtype=np.int32)
-domain_to_subdomain2[subdomain2_cell_map] = np.arange(
-    len(subdomain2_cell_map), dtype=np.int32
-)
+# # +
+# cell_imap = domain.topology.index_map(tdim)
+# num_cells = cell_imap.size_local + cell_imap.num_ghosts
+# domain_to_subdomain1 = np.full(num_cells, -1, dtype=np.int32)
+# domain_to_subdomain1[subdomain1_cell_map] = np.arange(
+#     len(subdomain1_cell_map), dtype=np.int32
+# )
+# domain_to_subdomain2 = np.full(num_cells, -1, dtype=np.int32)
+# domain_to_subdomain2[subdomain2_cell_map] = np.arange(
+#     len(subdomain2_cell_map), dtype=np.int32
+# )
 
 subdomain1.topology.create_connectivity(fdim, tdim)
 subdomain2.topology.create_connectivity(fdim, tdim)
 
-facet_imap = domain.topology.index_map(facets.dim)
-num_facets = facet_imap.size_local + facet_imap.num_ghosts
-domain_to_interface = np.full(num_facets, -1)
-domain_to_interface[interface_cell_map] = np.arange(len(interface_cell_map))
-# -
+# facet_imap = domain.topology.index_map(facets.dim)
+# num_facets = facet_imap.size_local + facet_imap.num_ghosts
+# domain_to_interface = np.full(num_facets, -1)
+# domain_to_interface[interface_cell_map] = np.arange(len(interface_cell_map))
+# # -
 
-# Before setting up the `entity_maps` dictionary, we need a specific treatment for integrating terms on the interface. The `interface_int_integration` manually defines integration quantities on the interface. Besides, interface terms seen from one specific subdomain only exist on one side. As the assembler complains about this, there is a specific tweak to map cells from one side of the interface to the other side, thereby modifying the `domain_to_subdomain` maps. Most importantly, cells in subdomain 1 correspond to the `"+"` side of the interface and cells in subdomain 2 to the `"-"` side.
+# # Before setting up the `entity_maps` dictionary, we need a specific treatment for integrating terms on the interface. The `interface_int_integration` manually defines integration quantities on the interface. Besides, interface terms seen from one specific subdomain only exist on one side. As the assembler complains about this, there is a specific tweak to map cells from one side of the interface to the other side, thereby modifying the `domain_to_subdomain` maps. Most importantly, cells in subdomain 1 correspond to the `"+"` side of the interface and cells in subdomain 2 to the `"-"` side.
 
-# +
-interface_entities, domain_to_subdomain1, domain_to_subdomain2 = interface_int_entities(
-    domain, interface_facets, domain_to_subdomain1, domain_to_subdomain2
-)
+# # +
+# interface_entities, domain_to_subdomain1, domain_to_subdomain2 = interface_int_entities(
+#     domain, interface_facets, domain_to_subdomain1, domain_to_subdomain2
+# )
 
-entity_maps = {
-    interface_mesh: domain_to_interface,
-    subdomain1: domain_to_subdomain1,
-    subdomain2: domain_to_subdomain2,
-}
+entity_maps = [subdomain1_cell_map, subdomain2_cell_map, interface_cell_map]
 # -
 
 # We are now in position to define the various integration measures. The key point here is that the `dInt` interface measure is defined using prescribed integration entities which have been defined earlier. This is done by passing them to `subdomain_data` as follows.
@@ -189,7 +185,7 @@ dx_int = ufl.Measure("dx", domain=interface_mesh)
 dInt = ufl.Measure(
     "dS",
     domain=domain,
-    subdomain_data=[(INT_TAG, interface_entities)],
+    subdomain_data=facets,
     subdomain_id=INT_TAG,
 )
 
@@ -344,6 +340,7 @@ petsc_options = {
     "snes_linesearch_type": "none",
     "snes_atol": 1e-6,
     "snes_rtol": 1e-6,
+    "snes_monitor": None,
     "ksp_type": "preonly",
     "pc_type": "lu",
     "pc_factor_mat_solver_type": "mumps",
