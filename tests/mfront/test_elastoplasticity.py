@@ -3,7 +3,7 @@ import numpy as np
 import sys
 import pytest
 import ufl
-from dolfinx_materials.material.mfront import MFrontMaterial
+from dolfinx_materials.mfront import MFrontMaterial
 
 path = pathlib.Path(__file__).parent.absolute()
 
@@ -29,7 +29,10 @@ def test_mfront_elastoplasticity(mesh_size):
     Exx = np.linspace(0, 2e-2, N + 1)
     Stress = uniaxial_tension_2D(material, Exx, N=mesh_size)
     assert np.allclose(
-        Stress[-1, :3], 2 / np.sqrt(3) * np.array([sig0, 0, sig0 / 2]), rtol=1e-2
+        Stress[-1, :3],
+        2 / np.sqrt(3) * np.array([sig0, 0, sig0 / 2]),
+        rtol=1e-2,
+        atol=1e-8,
     )
 
 

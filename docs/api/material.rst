@@ -7,7 +7,7 @@
    :members:
    :show-inheritance:
 
-.. automodule:: dolfinx_materials.material.jaxmat
+.. automodule:: dolfinx_materials.jaxmat
    :members:
    :show-inheritance:
 

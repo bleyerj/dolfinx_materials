@@ -1,4 +1,4 @@
-from dolfinx_materials.material import Material
+from dolfinx_materials.generic import Material
 import cvxpy as cp
 import numpy as np
 

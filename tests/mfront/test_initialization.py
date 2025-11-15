@@ -12,26 +12,53 @@ import ufl
 from mpi4py import MPI
 from dolfinx import fem, mesh
 from dolfinx_materials.quadrature_map import QuadratureMap
-from dolfinx_materials.material.mfront import MFrontMaterial
+from dolfinx_materials.mfront import MFrontMaterial
 from dolfinx_materials.utils import (
     symmetric_tensor_to_vector,
 )
+import pytest
 
 
-def test_initialization():
-    path = pathlib.Path(__file__).parent.absolute()
-
-    domain = mesh.create_unit_square(
+@pytest.fixture
+def domain():
+    return mesh.create_unit_square(
         MPI.COMM_WORLD,
         1,
         1,
         cell_type=mesh.CellType.quadrilateral,
     )
+
+
+@pytest.fixture
+def V(domain):
     gdim = domain.topology.dim
+    return fem.functionspace(domain, ("Q", 1, (gdim,)))
 
-    V = fem.functionspace(domain, ("Q", 1, (gdim,)))
 
-    u = fem.Function(V, name="Displacement")
+@pytest.fixture
+def u(V):
+    return fem.Function(V)
+
+
+@pytest.fixture
+def material():
+    path = pathlib.Path(__file__).parent.absolute()
+
+    mat_prop = {
+        "YoungModulus": 70e3,
+        "PoissonRatio": 0.0,
+        "HardeningSlope": 5e3,
+        "YieldStrength": 250.0,
+    }
+    return MFrontMaterial(
+        path / "src/libBehaviour.so",
+        "IsotropicLinearHardeningPlasticity",
+        hypothesis="plane_strain",
+        material_properties=mat_prop,
+    )
+
+
+def test_initialization(domain, V, u, material):
 
     def eps(u):
         return symmetric_tensor_to_vector(ufl.sym(ufl.grad(u)))
@@ -39,20 +66,7 @@ def test_initialization():
     x = ufl.SpatialCoordinate(domain)
     exx = fem.Constant(domain, 1e-2)
     E_macro = ufl.as_matrix([[exx, 0], [0, 0]])
-    u_exp = fem.Expression(ufl.dot(E_macro, x), V.element.interpolation_points())
-
-    mat_prop = {
-        "YoungModulus": 70e3,
-        "PoissonRatio": 0.3,
-        "HardeningSlope": 5e3,
-        "YieldStrength": 250.0,
-    }
-    material = MFrontMaterial(
-        path / "src/libBehaviour.so",
-        "IsotropicLinearHardeningPlasticity",
-        hypothesis="plane_strain",
-        material_properties=mat_prop,
-    )
+    u_exp = fem.Expression(ufl.dot(E_macro, x), V.element.interpolation_points)
 
     qmap = QuadratureMap(domain, 2, material)
     qmap.register_gradient("Strain", eps(u))
@@ -94,3 +108,49 @@ def test_initialization():
     # with numpy array
     qmap.update_initial_state("Stress", 2 * s0)
     assert np.allclose(sig.x.array, np.tile(2 * s0, 4))
+
+
+def test_material_properties(domain, V, u, material):
+    def eps(u):
+        return symmetric_tensor_to_vector(ufl.sym(ufl.grad(u)))
+
+    x = ufl.SpatialCoordinate(domain)
+    exx = fem.Constant(domain, 1e-3)
+    E_macro = ufl.as_matrix([[exx, 0], [0, 0]])
+    u_exp = fem.Expression(ufl.dot(E_macro, x), V.element.interpolation_points)
+
+    qmap = QuadratureMap(domain, 2, material)
+    qmap.register_gradient("Strain", eps(u))
+    sig = qmap.fluxes["Stress"]
+
+    qmap.initialize_state()
+
+    u.interpolate(u_exp)
+
+    qmap.update()
+    E = 70e3
+    assert np.allclose(sig.x.array[:3], E * np.array([1e-3, 0, 0]))
+
+    E = 200e3
+    material.material_properties["YoungModulus"] = E
+    qmap.update_material_properties()
+    qmap.update()
+    assert np.allclose(sig.x.array[:3], E * np.array([1e-3, 0, 0]))
+
+    E = 100e3
+    material.material_properties["YoungModulus"] = fem.Constant(domain, E)
+    qmap.update_material_properties()
+    qmap.update()
+    assert np.allclose(sig.x.array[:3], E * np.array([1e-3, 0, 0]))
+
+    E = 50e3
+    V0 = fem.functionspace(domain, ("DG", 0))
+    Ef = fem.Function(V0)
+    Ef.x.array[:] = E
+    material.material_properties["YoungModulus"] = Ef
+    qmap.update_material_properties()
+    qmap.update()
+    assert np.allclose(sig.x.array[:3], E * np.array([1e-3, 0, 0]))
+
+
+# test_material_properties()

@@ -17,11 +17,11 @@
 # %% [markdown]
 # # Finite-strain $\boldsymbol{F}^\text{e}\boldsymbol{F}^\text{p}$ plasticity
 #
-# $\newcommand{\bF}{\boldsymbol{F}}\newcommand{\bFe}{\boldsymbol{F}^\text{e}}\newcommand{\bFp}{\boldsymbol{F}^\text{p}}$ 
+# $\newcommand{\bF}{\boldsymbol{F}}\newcommand{\bFe}{\boldsymbol{F}^\text{e}}\newcommand{\bFp}{\boldsymbol{F}^\text{p}}$
 #
 # In this example, we show how to use a JAX implementation of finite-strain plasticity using the $\bFe\bFp$ formalism. The material behavior is described in the [`jaxmat` documentation](https://bleyerj.github.io/jaxmat/demos/quickstart/performance.html#material-model).
 #
-# The setup of the FEniCSx variational problem is quite similar to the MFront [](demos/mfront/hyperelasticity/hyperelasticity) demo.
+# The setup of the FEniCSx variational problem is quite similar to the MFront [](/../mfront/hyperelasticity/hyperelasticity.ipynb) demo.
 #
 # This demo runs in parallel. By default, JAX will allocate the full GPU memory for each process, which will fail when running with more than 1 MPI processor. Thus we first deallocate automatic GPU memory preallocation. The relevant packages are then imported.
 
@@ -30,7 +30,7 @@ import os
 from mpi4py import MPI
 
 # Avoid JAX preallocating all GPU memory
-os.environ["XLA_PYTHON_CLIENT_PREALLOCATE"] = "true"
+os.environ["XLA_PYTHON_CLIENT_PREALLOCATE"] = "false"
 
 # --- Import JAX AFTER setting env vars ---
 import jax
@@ -48,7 +48,7 @@ from dolfinx_materials.solvers import NonlinearMaterialProblem
 from dolfinx_materials.utils import nonsymmetric_tensor_to_vector
 
 import jaxmat.materials as jm
-from dolfinx_materials.material.jaxmat import JAXMaterial
+from dolfinx_materials.jaxmat import JAXMaterial
 
 comm = MPI.COMM_WORLD
 rank = comm.rank
@@ -232,7 +232,7 @@ for i, exx in enumerate(Exx[1:]):
     num_iter = problem.solver.getIterationNumber()
     assert converged > 0, f"Solver did not converge, got {converged}."
 
-    constitutive_update_time = timing("Constitutive update")[1].total_seconds()
+    constitutive_update_time = timing("SNES: constitutive update")[1].total_seconds()
     snes_time = timing("SNES: solve")[1].total_seconds()
 
     all_stats = None
@@ -268,10 +268,16 @@ vtx.close()
 import matplotlib.pyplot as plt
 
 num_iter = average_stats[:, 2]
-constitutive_time = np.diff(average_stats[:, 0],prepend=average_stats[0, 0])/num_iter
-solver_time = np.diff(average_stats[:, 1],prepend=average_stats[0, 1])/num_iter
+constitutive_time = np.diff(average_stats[:, 0], prepend=average_stats[0, 0]) / num_iter
+solver_time = np.diff(average_stats[:, 1], prepend=average_stats[0, 1]) / num_iter
 plt.bar(np.arange(N), constitutive_time, color="crimson", label="Constitutive update")
-plt.bar(np.arange(N), solver_time, bottom=constitutive_time, color='royalblue', label="Global solver")
+plt.bar(
+    np.arange(N),
+    solver_time,
+    bottom=constitutive_time,
+    color="royalblue",
+    label="Global solver",
+)
 plt.xlabel("Loading step")
 plt.ylabel("Wall clock time per global iteration [s]")
 plt.xlim(0, N)

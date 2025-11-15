@@ -44,7 +44,7 @@ from petsc4py import PETSc
 from dolfinx import fem, io, mesh, cpp
 from dolfinx.cpp.nls.petsc import NewtonSolver
 from dolfinx_materials.quadrature_map import QuadratureMap
-from dolfinx_materials.material.mfront import MFrontMaterial
+from dolfinx_materials.mfront import MFrontMaterial
 from dolfinx_materials.solvers import (
     BlockedNonlinearMaterialProblem,
 )

@@ -8,12 +8,12 @@ Interface to jaxmat behaviors.
 @Time    :   01/11/2025
 """
 from dolfinx.common import Timer
-from dolfinx_materials.material import Material
+from dolfinx_materials.generic import Material
 import jax
 import equinox as eqx
 import numpy as np
 from jaxmat.tensors import Tensor
-from jaxmat.materials import SmallStrainBehavior, FiniteStrainBehavior
+from jaxmat.materials.behavior import SmallStrainBehavior, FiniteStrainBehavior
 
 
 def get_shape(val):
@@ -212,7 +212,7 @@ class JAXMaterial(Material):
             jx_state = dolfinx_to_jaxmat_state(state, jx_state)
 
         if self._first_pass:
-            timer_name = "jaxmat: First pass"
+            timer_name = "jaxmat: First pass (includes jit compilation)"
             self._first_pass = False
         else:
             timer_name = "jaxmat: Constitutive update"

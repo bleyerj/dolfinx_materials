@@ -14,7 +14,7 @@ from dolfinx import fem, mesh
 from dolfinx.cpp.nls.petsc import NewtonSolver
 from dolfinx_materials.solvers import NonlinearMaterialProblem
 from dolfinx_materials.quadrature_map import QuadratureMap
-from dolfinx_materials.material.mfront import MFrontMaterial
+from dolfinx_materials.mfront import MFrontMaterial
 from dolfinx_materials.utils import (
     symmetric_tensor_to_vector,
 )
@@ -114,16 +114,33 @@ def test_multimaterials():
     Res = ufl.dot(sig, eps(v)) * qmap.dx
     Jac = qmap.derivative(Res, u, du)
 
-    problem = NonlinearMaterialProblem(qmap, Res, Jac, u, bcs)
+    petsc_options = {
+        "snes_type": "newtonls",
+        "snes_linesearch_type": "none",
+        "snes_atol": 1e-10,
+        "snes_rtol": 1e-10,
+        "ksp_type": "preonly",
+        "pc_type": "lu",
+        "pc_factor_mat_solver_type": "mumps",
+    }
 
+    problem = NonlinearMaterialProblem(
+        qmap,
+        Res,
+        u,
+        bcs=bcs,
+        J=Jac,
+        petsc_options_prefix="test_mono",
+        petsc_options=petsc_options,
+    )
     Sig = np.zeros((len(Exx), len(sig.x.array)))
     for i, exxi in enumerate(Exx[1:]):
         exx.value = exxi
         uD.interpolate(u_exp)
 
-        converged, it = problem.solve(newton)
+        problem.solve()
 
-        assert converged
+        assert problem.solver.getConvergedReason()
 
         Sig[i + 1, :] = sig.x.array
 
@@ -134,18 +151,22 @@ def test_multimaterials():
     Jac_r = qmap_r.derivative(Res_r, u, du)
 
     problem = NonlinearMaterialProblem(
-        [qmap_l, qmap_r], Res_l + Res_r, Jac_l + Jac_r, u, bcs
+        [qmap_l, qmap_r],
+        Res_l + Res_r,
+        u,
+        bcs=bcs,
+        J=Jac_l + Jac_r,
+        petsc_options_prefix="test_multi",
+        petsc_options=petsc_options,
     )
 
     for i, exxi in enumerate(Exx[1:]):
         exx.value = exxi
         uD.interpolate(u_exp)
 
-        converged, it = problem.solve(newton)
+        problem.solve()
 
-        assert converged
+        assert problem.solver.getConvergedReason()
 
         assert np.allclose(sig_l.x.array * sig_r.x.array, np.zeros_like(sig.x.array))
         assert np.allclose(Sig[i + 1, :], sig_l.x.array + sig_r.x.array)
-
-test_multimaterials()

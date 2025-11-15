@@ -134,8 +134,7 @@ def build_cell_to_dofs_map(V):
 
 
 def cell_to_dofs(cells, V):
-    with Timer("dx_mat:cell_to_dofs"):
-        dofmap = build_cell_to_dofs_map(V)
+    dofmap = build_cell_to_dofs_map(V)
     return dofmap[cells].ravel()
 
 
@@ -143,9 +142,10 @@ def update_vals(fun, array, cells=None):
     if cells is None:
         fun.x.array[:] = array.ravel()
     else:
-        bs = len(fun.x.array) // len(cells)
+        arr = array.ravel()
+        bs = len(arr) // len(cells)
         dofs = np.add.outer(cells * bs, np.arange(bs)).ravel()
-        fun.x.array[dofs] = array.ravel()
+        fun.x.array[dofs] = arr
 
 
 def symmetric_tensor_to_vector(T, T22=0):

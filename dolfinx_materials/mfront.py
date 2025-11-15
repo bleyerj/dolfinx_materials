@@ -9,9 +9,17 @@ Laboratoire Navier (ENPC,IFSTTAR,CNRS UMR 8205)
 """
 import mgis.behaviour as mgis_bv
 from dolfinx_materials import PerformanceWarning
-import subprocess
-import os
 import warnings
+import numpy as np
+
+
+def cast_scalar_array(x):
+    arr = np.asarray(x)
+
+    if arr.ndim == 0:  # zero-dimensional array, e.g. np.array(5)
+        return float(arr)  # or arr.item()
+    else:
+        return arr
 
 
 # we filter out brackets from MFront variable names as it messes up with FFCx
@@ -107,8 +115,15 @@ class MFrontMaterial:
 
     def update_material_property(self, name, values):
         for s in [self.data_manager.s0, self.data_manager.s1]:
-            if type(values) in [int, float]:
-                mgis_bv.setMaterialProperty(s, name, values)
+            if (
+                isinstance(values, (int, float, np.ndarray))
+                and np.asarray(values).ndim == 0
+            ):
+                mgis_bv.setMaterialProperty(
+                    s,
+                    name,
+                    cast_scalar_array(values),
+                )
             else:
                 mgis_bv.setMaterialProperty(
                     s,
@@ -118,8 +133,8 @@ class MFrontMaterial:
                 )
 
     def _set_external_state_variable(self, state, name, values):
-        if type(values) in [int, float]:
-            mgis_bv.setExternalStateVariable(state, name, values)
+        if isinstance(values, (int, float, np.ndarray)):
+            mgis_bv.setExternalStateVariable(state, name, cast_scalar_array(values))
         else:
             mgis_bv.setExternalStateVariable(
                 state,

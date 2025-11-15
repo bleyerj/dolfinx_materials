@@ -1,5 +1,5 @@
 import numpy as np
-from dolfinx_materials.material import Material
+from dolfinx_materials.generic import Material
 
 
 class LinearElasticIsotropic(Material):

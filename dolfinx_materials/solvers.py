@@ -119,6 +119,8 @@ class NonlinearMaterialProblem(NonlinearProblem):
         bcs : list
             list of fem.dirichletbc
         """
+        if J is None:
+            J = qmap.derivative(u, ufl.TrialFunction(u.function_space))
         super().__init__(
             F,
             u,
@@ -150,7 +152,7 @@ class NonlinearMaterialProblem(NonlinearProblem):
         )
 
     def _constitutive_update(self):
-        with Timer("Constitutive update"):
+        with Timer("SNES: constitutive update"):
             for qmap in self.quadrature_maps:
                 qmap.update()
 

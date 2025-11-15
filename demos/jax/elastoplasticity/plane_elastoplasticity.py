@@ -25,36 +25,36 @@
 # :width: 700px
 # ```
 #
-# We start by loading the relevant modules. In particular, we will make use of the `QuadratureMap` object available in `dolfinx_materials.quadrature_map` which handles the exchange of information between `FEniCSx` and custom material objects, here a `JAXMaterial`.
+# We start by loading the relevant modules. In particular, we will make use of the `QuadratureMap` object available in `dolfinx_materials.quadrature_map` which handles the exchange of information between `FEniCSx` and custom material objects, here a `JAXMaterial`. In this demo, we configure `jax` to run on the CPU.
 
 # %%
 import numpy as np
 import matplotlib.pyplot as plt
 import jax
-import jax.numpy as jnp
 
-# %%
 jax.config.update("jax_platform_name", "cpu")
 from mpi4py import MPI
 import ufl
 from dolfinx import io, fem
-from dolfinx_materials.material import JAXMaterial
+from dolfinx.common import timing, list_timings
+from dolfinx_materials.jaxmat import JAXMaterial
 from dolfinx_materials.quadrature_map import QuadratureMap
 from dolfinx_materials.solvers import NonlinearMaterialProblem
 
-# %%
 import jaxmat.materials as jm
 from generate_mesh import generate_perforated_plate
 
 # %% [markdown]
 # ## Material definition
 #
-# We first define our elastoplastic material using the `ElastoPlasticIsotropicHardening` class which represents a JAX von Mises elastoplastic material which takes as input arguments a JAX `LinearElasticIsotropic` material and a custom hardening yield stress function. Here we use a Voce-type exponential harding such that:
+# We first define our elastoplastic behavior using the `vonMisesIsotropicHardening` class which represents a `jaxmat` von Mises elastoplastic material which takes as input arguments a `jaxmat` `LinearElasticIsotropic` material and a nonlinear hardening yield stress function, here we use a Voce-type exponential harding (`VoceHardening`) such that:
 #
 # $$
 # \sigma_Y(p) = \sigma_0 + (\sigma_u-\sigma_0)\exp(-bp)
 # $$
 # where $\sigma_0$ and $\sigma_u$ are the initial and final yield stresses respectively and $b$ is a hardening parameter controlling the rate of convergence from $\sigma_0$ to $\sigma_u$ as a function of the cumulated plastic strain $p$.
+#
+# Finally, the resulting `jaxmat` behavior is converted to a `dolfinx`-compatible material via the `JAXMaterial` class.
 
 # %%
 E, nu = 70e3, 0.3
@@ -87,11 +87,10 @@ cell_markers = mesh_data.cell_tags
 facets = mesh_data.facet_tags
 domain = mesh_data.mesh
 
-# %%
 ds = ufl.Measure("ds", subdomain_data=facets)
 
 # %% [markdown]
-# We define the function space for the displacement $\boldsymbol{u}$, interpolated here with quadratic Lagrange elements. We apply prescribed Dirichlet boundary conditions on the bottom and top dofs. For the consitutive equation, we use a quadrature degree equal to twice the degree of the associated strain i.e. `2*(order-1)=2` here.
+# We define the function space for the displacement $\boldsymbol{u}$, interpolated here with quadratic Lagrange elements. We apply prescribed Dirichlet boundary conditions on the bottom and top dofs. For the constitutive equation, we use a quadrature degree equal to twice the degree of the associated strain i.e. `2*(order-1)=2` here.
 
 # %%
 order = 2
@@ -108,7 +107,8 @@ bcs = [fem.dirichletbc(uD_t, top_dofs), fem.dirichletbc(uD_b, bottom_dofs)]
 
 
 # %% [markdown]
-# Now, we define the `QuadratureMap` object associated with the elastoplastic `material`. We check that the material has only one gradient field, here the field `"Strain"` and one flux field, here the field `"Stress"`. We register the UFL object `strain(u)` corresponding to the vectorial Mandel representation of the strain components.
+# Now, we define the `QuadratureMap` object associated with the elastoplastic `material`. We check that the material has only one gradient field, here the field `"strain"` and one flux field, here the field `"stress"`. We register the UFL object `strain(u)` corresponding to the vectorial Mandel representation of the strain components.
+
 
 # %%
 def strain(u):
@@ -132,7 +132,7 @@ print("Fluxes", material.flux_names)
 qmap.register_gradient(material.gradient_names[0], strain(u))
 
 # %% [markdown]
-# We can then use the abstract flux field `"Stress"` to define the weak formulation in small strain conditions and use `qmap.derivative` to define the associated tangent form using AutoDiff.
+# We can then use the abstract flux field `"stress"` to define the weak formulation in small strain conditions and use `qmap.derivative` to define the associated tangent form using AutoDiff.
 
 # %%
 du = ufl.TrialFunction(V)
@@ -142,8 +142,16 @@ sig = qmap.fluxes["stress"]
 Res = ufl.dot(sig, strain(v)) * qmap.dx
 Jac = qmap.derivative(Res, u, du)
 
+# %% [markdown]
+# Below, we will measure various timings. As JIT compilation induces a compilation time overhead, we first call the `qmap.update()` method to run a dummy constitutive model evaluation which triggers JIT compilation. Note that this is not needed in general and done only for having an accurate timing measurement without including jitting cost.
+
+# %%
+qmap.update()
+
+# %% [markdown]
 # Next, the custom nonlinear problem is defined with the class `NonlinearMaterialProblem` as well as the corresponding Newton solver.
 
+# %%
 petsc_options = {
     "snes_type": "newtonls",
     "snes_linesearch_type": "none",
@@ -165,11 +173,11 @@ problem = NonlinearMaterialProblem(
     petsc_options=petsc_options,
 )
 
-
+# %% [markdown]
 # We then loop over a set of imposed vertical strains, apply the corresponding imposed displacement boundary condition on the top surface, solve the problem and then compute plastic and stress fields projected onto a DG space for visualization. Finally, we use the imposed displacement field to compute the associated resultant force in a consistent manner, see [](https://bleyerj.github.io/comet-fenicsx/tips/computing_reactions/computing_reactions.html) for more details.
 
 # %%
-out_file = "elastoplasticity.pvd"
+out_file = "results/elastoplasticity.pvd"
 vtk = io.VTKFile(domain.comm, out_file, "w")
 
 N = 15
@@ -196,9 +204,9 @@ for i, eyy in enumerate(Eyy[1:]):
 
     syy = stress.sub(1).collapse()
     syy.name = "stress"
-    # vtk.write_function(u, i + 1)
-    # vtk.write_function(p, i + 1)
-    # vtk.write_function(syy, i + 1)
+    vtk.write_function(u, i + 1)
+    vtk.write_function(p, i + 1)
+    vtk.write_function(syy, i + 1)
     nit[i + 1] = num_iter
 
 vtk.close()
@@ -216,7 +224,7 @@ plt.ylim(0, 400)
 plt.show()
 
 # %% [markdown]
-# We report below the evolution of the number of Newton iterations for each load step. We can see that in the first iterations, convergence is reached in 1 iteration only, corresponding to the elastic stage. The number of iterations then increases, the final stages corresponding to the plastic collapse needing around 10 iterations to converge.
+# We report below the evolution of the number of Newton iterations for each load step. We can see that in the first iterations, convergence is reached in 1 iteration only, corresponding to the elastic stage. The number of iterations then increases during the plastic stage.
 
 # %%
 plt.bar(np.arange(N + 1), nit, color="C2")
@@ -226,15 +234,16 @@ plt.xlim(0, N + 1)
 plt.show()
 
 # %% [markdown]
-# We list the total timings. We can check that the constitutive update represents only a small fraction of the total computing time which is mostly dominated by the cost of solving the global linear system at each global Newton iteration.
+# We measure below the time spent in the full SNES solve and the time spent only in the constitutive integration part. We can check that the latter represents only a small fraction of the total computing time which is mostly dominated by the cost of solving the global linear system at each global Newton iteration.
 
 # %%
-from dolfinx.common import timing
+snes_solve = timing("SNES: solve")[1].total_seconds()
+print(f"Total solving time {snes_solve:.2f}s")
+constitutive_update_time = timing("SNES: constitutive update")[1].total_seconds()
+print(f"Total time spent in constitutive update {constitutive_update_time:.2f}s")
+
+# %% [markdown]
+# We can list below the breakdown of the different timings.
 
 # %%
-constitutive_update_time = timing("Constitutive update")[2]
-linear_solve_time = timing("PETSc Krylov solver")[2]
-print(
-    f"Total time spent in constitutive update {constitutive_update_time/np.sum(nit):.2f}s"
-)
-print(f"Total time spent in global linear solver {linear_solve_time/np.sum(nit):.2f}s")
+list_timings(MPI.COMM_WORLD)
