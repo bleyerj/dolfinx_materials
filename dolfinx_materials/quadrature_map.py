@@ -155,9 +155,9 @@ class QuadratureMap:
     def update_material_properties(self):
         """Update material properties from provided values."""
         for name, mat_prop in self.material.material_properties.items():
-            try:
+            if isinstance(mat_prop, (int, float, np.ndarray)):
                 values = np.asarray(mat_prop)
-            except Exception:
+            else:
                 shape = mat_prop.ufl_shape
                 Vm = create_quadrature_functionspace(self.mesh, self.degree, shape)
                 mat_prop_fun = fem.Function(Vm, name=name)
@@ -264,7 +264,6 @@ class QuadratureMap:
             raise ValueError("Can only initialize a flux or internal state variables.")
         # if a value is provided we update the field with it
         values = get_vals(field)[self.dofs]
-        print(value, values, field_name)
         if value is not None:
             if isinstance(value, (int, float, np.ndarray)):
                 values = np.full_like(values, value)

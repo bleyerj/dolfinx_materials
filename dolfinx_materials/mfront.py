@@ -13,6 +13,15 @@ import warnings
 import numpy as np
 
 
+def cast_scalar_array(x):
+    arr = np.asarray(x)
+
+    if arr.ndim == 0:  # zero-dimensional array, e.g. np.array(5)
+        return float(arr)  # or arr.item()
+    else:
+        return arr
+
+
 # we filter out brackets from MFront variable names as it messes up with FFCx
 def filter_names(function):
     def new_function(self):
@@ -106,11 +115,14 @@ class MFrontMaterial:
 
     def update_material_property(self, name, values):
         for s in [self.data_manager.s0, self.data_manager.s1]:
-            if isinstance(values, (int, float, np.ndarray)):
+            if (
+                isinstance(values, (int, float, np.ndarray))
+                and np.asarray(values).ndim == 0
+            ):
                 mgis_bv.setMaterialProperty(
                     s,
                     name,
-                    float(values),
+                    cast_scalar_array(values),
                 )
             else:
                 mgis_bv.setMaterialProperty(
@@ -122,7 +134,7 @@ class MFrontMaterial:
 
     def _set_external_state_variable(self, state, name, values):
         if isinstance(values, (int, float, np.ndarray)):
-            mgis_bv.setExternalStateVariable(state, name, float(values))
+            mgis_bv.setExternalStateVariable(state, name, cast_scalar_array(values))
         else:
             mgis_bv.setExternalStateVariable(
                 state,
