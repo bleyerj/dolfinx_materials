@@ -20,7 +20,7 @@ We consider a geometry containing a matrix phase and inclusions. Both subdomains
 
 ```{image} multimaterials.gif
 :align: center
-:width: 500px
+:width: 600px
 ```
 
 ```{seealso}
@@ -33,11 +33,11 @@ This demo builds upon the [COMET cohesive zone models tutorials](https://bleyerj
 * {Download}`Python script<./multimaterials.py>`
 * {Download}`Jupyter notebook<./multimaterials.ipynb>`
 * {Download}`Utility module<./utils.py>`
-* {Download}`MFront file 1<./IsotropicPlasticMisesFlowVoce.mfront>``
+* {Download}`MFront file<./IsotropicPlasticHosfordFlowLinear.mfront>``
 ```
 ## Imports
 
-For this demo, you need both `mfront` and `jaxmat` installed. Utility functions regarding submeshes are implemented in the {Download}`utility module<./utils.py>`.
+For this demo, you need both `mfront` and `jaxmat` installed. Utility functions regarding submeshes are implemented in the {Download}`utils.py module<./utils.py>`.
 
 ```{code-cell} ipython3
 import jax
