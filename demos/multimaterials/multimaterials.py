@@ -1,6 +1,7 @@
 # ---
 # jupyter:
 #   jupytext:
+#     default_lexer: ipython3
 #     formats: md:myst,py:percent,ipynb
 #     text_representation:
 #       extension: .py
@@ -16,7 +17,7 @@
 # %% [markdown]
 # # Multiple behaviors on subdomains and interface conditions
 #
-# In this demo, we show how to define a problem containing different subdomains, potentially separated by an interface. In each subdomain, a different MFront behavior is called.
+# In this demo, we show how to define a problem containing different subdomains, potentially separated by an interface. In each subdomain, a different elastoplastic behavior is called. In particular, we use a MFront behavior in one domain and a JAX behavior in the second domain, while the interface behavior is written in pure UFL.
 #
 # We consider a geometry containing a matrix phase and inclusions. Both subdomains will be separated by an elastic interface behavior. In particular, the displacement field is continuous inside both phases, but discontinuous across the interface. To tackle this case, we will build a formulation involving the matrix and the inclusion submeshes with a standard Continuous Galerkin formulation in both of them. The two domains will then be tied by the formulation of an elastic behavior on the interface.
 #
@@ -35,10 +36,17 @@
 # * {Download}`Python script<./multimaterials.py>`
 # * {Download}`Jupyter notebook<./multimaterials.ipynb>`
 # * {Download}`Utility module<./utils.py>`
-# * {Download}`MFront file 1<./IsotropicPlasticMisesFlowVoce.mfront>` {Download}`MFront file 2<./IsotropicPlasticHosfordFlowLinear.mfront>`
+# * {Download}`MFront file 1<./IsotropicPlasticMisesFlowVoce.mfront>``
 # ```
+# ## Imports
+#
+# For this demo, you need both `mfront` and `jaxmat` installed. Utility functions regarding submeshes are implemented in the {Download}`utility module<./utils.py>`.
 
 # %%
+import jax
+
+jax.config.update("jax_platform_name", "cpu")
+import optimistix as optx
 import numpy as np
 from mpi4py import MPI
 import gmsh
@@ -47,9 +55,10 @@ from petsc4py import PETSc
 from dolfinx import fem, io, mesh, cpp
 from dolfinx_materials.quadrature_map import QuadratureMap
 from dolfinx_materials.mfront import MFrontMaterial
+from dolfinx_materials.jaxmat import JAXMaterial
 from dolfinx_materials.solvers import NonlinearMaterialProblem
+import jaxmat.materials as jm
 
-# %%
 from utils import (
     interface_int_entities,
     transfer_meshtags_to_submesh,
@@ -140,7 +149,7 @@ interface_mesh, interface_cell_map, _, _ = mesh.create_submesh(
 )
 
 # %% [markdown]
-# Now that we have defined submeshes, we need to transfer (facets) meshtags from those defined on the original domain to their subdomain counterpart. This function is available in {download}`./utils.py`.
+# Now that we have defined submeshes, we need to transfer (facets) meshtags from those defined on the original domain to their subdomain counterpart.
 
 # %%
 subdomain1_facet_tags, subdomain1_facet_map = transfer_meshtags_to_submesh(
@@ -151,12 +160,12 @@ subdomain2_facet_tags, subdomain2_facet_map = transfer_meshtags_to_submesh(
 )
 
 # %% [markdown]
-# # ### Entity map and integration measures
+# ## Entity map and integration measures
 #
-# Similarly to the previous CZM tour, *entity maps* must be defined to link integration of quantities defined on the subdomains.
+# Similarly to the previously mentioned CZM tour, *entity maps* must be defined to link integration of quantities defined on the subdomains.
 #
 # Before setting up the `entity_maps` list, we need a specific treatment for integrating terms on the interface.
-# The `interface_int_integration` manually defines the specific integration quantities on the interface. Besides, interface terms seen from one specific subdomain only exist on one side. The helper function defines a consistent ordering such that cells for which `marker[cell] != 0` correspond to the `"+"` restriction (inclusions here), and cells for which `marker[cell] == 0` correspond to the `"-"` restriction (matrix here).
+# The `interface_int_entities` manually defines the specific integration quantities on the interface. Besides, interface terms seen from one specific subdomain only exist on one side. The helper function defines a consistent ordering such that cells for which `marker[cell] != 0` correspond to the `"+"` restriction (inclusions here), and cells for which `marker[cell] == 0` correspond to the `"-"` restriction (matrix here).
 
 # %%
 subdomain1.topology.create_connectivity(fdim, tdim)
@@ -174,7 +183,6 @@ interface_entities = interface_int_entities(domain, interface_facets, marker)
 
 # %%
 entity_maps = [subdomain1_cell_map, subdomain2_cell_map, interface_cell_map]
-# -
 
 # %% [markdown]
 # We are now in position to define the various integration measures. The key point here is that the `dInt` interface measure is defined using prescribed integration entities which have been defined earlier. This is done by passing them to `subdomain_data` as follows.
@@ -224,38 +232,23 @@ du1, du2 = ufl.TrialFunctions(W)
 # %% [markdown]
 # ### Material laws on subdomains
 #
-# Second, we define two different `MFrontMaterial` on the two subdomains. In this example, we use two plastic behaviors with different yield surfaces and hardening laws. In the matrix, a von Mises criterion is used with an exponential Voce hardening whereas in the stiffer inclusions, we use a Hosford criterion and linear isotropic hardening.
+# Second, we define two different materials on the two subdomains. In this example, we use two plastic behaviors with different yield surfaces and hardening laws. In the matrix, a MFront behavior with a Hosford criterion and linear isotropic hardening is used whereas in the stiffer inclusions, we use a `jaxmat` von Mises criterion and Voce nonlinear isotropic hardening.
 #
 # ```{important}
-# It is perfectly possible to use behaviors with different internal state variables, and even with different gradients/fluxes etc. They are really independent from each other and will only be combined by summing their contribution to the resulting weak form. As a result, we could also combine a MFront implementation and a JAX implementation for instance.
+# It is perfectly possible to use behaviors with different internal state variables, and even with different gradients/fluxes etc. They are really independent from each other and will only be combined by summing their contribution to the resulting weak form.
 # ```
 
 # %%
 material1 = MFrontMaterial(
     "src/libBehaviour.so",
-    "IsotropicPlasticMisesFlowVoce",
+    "IsotropicPlasticHosfordFlowLinear",
     material_properties={
         "young_modulus": 70e3,
         "poisson_ratio": 0.3,
         "R0": 200.0,
-        "Rinf": 450,
-        "b": 100,
+        "hardening_slope": 10,
     },
 )
-# material2 = MFrontMaterial(
-#     "src/libBehaviour.so",
-#     "IsotropicPlasticHosfordFlowLinear",
-#     material_properties={
-#         "young_modulus": 90e3,
-#         "poisson_ratio": 0.25,
-#         "hardening_slope": 10.0,
-#         "R0": 200.0,
-#     },
-# )
-from dolfinx_materials.jaxmat import JAXMaterial
-import jax.numpy as jnp
-import jaxmat.materials as jm
-import equinox as eqx
 
 elasticity = jm.LinearElasticIsotropic(E=90e3, nu=0.25)
 yield_stress = jm.VoceHardening(sig0=200.0, b=10.0, sigu=300.0)
@@ -265,7 +258,7 @@ behavior = jm.vonMisesIsotropicHardening(
 material2 = JAXMaterial(behavior)
 
 # %% [markdown]
-# As a result, we define two different `QuadratureMap` defined on both subdomains. Note that the registered gradients involve the two different displacements `u1` and `u2` respectively. Note that when assembling mixed forms it is more convenient that integration measures are defined on the similar parent domain (the full mesh) and to pass the entity maps when compiling the forms. We thus redefine the `qmap` measures metadata accordingly. Finally, we define the contributions of both subdomains to the total residual form.
+# As a result, we define two different `QuadratureMap` defined on both subdomains. Note that the registered gradients involve the two different displacements `u1` and `u2` respectively. We simply need to pay attention to the names used by both implementations for gradients, fluxes and state variables. Note that when assembling mixed forms it is more convenient that integration measures are defined on the similar parent domain (the full mesh) and to pass the entity maps when compiling the forms. We thus redefine the `qmap` measures metadata accordingly. Finally, we define the contributions of both subdomains to the total residual form.
 
 # %%
 deg_quad = 1
@@ -297,7 +290,6 @@ Res_inclusions = ufl.dot(sig2, strain(v2)) * qmap2.dx(2)
 
 # %%
 def jump(u1, u2):
-    # As cell("+") are mapped to cell("-") when defining the cell maps, it does not really matter which side ("+"/"-") is used
     return u2("+") - u1("-")
 
 
@@ -308,7 +300,7 @@ Res_interface = K * ufl.dot(jump(u1, u2), jump(v1, v2)) * dInt
 # %% [markdown]
 # ### Total residual and jacobian
 #
-# Finally, the total residual is the sum of all three residuals. Since we work with a `MixedFunctionSpace`, we use `ufl.extract_blocks` to extract the blocks corresponding to both `u1` and `u2`. We then compute the corresponding Jacobian with both `qmap.derivative` in the corresponding trial functions. Both the residual and tangent blocked forms are compiled by passing the `entity_maps` dictionary to `fem.form`.
+# Finally, the total residual is the sum of all three residuals. Since we work with a `MixedFunctionSpace`, we use `ufl.extract_blocks` to extract the blocks corresponding to both `u1` and `u2`. We then compute the corresponding Jacobian with both `qmap.derivative` in the corresponding trial functions. Both the residual and tangent blocked forms are compiled by passing the `entity_maps` to `fem.form`.
 
 # %%
 Res = Res_matrix + Res_inclusions + Res_interface
@@ -393,11 +385,14 @@ for i, exx in enumerate(Exx[1:]):
 
     problem.solve()
     assert problem.solver.getConvergedReason()
+    print(
+        f"Increment {i} converged in {problem.solver.getIterationNumber()} iterations."
+    )
 
     qmap1.project_on(
         "EquivalentPlasticStrain", ("DG", 0), fun=p1, entity_maps=entity_maps
     )
-    p2 = qmap2.project_on("p", ("DG", 0), fun=p2, entity_maps=entity_maps)
+    qmap2.project_on("p", ("DG", 0), fun=p2, entity_maps=entity_maps)
 
     file1.write(i + 1)
     file2.write(i + 1)
@@ -420,10 +415,3 @@ plt.plot(Exx, Force, "-oC3")
 plt.xlabel("Imposed horizontal strain")
 plt.ylabel("Reaction force")
 plt.show()
-
-# %%
-from dolfinx.common import list_timings
-
-list_timings(MPI.COMM_WORLD)
-
-# %%
