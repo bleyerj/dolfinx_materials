@@ -13,6 +13,11 @@ from dolfinx.common import Timer
 from .quadrature_function import create_quadrature_function, QuadratureExpression
 from mpi4py import MPI
 
+try:
+    import jax
+except ImportError:
+    pass
+
 
 def my_dot(a, b):
     if a.ufl_shape == ():
@@ -155,7 +160,7 @@ class QuadratureMap:
     def update_material_properties(self):
         """Update material properties from provided values."""
         for name, mat_prop in self.material.material_properties.items():
-            if isinstance(mat_prop, (int, float, np.ndarray)):
+            if isinstance(mat_prop, (int, float, np.ndarray, jax.Array)):
                 values = np.asarray(mat_prop)
             else:
                 shape = mat_prop.ufl_shape
@@ -176,7 +181,7 @@ class QuadratureMap:
         ext_state_var : float, np.ndarray, UFL expression
             Constant or UFL expression to register, e.g. fem.Function(V, name="Temperature")
         """
-        if isinstance(ext_state_var, (int, float, np.ndarray)):
+        if isinstance(ext_state_var, (int, float, np.ndarray, jax.Array)):
             ext_state_var = fem.Constant(self.mesh, ext_state_var)
         state_var = QuadratureExpression(
             name,
@@ -265,7 +270,7 @@ class QuadratureMap:
         # if a value is provided we update the field with it
         values = get_vals(field)[self.dofs]
         if value is not None:
-            if isinstance(value, (int, float, np.ndarray)):
+            if isinstance(value, (int, float, np.ndarray, jax.Array)):
                 values = np.full_like(values, value)
                 update_vals(field, values, self.cells)
             else:
