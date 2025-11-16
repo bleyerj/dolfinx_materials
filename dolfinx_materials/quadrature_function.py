@@ -11,7 +11,7 @@ import ufl
 import numpy as np
 from dolfinx import fem
 from dolfinx.common import Timer
-from .utils import build_cell_to_dofs_map, create_quadrature_functionspace
+from .utils import _build_cell_to_dofs_map, create_quadrature_functionspace
 
 
 def create_quadrature_function(name, shape, mesh, quadrature_degree):
@@ -32,7 +32,7 @@ class QuadratureExpression:
         map_c = mesh.topology.index_map(mesh.topology.dim)
         num_cells = map_c.size_local + map_c.num_ghosts
         self._mesh_cells = np.arange(0, num_cells, dtype=np.int32)
-        self.total_dofs = build_cell_to_dofs_map(self._function_space)
+        self.total_dofs = _build_cell_to_dofs_map(self._function_space)
 
     def initialize_function(self, mesh, quadrature_degree):
         self.quadrature_degree = quadrature_degree

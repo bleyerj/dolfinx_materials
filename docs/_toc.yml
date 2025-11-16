@@ -31,6 +31,6 @@ parts:
     chapters:
       - file: cvxpy.md
       - file: demos/cvxpy/cvxpy_return_mapping.md
-  # - caption: API
-  #   chapters:
-  #     - file: api/api.rst
+  - caption: API
+    chapters:
+      - file: api/api.rst

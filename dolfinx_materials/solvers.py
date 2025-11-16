@@ -28,7 +28,7 @@ from dolfinx.mesh import EntityMap as _EntityMap
 from dolfinx_materials.quadrature_map import QuadratureMap
 
 
-def assemble_residual(
+def _assemble_residual(
     external_callback: Callable,
     u: _Function | Sequence[_Function],
     residual: Form | Sequence[Form],
@@ -103,7 +103,7 @@ class NonlinearMaterialProblem(NonlinearProblem):
 
     def __init__(
         self,
-        qmap: QuadratureMap,
+        qmap: QuadratureMap | Sequence[QuadratureMap],
         F: ufl.form.Form | Sequence[ufl.form.Form],
         u: _Function | Sequence[_Function],
         *,
@@ -120,16 +120,23 @@ class NonlinearMaterialProblem(NonlinearProblem):
         """
         Parameters
         ----------
-        qmap : dolfinx_materials.quadrature_map.QuadratureMap
-            The abstract QuadratureMap object
+        qmap : dolfinx_materials.quadrature_map.QuadratureMap, list
+            The abstract QuadratureMap object, can also be a list.
         F : Form
             Nonlinear residual form
-        J : Form
-            Associated Jacobian form
         u : fem.Function
             Unknown function representing the solution
+        J : Form
+            Associated Jacobian form
+        J : Form
+            Associated Jacobian form
         bcs : list
-            list of fem.dirichletbc
+            list of ``fem.dirichletbc``
+        entity_maps:
+            If any trial functions, test functions, or
+            coefficients in the form are not defined over the same mesh
+            as the integration domain, a corresponding :class:
+            `EntityMap<dolfinx.mesh.EntityMap>` must be provided.
         """
         if J is None:
             J = qmap.derivative(u, ufl.TrialFunction(u.function_space))
@@ -153,7 +160,7 @@ class NonlinearMaterialProblem(NonlinearProblem):
 
         self.solver.setFunction(
             partial(
-                assemble_residual,
+                _assemble_residual,
                 self._constitutive_update,
                 self.u,
                 self.F,

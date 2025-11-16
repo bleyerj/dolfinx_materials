@@ -6,8 +6,8 @@ from .utils import (
     project,
     create_quadrature_functionspace,
     to_mat,
-    get_vals,
-    update_vals,
+    _get_vals,
+    _update_vals,
 )
 from dolfinx.common import Timer
 from .quadrature_function import create_quadrature_function, QuadratureExpression
@@ -250,7 +250,7 @@ class QuadratureMap:
 
     def get_gradient_vals(self, gradient, cells):
         gradient.eval(cells)
-        return get_vals(gradient.function)[self.dofs, :]
+        return _get_vals(gradient.function)[self.dofs, :]
 
     def _cell_to_dofs(self, cells):
         num_qp = len(self.quadrature_points)
@@ -268,22 +268,22 @@ class QuadratureMap:
         else:
             raise ValueError("Can only initialize a flux or internal state variables.")
         # if a value is provided we update the field with it
-        values = get_vals(field)[self.dofs]
+        values = _get_vals(field)[self.dofs]
         if value is not None:
             if isinstance(value, (int, float, np.ndarray, jax.Array)):
                 values = np.full_like(values, value)
-                update_vals(field, values, self.cells)
+                _update_vals(field, values, self.cells)
             else:
                 self.eval_quadrature(value, field)
-                values = get_vals(field)[self.dofs]
+                values = _get_vals(field)[self.dofs]
         self.material.set_initial_state_dict({field_name: values})
 
     def initialize_state(self):
         state_flux = {
-            key: get_vals(field)[self.dofs] for key, field in self.fluxes.items()
+            key: _get_vals(field)[self.dofs] for key, field in self.fluxes.items()
         }
         state_isv = {
-            key: get_vals(field)[self.dofs]
+            key: _get_vals(field)[self.dofs]
             for key, field in self.internal_state_variables.items()
         }
         state_grad = {
@@ -331,20 +331,20 @@ class QuadratureMap:
         with Timer("dx_mat: Update values and tangent operators"):
             self.update_fluxes(flux_vals)
             self.update_internal_state_variables(isv_vals)
-            update_vals(self.jacobian_flatten, Ct_vals, self.cells)
+            _update_vals(self.jacobian_flatten, Ct_vals, self.cells)
 
     def update_fluxes(self, flux_vals):
         buff = 0
         for name, dim in self.material.fluxes.items():
             flux = self.fluxes[name]
-            update_vals(flux, flux_vals[:, buff : buff + dim], self.cells)
+            _update_vals(flux, flux_vals[:, buff : buff + dim], self.cells)
             buff += dim
 
     def update_internal_state_variables(self, isv_vals):
         buff = 0
         for name, dim in self.material.internal_state_variables.items():
             isv = self.internal_state_variables[name]
-            update_vals(isv, isv_vals[:, buff : buff + dim], self.cells)
+            _update_vals(isv, isv_vals[:, buff : buff + dim], self.cells)
             buff += dim
 
     def advance(self):
@@ -357,7 +357,7 @@ class QuadratureMap:
         # print(final_state)
         for key in self.variables.keys():
             if key not in self.gradients:  # update flux and isv but not gradients
-                update_vals(self.variables[key], final_state[key], self.cells)
+                _update_vals(self.variables[key], final_state[key], self.cells)
 
     def project_on(self, name, interp=None, entity_maps=None, fun=None):
         """

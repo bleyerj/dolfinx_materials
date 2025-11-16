@@ -60,6 +60,9 @@ sphinx:
   - 'sphinx.ext.napoleon'
   - 'sphinx.ext.viewcode'
   - 'sphinx.ext.autosummary'
+  - 'sphinx_math_dollar'
+  - 'docs.remove_docstring' # remove module docstring
+  
     
 parse:
   myst_enable_extensions:
