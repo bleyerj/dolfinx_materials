@@ -22,13 +22,15 @@ parts:
     chapters:
       - file: demos/mfront/finite_strain_elastoplasticity/finite_strain_elastoplasticity.md
       - file: demos/mfront/hyperelasticity/hyperelasticity.md
-      - file: demos/mfront/multimaterials/multimaterials.md
       - file: demos/mfront/heat_transfer/nonlinear_heat_transfer.md
       - file: demos/mfront/heat_transfer/phase_change.md
+  - caption: Multi-materials
+    chapters:
+      - file: demos/multimaterials/multimaterials.ipynb
   - caption: CVXPY demos
     chapters:
       - file: cvxpy.md
       - file: demos/cvxpy/cvxpy_return_mapping.md
-  # - caption: API
-  #   chapters:
-  #     - file: api/api.rst
+  - caption: API
+    chapters:
+      - file: api/api.rst

@@ -43,7 +43,7 @@ class DataManager:
         self.s1 = self.s0
 
 
-def hcat_mixed(arrays):
+def _hcat_mixed(arrays):
     """Horizontally concatenate arrays of shape (d,) or (d, n)."""
     prepped = []
     for a in arrays:
@@ -58,7 +58,7 @@ def hcat_mixed(arrays):
     return np.concatenate(prepped, axis=1)
 
 
-def merge_special_key(d: dict, special_key: str) -> dict:
+def _merge_special_key(d: dict, special_key: str) -> dict:
     """Flatten the contents of `special_key` into the top-level dict."""
     out = {}
     for k, v in d.items():
@@ -82,7 +82,7 @@ def jaxmat_to_dolfinx_state(jaxmat_state):
         flatten, jaxmat_state, is_leaf=lambda x: isinstance(x, Tensor)
     )
     #  merge `internal` sub dict with other entries
-    dolfinx_state = merge_special_key(dolfinx_state.__dict__, "internal")
+    dolfinx_state = _merge_special_key(dolfinx_state.__dict__, "internal")
     return dolfinx_state
 
 

@@ -4,3 +4,4 @@
    material
    quadrature_map
    solvers
+   utils

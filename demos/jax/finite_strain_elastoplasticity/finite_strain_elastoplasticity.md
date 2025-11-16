@@ -18,7 +18,7 @@ $\newcommand{\bF}{\boldsymbol{F}}\newcommand{\bFe}{\boldsymbol{F}^\text{e}}\newc
 
 In this example, we show how to use a JAX implementation of finite-strain plasticity using the $\bFe\bFp$ formalism. The material behavior is described in the [`jaxmat` documentation](https://bleyerj.github.io/jaxmat/demos/quickstart/performance.html#material-model).
 
-The setup of the FEniCSx variational problem is quite similar to the MFront [](/../mfront/hyperelasticity/hyperelasticity.ipynb) demo.
+The setup of the FEniCSx variational problem is quite similar to the MFront [](./../../mfront/finite_strain_elastoplasticity/finite_strain_elastoplasticity.ipynb) demo.
 
 This demo runs in parallel. By default, JAX will allocate the full GPU memory for each process, which will fail when running with more than 1 MPI processor. Thus we first deallocate automatic GPU memory preallocation. The relevant packages are then imported.
 

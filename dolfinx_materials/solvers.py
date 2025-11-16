@@ -13,6 +13,9 @@ from dolfinx.fem.petsc import (
     apply_lifting,
     set_bc,
     NonlinearProblem,
+    _assign_block_data,
+    _bcs_by_block,
+    _extract_function_spaces,
 )
 from dolfinx.fem.forms import Form
 from dolfinx.fem.function import Function as _Function
@@ -25,63 +28,72 @@ from dolfinx.mesh import EntityMap as _EntityMap
 from dolfinx_materials.quadrature_map import QuadratureMap
 
 
-def assemble_residual_with_callback(
-    u: _Function,
-    F: Form,
-    J: Form,
-    bcs: Sequence[DirichletBC],
+def _assemble_residual(
     external_callback: Callable,
-    snes: PETSc.SNES,
-    x: PETSc.Vec,
-    b: PETSc.Vec,
-) -> None:
-    """Assemble the residual at ``x`` into the vector ``b`` with a callback to
-    external functions.
+    u: _Function | Sequence[_Function],
+    residual: Form | Sequence[Form],
+    jacobian: Form | Sequence[Sequence[Form]],
+    bcs: Sequence[DirichletBC],
+    _snes: PETSc.SNES,  # type: ignore[name-defined]
+    x: PETSc.Vec,  # type: ignore[name-defined]
+    b: PETSc.Vec,  # type: ignore[name-defined]
+):
+    """Assemble the residual at ``x`` into the vector ``b``.
 
-    Prior to assembling the residual and after updating the solution ``u``, the
-    function ``external_callback`` with input arguments ``args_external_callback``
-    is called.
-
-    A function conforming to the interface expected by ``SNES.setFunction`` can
-    be created by fixing the first 5 arguments, e.g. (cf.
-    ``dolfinx.fem.petsc.assemble_residual``):
+    A function conforming to the interface expected by ``SNES.setFunction``
+    can be created by fixing the first four arguments, e.g.:
 
     Example::
 
         snes = PETSc.SNES().create(mesh.comm)
         assemble_residual = functools.partial(
-            dolfinx.fem.petsc.assemble_residual, u, F, J, bcs,
-            external_callback, args_external_callback)
+            dolfinx.fem.petsc.assemble_residual,
+            u, residual, jacobian, bcs)
         snes.setFunction(assemble_residual, b)
 
     Args:
-        u: Function tied to the solution vector within the residual and
+        u: Function(s) tied to the solution vector within the residual and
            Jacobian.
-        F: Form of the residual.
-        J: Form of the Jacobian.
+        residual: Form of the residual. It can be a sequence of forms.
+        jacobian: Form of the Jacobian. It can be a nested sequence of
+            forms.
         bcs: List of Dirichlet boundary conditions to lift the residual.
-        external_callback: A callback function to call prior to assembling the
-                           residual.
-        args_external_callback: Arguments to pass to the external callback
-                                function.
-        snes: The solver instance.
+        _snes: The solver instance.
         x: The vector containing the point to evaluate the residual at.
         b: Vector to assemble the residual into.
     """
-    x.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
-    x.copy(u.x.petsc_vec)
-    u.x.scatter_forward()
+    # Update input vector before assigning
+    dolfinx.la.petsc._ghost_update(x, PETSc.InsertMode.INSERT, PETSc.ScatterMode.FORWARD)  # type: ignore[attr-defined]
+
+    # Assign the input vector to the unknowns
+    assign(x, u)
 
     # Call external functions, e.g. evaluation of external operators
     external_callback()
 
-    with b.localForm() as b_local:
-        b_local.set(0.0)
-    assemble_vector(b, F)
+    # Assign block data if block assembly is requested
+    if isinstance(residual, Sequence) and b.getType() != PETSc.Vec.Type.NEST:  # type: ignore[attr-defined]
+        _assign_block_data(residual, b)
+        _assign_block_data(residual, x)
 
-    apply_lifting(b, [J], [bcs], [x], -1.0)
-    b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
-    set_bc(b, bcs, x, -1.0)
+    # Assemble the residual
+    dolfinx.la.petsc._zero_vector(b)
+    assemble_vector(b, residual)  # type: ignore[arg-type]
+
+    # Lift vector
+    if isinstance(jacobian, Sequence):
+        # Nest and blocked lifting
+        bcs1 = _bcs_by_block(_extract_function_spaces(jacobian, 1), bcs)  # type: ignore[arg-type]
+        apply_lifting(b, jacobian, bcs=bcs1, x0=x, alpha=-1.0)
+        dolfinx.la.petsc._ghost_update(b, PETSc.InsertMode.ADD, PETSc.ScatterMode.REVERSE)  # type: ignore[attr-defined]
+        bcs0 = _bcs_by_block(_extract_function_spaces(residual), bcs)  # type: ignore[arg-type]
+        set_bc(b, bcs0, x0=x, alpha=-1.0)
+    else:
+        # Single form lifting
+        apply_lifting(b, [jacobian], bcs=[bcs], x0=[x], alpha=-1.0)
+        dolfinx.la.petsc._ghost_update(b, PETSc.InsertMode.ADD, PETSc.ScatterMode.REVERSE)  # type: ignore[attr-defined]
+        set_bc(b, bcs, x0=x, alpha=-1.0)
+    dolfinx.la.petsc._ghost_update(b, PETSc.InsertMode.INSERT, PETSc.ScatterMode.FORWARD)  # type: ignore[attr-defined]
 
 
 class NonlinearMaterialProblem(NonlinearProblem):
@@ -91,7 +103,7 @@ class NonlinearMaterialProblem(NonlinearProblem):
 
     def __init__(
         self,
-        qmap: QuadratureMap,
+        qmap: QuadratureMap | Sequence[QuadratureMap],
         F: ufl.form.Form | Sequence[ufl.form.Form],
         u: _Function | Sequence[_Function],
         *,
@@ -108,16 +120,23 @@ class NonlinearMaterialProblem(NonlinearProblem):
         """
         Parameters
         ----------
-        qmap : dolfinx_materials.quadrature_map.QuadratureMap
-            The abstract QuadratureMap object
+        qmap : dolfinx_materials.quadrature_map.QuadratureMap, list
+            The abstract QuadratureMap object, can also be a list.
         F : Form
             Nonlinear residual form
-        J : Form
-            Associated Jacobian form
         u : fem.Function
             Unknown function representing the solution
+        J : Form
+            Associated Jacobian form
+        J : Form
+            Associated Jacobian form
         bcs : list
-            list of fem.dirichletbc
+            list of ``fem.dirichletbc``
+        entity_maps:
+            If any trial functions, test functions, or
+            coefficients in the form are not defined over the same mesh
+            as the integration domain, a corresponding :class:
+            `EntityMap<dolfinx.mesh.EntityMap>` must be provided.
         """
         if J is None:
             J = qmap.derivative(u, ufl.TrialFunction(u.function_space))
@@ -141,12 +160,12 @@ class NonlinearMaterialProblem(NonlinearProblem):
 
         self.solver.setFunction(
             partial(
-                assemble_residual_with_callback,
+                _assemble_residual,
+                self._constitutive_update,
                 self.u,
                 self.F,
                 self.J,
                 self.bcs,
-                self._constitutive_update,
             ),
             self.b,
         )

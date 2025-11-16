@@ -95,7 +95,7 @@ def create_quadrature_functionspace(domain, deg_quad, shape):
     return fem.functionspace(domain, We)
 
 
-def get_vals(fun):
+def _get_vals(fun):
     """Get values of a function in reshaped form N x dim where dim is the function space dimension"""
     if ufl.shape(fun) == ():
         dim = 1
@@ -104,10 +104,10 @@ def get_vals(fun):
     return fun.x.array.reshape((-1, dim))
 
 
-def build_cell_to_dofs_map(V):
+def _build_cell_to_dofs_map(V):
     """
-    Build a full cell->DOF map for function space V (including block size)
-    as a dense NumPy array of shape (num_cells, dofs_per_cell * block_size).
+    Build a full cell to DOF map for function space V (including block size)
+    as a dense NumPy array of shape ``(num_cells, dofs_per_cell * block_size)``.
     """
 
     # Raw cell->dofs array, shape [num_cells, dofs_per_cell]
@@ -133,12 +133,7 @@ def build_cell_to_dofs_map(V):
     return expanded
 
 
-def cell_to_dofs(cells, V):
-    dofmap = build_cell_to_dofs_map(V)
-    return dofmap[cells].ravel()
-
-
-def update_vals(fun, array, cells=None):
+def _update_vals(fun, array, cells=None):
     if cells is None:
         fun.x.array[:] = array.ravel()
     else:
@@ -218,11 +213,11 @@ def vector_to_tensor(T):
 
 
 def axi_grad(r, v):
-    """
-    Axisymmetric gradient in cylindrical coordinate (er, etheta, ez) for:
-    * a scalar v(r, z)
-    * a 2d-vectorial (vr(r,z), vz(r, z))
-    * a 3d-vectorial (vr(r,z), 0, vz(r, z))
+    r"""
+    Axisymmetric gradient in cylindrical coordinate $(\boldsymbol{e}_r, \boldsymbol{e}_{\theta}, \boldsymbol{e}_z)$ for:
+      -  a scalar $v(r, z)$
+      - a 2d-vector $(v_r(r,z), v_z(r, z))$
+      - a 3d-vector $(v_r(r,z), 0, v_z(r, z))$
     """
     if ufl.shape(v) == (3,):
         return ufl.as_matrix(
@@ -249,15 +244,15 @@ def grad_3d(u):
 
 
 def symmetric_gradient(g):
-    """Return symmetric gradient components in vector form"""
+    r"""Return symmetric gradient components in vector form."""
     return symmetric_tensor_to_vector(ufl.sym(g))
 
 
-def transformation_gradient(g, dim=3):
-    """Return transformation gradient components in vector form"""
+def deformation_gradient(g, dim=3):
+    r"""Return deformation gradient $\boldsymbol{F}$ components in vector form."""
     return nonsymmetric_tensor_to_vector(ufl.Identity(dim) + g, T22=1)
 
 
 def gradient(g):
-    """Return displacement gradient components in vector form"""
+    """Return displacement gradient components in vector form."""
     return nonsymmetric_tensor_to_vector(g)
