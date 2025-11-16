@@ -227,7 +227,7 @@ def right(x):
 
 Tl = 300.0
 Tr = 800.0
-T.vector.set(Tl)
+T.x.petsc_vec.set(Tl)
 
 left_dofs = fem.locate_dofs_geometrical(V, left)
 right_dofs = fem.locate_dofs_geometrical(V, right)
@@ -316,10 +316,10 @@ assert converged and it < 10
 We finally check that the thermal conductivity coefficient $k$, computed from the ratio between the horizontal heat flux and temperature gradient matches the temperature-dependent expressions implemented in the `MFront` behavior.
 
 ```{code-cell}
-j_vals = j.vector.array
-g_vals = qmap.gradients["TemperatureGradient"].function.vector.array
+j_vals = j.x.array
+g_vals = qmap.gradients["TemperatureGradient"].function.x.array
 k_gauss = -j_vals[::2] / g_vals[::2]
-T_gauss = qmap.external_state_variables["Temperature"].function.vector.array
+T_gauss = qmap.external_state_variables["Temperature"].function.x.array
 A = material.get_parameter("A")
 B = material.get_parameter("B")
 k_ref = 1 / (A + B * T_gauss)

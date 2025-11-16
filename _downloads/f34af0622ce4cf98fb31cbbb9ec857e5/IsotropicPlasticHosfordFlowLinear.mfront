@@ -1,0 +1,27 @@
+@DSL Implicit;
+@Behaviour IsotropicPlasticHosfordFlowLinear;
+
+@ModellingHypotheses{".+"};
+
+@Algorithm NewtonRaphson;
+@Epsilon 1.e-12;
+@Theta 1;
+
+@MaterialProperty stress young_modulus;
+@MaterialProperty real poisson_ratio;
+@MaterialProperty stress R0;
+@MaterialProperty stress hardening_slope;
+
+@Brick StandardElastoViscoPlasticity{
+  stress_potential : "Hooke" {
+    young_modulus : young_modulus, 
+    poisson_ratio : poisson_ratio
+  },
+  inelastic_flow : "Plastic" {
+    criterion : "Hosford" {a: 10},
+    isotropic_hardening : "Linear" {
+       R0 : R0,
+       H : hardening_slope
+    }  
+  }
+};

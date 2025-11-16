@@ -107,7 +107,7 @@ To summarize, the JAX implementation will involve the following steps:
 
 * computing an elastic stress predictor
 * checking wether the yield criterion is exceeded or not
-* setting $\Delta p,\Delta_\bepsp=0$ if it is not attained
+* setting $\Delta p,\Delta \bepsp=0$ if it is not attained
 * otherwise, solving a nonlinear equation for $\Delta p$ and setting $\Delta \bepsp$ accordingly
 
 One key challenge here is the use of conditionals to distinguish elastic and plastic evolutions. Moreover, we will use the `tangent_AD` decorator to compute the tangent operator via AutoDiff.
@@ -218,7 +218,7 @@ Simulating this behavior for a loading/unloading shear strain with an exponentia
 In this section, we expand upon the previous section by considering a generic yield surface $f(\bsig;p) = \bar{\sigma}(\bsig) - R(p)$ instead of the specific von Mises surface. Here $\bar{\sigma}$ represents a chosen equivalent stress. For simplicity, we still consider a generic isotropic hardening function $R(p)$ and associated (normal) plastic flow rule. In discretized form, the latter reads:
 
 $$
-\Delta \bepsp = \Delta p \dfrac{\partial \bsig}{\partial \bsig} = \Delta p \bn
+\Delta \bepsp = \Delta p \dfrac{\partial \bar{\sigma}}{\partial \bsig} = \Delta p \bn
 $$
 where $\bn$ denotes the normal vector to the yield surface. This vector depends on the final stress state $\bsig$. This is the main difference with the von Mises case. As a consequence, the return mapping can no longer be written explicitly in terms of the elastic predictor. We must formulate a nonlinear system of equations involving both the cumulated plastic strain $p$ and the plastic strain tensor $\bepsp$.
 
@@ -242,7 +242,7 @@ class GeneralIsotropicHardening(JAXMaterial):
         return {"p": 1}
 ```
 
-As before, we implement the constitutive update, decorated with `tangent_AD`. We first retrieve the relevant state variables and we compute the elastic predictor stress `sig_el`, the elastic equivalent stress $\bar(\bsig_\text{elas})$ and yield criterion predictor.
+As before, we implement the constitutive update, decorated with `tangent_AD`. We first retrieve the relevant state variables and we compute the elastic predictor stress `sig_el`, the elastic equivalent stress $\bar{\sigma}(\bsig_\text{elas})$ and yield criterion predictor.
 
 ```python
     @tangent_AD
@@ -308,7 +308,7 @@ Finally, the local Newton system is solved (the corresponding jacobian is comput
 
 ```python
         x0 = jnp.zeros((7,))
-        x, res = newton.solve(x0)
+        x = newton.solve(x0)
 
         depsp = x[:-1]
         dp = x[-1]

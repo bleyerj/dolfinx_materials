@@ -12,7 +12,7 @@ The constitutive update of complex behaviors requires:
 - computing the resulting stress
 - computing the corresponding consistent tangent operator
 
-A pure Python implementation generally prove extremely inefficient due to the loop over all quadrature points. To solve this issue, we will rely on the [JAX library](https://jax.readthedocs.io).
+A pure Python implementation generally prove extremely inefficient due to the loop over all quadrature points. To solve this issue, we will rely on the [`jaxmat` library](https://github.com/bleyerj/jaxmat) which implements constitutive models in [JAX](https://jax.readthedocs.io).
 
 JAX is a Python library for accelerated (GPU) array computation and program transformation, designed for high-performance numerical computing and large-scale machine learning {cite:p}`jax2018github`. Its key features of interest here involve:
 
@@ -21,88 +21,44 @@ JAX is a Python library for accelerated (GPU) array computation and program tran
 * [Just-In-Time compilation](https://jax.readthedocs.io/en/latest/jax-101/02-jitting.html) using `jax.jit`
 * [Automatic Vectorization](https://jax.readthedocs.io/en/latest/jax-101/03-vectorization.html) using `jax.vmap`
 
-All such features will prove extremely valuable when implementing optimized constitutive behavior models.
+All such features prove extremely valuable when implementing optimized constitutive behavior models.
 
-## A simple example
-
-A `JAXMaterial` inherits from the general `Material` class and requires the user to implement the `constitutive_update` taking as arguments, the current strain `eps`, the previous state as a dictionary `state` and the time step `dt`.
-
-As a simple example, here is an implementation of a linear elastic material:
-
-```python
-import jax.numpy as jnp
-from dolfinx_materials.material.jax import JAXMaterial
-from dolfinx_materials.material.jax.tensors import J, K
-
-
-class LinearElasticIsotropic(JAXMaterial):
-    def __init__(self, E, nu):
-        super().__init__()
-        E = 9 * kappa * mu / (3 * kappa + mu)
-        nu = (3 * kappa - 2 * mu) / (2 * (3 * kappa + mu))
-        self.C = 3 * self.kappa * J + 2 * self.mu * K
-
-    def constitutive_update(self, eps, state, dt):
-        sig = jnp.dot(self.C, eps)
-        state["Stress"] = sig
-        C_tang = self.C
-        return C_tang, state
+```{seealso}
+JAX-based behaviors in FEniCSx have been first proposed in [](https://bleyerj.github.io/comet-fenicsx/tours/nonlinear_problems/linear_viscoelasticity_jax/linear_viscoelasticity_jax.html) and in {cite:p}`latyshev2025expressing`.
 ```
 
-By default, the `state` dictionary contains two fields: `"Stress"` and `"Strain"` of dimension 6. For the sake of generality and simplicity, JAX behaviors are always written in a 3D setting, dimension `dim=6` corresponding to the 6 components of symmetric tensors.
+## `jaxmat`
 
-We import the spherical and deviatoric projector tensors `J` and `K` from the `tensors` helper module and define the elastic stiffness operator `C`, see also [](tensors_conventions). The `constitutive_update` method simply computes $\boldsymbol{\sigma}=\mathbb{C}:\boldsymbol{\varepsilon}$. It then updates the state `"Stress"` with the computed values and outputs the tangent operator which is here simply `C` and the state containing the new stress.
+[`jaxmat`](https://github.com/bleyerj/jaxmat) is a JAX-based material modeling library for implementing material constitutive models in a way that integrates seamlessly with modern machine learning frameworks and existing finite element software. 
 
-Note that we explicitly use `jnp.dot` to perform the operation.
+We give below a very brief overview of the features used within `dolfinx_materials`. For more details on `jaxmat` implementations of material models or their identification, we refer to the [`jaxmat` documentation](https://bleyerj.github.io/jaxmat/).
+
+## Composition and hybrid ML-components
+
+`jaxmat` behaviors are defined in a modular fashion by composing different sub-entities which are `equinox.Module`s. Formally, this means that constitutive models are treated exactly as ML models such as neural networks. As a result, `jaxmat` can also be used to train ML-based constitutive models, which can then be used within FEniCSx using `dolfinx_materials`.
+
+## Batching
+
+`jaxmat` tackles the definition of the material constitutive model and its solving methods at the quadrature point level. By leveraging `jax.vmap` we obtain a batched version of the constitutive update which allows to compute in parallel the current stress of many independent material points.
+
+The `JAXMaterial` class inherits from the general `Material` class and provides an interface between `dolfinx_materials` and any `jaxmat` behavior.
+
+Each `jaxmat` behavior implements a `constitutive_update` method taking as arguments, the current strain `eps`, the previous state `state` and the time step `dt` and returns the current stress `sig` and the new state `new_state` as follows:
+
+```python
+sig, new_state = material.constitutive_update(eps, state, dt)
+```
+where `material` is a PyTree which implicitly stores learned/calibrated material parameters.
 
 ## JIT and automatic vectorization
 
-To avoid a Python loop over all quadrature points, an alternative would be to rewrite the local constitutive function in vectorized form to work on a batch of strain-like quantities of shape `(dim, num_gauss)` where `num_gauss` is the total number of Gauss points. This strategy proves however error-prone and cumbersome in general, especially for complex behaviors incorporating logical branching such as plasticity.
+As stated before, a Python loop over all quadrature points is avoided by leveraging `jax.vmap` which automatically transforms a function into an efficient vectorized form using `jax.vmap`.
 
-Fortunately, JAX provides a way to automatically transform a function into an efficient vectorized form using `jax.vmap`. This means that any material behavior can be implemented as if working at a single material point.
-In `JAXMaterial`, the method `batched_constitutive_update` is defined which handles all Gauss points simultaneously, it is defined as:
-
-```python
-self.batched_constitutive_update = jax.jit(jax.vmap(self.constitutive_update, in_axes=(0, 0, None))
-```
-
-The `in_axes` argument specifies that the vectorization occurs over axis 0 of the first two arguments (`eps` and `state`) but not the last one (`dt` is not batched). Note that JAX manages to do vectorization on all entries of the `state` dictionary.
-
-Finally, the resulting function is also jitted using `jax.jit` for efficient compilation and execution by the XLA compiler.
+Moreover, the resulting function is also jitted using `jax.jit` for efficient compilation and execution by the XLA compiler. Note that jitting induces an extra compilation cost at the first execution of the constitutive integration.
 
 ## Automatic differentiation
 
-In the above elastic example, the computation of the tangent operator is trivial. However, in most cases, it can be much more involved. In such cases, the library offers a way to do the computation seamlessly using *Automatic Differentiation* (AD) via the `@tangent_AD` decorator. To do so, simply decorate the `constitutive_update` method and returns the stress $\boldsymbol{\sigma}$ `sig` and the state `state` as outputs. Under the hood, this decorator does the following transformation:
-
-```python
-constitutive_update_tangent = jax.jacfwd(constitutive_update, argnums=0, has_aux=True)
-```
-
-The implementation relies on the `jax.jacfwd` function which computes the jacobian of the `constitutive_update` function with respect to argument `argnums=0`, namely $\boldsymbol{\varepsilon}$ here. The computation is done using forward-mode automatic differentiation, although here the tangent operator is of square shape so that there should be no significant difference with backward-mode. Finally, `constitutive_update` also returns `state` as an auxiliary output. This is specified explicitly with `has_aux=True` which indicates that the function returns a pair where the first element is considered the output of the mathematical function to be differentiated and the second element is auxiliary data. In this case, the output of `jacfwd` is `(C_tang, state)`.
-
-The implementation of the `LinearElasticIsotropic` behavior would look in this case as:
-
-```python
-import jax.numpy as jnp
-from dolfinx_materials.material.jax import JAXMaterial, tangent_AD
-from dolfinx_materials.material.jax.tensors import J, K
-
-
-class LinearElasticIsotropic(JAXMaterial):
-    def __init__(self, E, nu):
-        super().__init__()
-        E = 9 * kappa * mu / (3 * kappa + mu)
-        nu = (3 * kappa - 2 * mu) / (2 * (3 * kappa + mu))
-        self.C = 3 * self.kappa * J + 2 * self.mu * K
-
-    @tangent_AD
-    def constitutive_update(self, eps, state, dt):
-        sig = jnp.dot(self.C, eps)
-        state["Stress"] = sig
-        return sig, state
-```
-
-For more details on the use of AD on JAX behaviors, see [](jax_elastoplasticity.md) and the [](demos/jax/elastoplasticity/plane_elastoplasticity.md) demo.
+Finally, we also leverage *Automatic Differentiation* (AD) to differentiate the `constitutive_update` method with respect to its first argument, namely the imposed strain $\boldsymbol{\varepsilon}$ using forward AD with `jax.jacfwd`.
 
 ## References
 

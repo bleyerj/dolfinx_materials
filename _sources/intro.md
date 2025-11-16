@@ -22,7 +22,7 @@ We list below a few resources upon which this library has been built:
 ```{admonition} Future changes
 :class: important
 
-Integration with the `dolfinx` library will probably be reimplemented in the next future based on the concept of `ExternalOperator`. For more details, see [External operators within FEniCSx/DOLFINx](https://a-latyshev.github.io/dolfinx-external-operator/).
+Integration with the `dolfinx` library will probably be reimplemented in the next future based on the concept of `ExternalOperator`. For more details, see [External operators within FEniCSx/DOLFINx](https://a-latyshev.github.io/dolfinx-external-operator/) and {cite:p}`latyshev2025expressing`.
 ```
 
 ## Nonlinear constitutive equations

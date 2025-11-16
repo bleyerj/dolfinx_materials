@@ -5,7 +5,7 @@ jupytext:
     extension: .md
     format_name: myst
     format_version: 0.13
-    jupytext_version: 1.16.1
+    jupytext_version: 1.18.1
 kernelspec:
   display_name: Python 3 (ipykernel)
   language: python
@@ -29,8 +29,9 @@ from cvxpy_materials import CvxPyMaterial
 import cvxpy as cp
 
 
-E, nu = 70e3, 0.
+E, nu = 70e3, 0.0
 elastic_model = LinearElasticIsotropic(E, nu)
+
 
 def plot_stress_paths(material, ax):
     eps = 1e-3
@@ -50,7 +51,7 @@ def plot_stress_paths(material, ax):
         Stress[i + 1, :, :] = sig
 
         material.data_manager.update()
-        
+
     cmap = plt.get_cmap("inferno")
     for j in range(Nbatch):
         points = Stress[:, [j], :2]
@@ -81,7 +82,7 @@ $$
 \end{align}
 $$
 
-To follow Disciplined Convex Programming rules of `cvxpy`, we finally write $\{\sigma\}^\text{T}\mathbf{Q}\{\sigma\} \leq \sigma_0**2$ which reads:
+To follow Disciplined Convex Programming rules of `cvxpy`, we finally write $\{\sigma\}^\text{T}\mathbf{Q}\{\sigma\} \leq \sigma_0^2$ which reads:
 
 ```{code-cell} ipython3
 class PlaneStressvonMises(CvxPyMaterial):
@@ -215,7 +216,14 @@ a = 10
 material = PlaneStressHosford(elastic_model, sig0=sig0, a=a)
 plot_stress_paths(material, ax)
 sig = np.array([[np.cos(t), np.sin(t)] for t in np.linspace(0, 2 * np.pi, 100)])
-sig_eq = ((np.abs(sig[:, 0]) ** a + np.abs(sig[:, 1]) ** a + np.abs(sig[:, 0] - sig[:, 1])**a)/2)**(1/a)
+sig_eq = (
+    (
+        np.abs(sig[:, 0]) ** a
+        + np.abs(sig[:, 1]) ** a
+        + np.abs(sig[:, 0] - sig[:, 1]) ** a
+    )
+    / 2
+) ** (1 / a)
 yield_surface = sig * sig0 / np.repeat(sig_eq[:, np.newaxis], 2, axis=1)
 ax.plot(yield_surface[:, 0], yield_surface[:, 1], "-k", linewidth=0.5)
 plt.xlabel(r"Stress $\sigma_{xx}$")

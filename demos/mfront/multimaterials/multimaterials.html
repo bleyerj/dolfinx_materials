@@ -1,0 +1,1167 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Multiple behaviors on subdomains and interface conditions &#8212; dolfinx_materials</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../../../_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+
+  
+  <link href="../../../_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/styles/sphinx-book-theme.css?v=eba8b062" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/togglebutton.css?v=13237357" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/mystnb.8ecb98da25f57f5357bf6f572d296f466b2cfe2517ffebfabe82451661e28f02.css?v=6644e6bb" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-thebe.css?v=4fa983c6" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="../../../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script src="../../../_static/documentation_options.js?v=9eb32ce0"></script>
+    <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../../_static/copybutton.js?v=f281be69"></script>
+    <script src="../../../_static/scripts/sphinx-book-theme.js?v=887ef09a"></script>
+    <script>let toggleHintShow = 'Click to show';</script>
+    <script>let toggleHintHide = 'Click to hide';</script>
+    <script>let toggleOpenOnPrint = 'true';</script>
+    <script src="../../../_static/togglebutton.js?v=4a39c7ea"></script>
+    <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
+    <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"; const thebe_selector = ".thebe,.cell"; const thebe_selector_input = "pre"; const thebe_selector_output = ".output, .cell_output"</script>
+    <script async="async" src="../../../_static/sphinx-thebe.js?v=c100c467"></script>
+    <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
+    <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"; const thebe_selector = ".thebe,.cell"; const thebe_selector_input = "pre"; const thebe_selector_output = ".output, .cell_output"</script>
+    <script>window.MathJax = {"options": {"processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'demos/mfront/multimaterials/multimaterials';</script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link rel="next" title="Stationary nonlinear heat transfer" href="../heat_transfer/nonlinear_heat_transfer.html" />
+    <link rel="prev" title="Hyperelastic heterogeneous material" href="../hyperelasticity/hyperelasticity.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search..."
+         aria-label="Search..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../../index.html">
+  
+  
+  
+  
+  
+  
+    <p class="title logo__title">dolfinx_materials</p>
+  
+</a></div>
+        <div class="sidebar-primary-item">
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script></div>
+        <div class="sidebar-primary-item"><nav class="bd-links bd-docs-nav" aria-label="Main">
+    <div class="bd-toc-item navbar-nav active">
+        
+        <ul class="nav bd-sidenav bd-sidenav__home-link">
+            <li class="toctree-l1">
+                <a class="reference internal" href="../../../index.html">
+                    Documentation
+                </a>
+            </li>
+        </ul>
+        <p aria-level="2" class="caption" role="heading"><span class="caption-text">User guide</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../../../intro.html">General framework</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../jax.html">JAX implementation of material behaviors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../mfront.html">Using MFront behaviors</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">JAX demos</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../../jax/elastoplasticity/plane_elastoplasticity.html">Finite-element simulations of JAX elastoplasticity</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../jax/finite_strain_elastoplasticity/finite_strain_elastoplasticity.html">Finite-strain <span class="math notranslate nohighlight">\(\boldsymbol{F}^\text{e}\boldsymbol{F}^\text{p}\)</span> plasticity</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">MFront demos</span></p>
+<ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../finite_strain_elastoplasticity/finite_strain_elastoplasticity.html">Finite-strain elastoplasticity within the logarithmic strain framework</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../hyperelasticity/hyperelasticity.html">Hyperelastic heterogeneous material</a></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">Multiple behaviors on subdomains and interface conditions</a></li>
+
+<li class="toctree-l1"><a class="reference internal" href="../heat_transfer/nonlinear_heat_transfer.html">Stationary nonlinear heat transfer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../heat_transfer/phase_change.html">Transient heat equation with phase change</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">CVXPY demos</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../../../cvxpy.html">Convex optimization-based constitutive update</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../cvxpy/cvxpy_return_mapping.html">Computing yield surfaces</a></li>
+</ul>
+
+    </div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+
+<div class="sbt-scroll-pixel-helper"></div>
+
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item"><button class="sidebar-toggle primary-toggle btn btn-sm" title="Toggle primary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <span class="fa-solid fa-bars"></span>
+</button></div>
+      
+    </div>
+  
+  
+    <div class="header-article-items__end">
+      
+        <div class="header-article-item">
+
+<div class="article-header-buttons">
+
+
+
+
+
+<div class="dropdown dropdown-source-buttons">
+  <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Source repositories">
+    <i class="fab fa-github"></i>
+  </button>
+  <ul class="dropdown-menu">
+      
+      
+      
+      <li><a href="https://github.com/bleyerj/dolfinx_materials" target="_blank"
+   class="btn btn-sm btn-source-repository-button dropdown-item"
+   title="Source repository"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fab fa-github"></i>
+  </span>
+<span class="btn__text-container">Repository</span>
+</a>
+</li>
+      
+      
+      
+      
+      <li><a href="https://github.com/bleyerj/dolfinx_materials/edit/main/demos/mfront/multimaterials/multimaterials.ipynb" target="_blank"
+   class="btn btn-sm btn-source-edit-button dropdown-item"
+   title="Suggest edit"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-pencil-alt"></i>
+  </span>
+<span class="btn__text-container">Suggest edit</span>
+</a>
+</li>
+      
+  </ul>
+</div>
+
+
+
+
+<button onclick="toggleFullScreen()"
+  class="btn btn-sm btn-fullscreen-button"
+  title="Fullscreen mode"
+  data-bs-placement="bottom" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-expand"></i>
+  </span>
+
+</button>
+
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script>
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm pst-navbar-icon search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+  </button>
+`);
+</script>
+<button class="sidebar-toggle secondary-toggle btn btn-sm" title="Toggle secondary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="fa-solid fa-list"></span>
+</button>
+</div></div>
+      
+    </div>
+  
+</div>
+</div>
+              
+              
+
+<div id="jb-print-docs-body" class="onlyprint">
+    <h1>Multiple behaviors on subdomains and interface conditions</h1>
+    <!-- Table of contents -->
+    <div id="print-main-content">
+        <div id="jb-print-toc">
+            
+            <div>
+                <h2> Contents </h2>
+            </div>
+            <nav aria-label="Page">
+                <ul class="visible nav section-nav flex-column">
+<li class="toc-h1 nav-item toc-entry"><a class="reference internal nav-link" href="#">Multiple behaviors on subdomains and interface conditions</a><ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#meshing-and-subdomains">Meshing and subdomains</a><ul class="visible nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#submesh-creation">Submesh creation</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toc-h1 nav-item toc-entry"><a class="reference internal nav-link" href="#entity-map-and-integration-measures">### Entity map and integration measures</a><ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#nonlinear-behavior-formulation">Nonlinear behavior formulation</a><ul class="visible nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#material-laws-on-subdomains">Material laws on subdomains</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#interface-behavior">Interface behavior</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#total-residual-and-jacobian">Total residual and jacobian</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#boundary-conditions">Boundary conditions</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#resolution">Resolution</a><ul class="visible nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#time-stepping">Time-stepping</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#results">Results</a></li>
+</ul>
+</li>
+</ul>
+
+            </nav>
+        </div>
+    </div>
+</div>
+
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section class="tex2jax_ignore mathjax_ignore" id="multiple-behaviors-on-subdomains-and-interface-conditions">
+<h1>Multiple behaviors on subdomains and interface conditions<a class="headerlink" href="#multiple-behaviors-on-subdomains-and-interface-conditions" title="Link to this heading">#</a></h1>
+<p>In this demo, we show how to define a problem containing different subdomains, potentially separated by an interface. In each subdomain, a different MFront behavior is called.</p>
+<p>We consider a geometry containing a matrix phase and inclusions. Both subdomains will be separated by an elastic interface behavior. In particular, the displacement field is continuous inside both phases, but discontinuous across the interface. To tackle this case, we will build a formulation involving the matrix and the inclusion submeshes with a standard Continuous Galerkin formulation in both of them. The two domains will then be tied by the formulation of an elastic behavior on the interface.</p>
+<a class="reference internal image-reference" href="../../../_images/multimaterials.gif"><img alt="../../../_images/multimaterials.gif" class="align-center" src="../../../_images/multimaterials.gif" style="width: 500px;" />
+</a>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>This demo builds upon the <a class="reference external" href="https://bleyerj.github.io/comet-fenicsx/tours/interfaces/contents.html">COMET cohesive zone models tutorials</a>. While the latter focus on a damageable interface behavior and elastic behavior inside the phases, the present demo assumes an elastic behavior of the interface and different nonlinear plastic behaviors inside both phases. Both approaches can obviously be combined together.</p>
+</div>
+<div class="download admonition">
+<p class="admonition-title">Download sources</p>
+<ul class="simple">
+<li><p><a class="reference download internal" download="" href="../../../_downloads/9ba91cb2e261afd14086015355afacee/multimaterials.py"><code class="xref download docutils literal notranslate"><span class="pre">Python</span> <span class="pre">script</span></code></a></p></li>
+<li><p><a class="reference download internal" download="" href="../../../_downloads/81896ce1991e1916cb03322bbcb6bee2/multimaterials.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Jupyter</span> <span class="pre">notebook</span></code></a></p></li>
+<li><p><a class="reference download internal" download="" href="../../../_downloads/952762f8d972821cbfd683a730976155/utils.py"><code class="xref download docutils literal notranslate"><span class="pre">Utility</span> <span class="pre">module</span></code></a></p></li>
+<li><p><a class="reference download internal" download="" href="../../../_downloads/a622c15783daed5361eb20ad278bf3bc/IsotropicPlasticMisesFlowVoce.mfront"><code class="xref download docutils literal notranslate"><span class="pre">MFront</span> <span class="pre">file</span> <span class="pre">1</span></code></a> <a class="reference download internal" download="" href="../../../_downloads/f34af0622ce4cf98fb31cbbb9ec857e5/IsotropicPlasticHosfordFlowLinear.mfront"><code class="xref download docutils literal notranslate"><span class="pre">MFront</span> <span class="pre">file</span> <span class="pre">2</span></code></a></p></li>
+</ul>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">mpi4py</span><span class="w"> </span><span class="kn">import</span> <span class="n">MPI</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">gmsh</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">ufl</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">petsc4py</span><span class="w"> </span><span class="kn">import</span> <span class="n">PETSc</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dolfinx</span><span class="w"> </span><span class="kn">import</span> <span class="n">fem</span><span class="p">,</span> <span class="n">io</span><span class="p">,</span> <span class="n">mesh</span><span class="p">,</span> <span class="n">cpp</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dolfinx_materials.quadrature_map</span><span class="w"> </span><span class="kn">import</span> <span class="n">QuadratureMap</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dolfinx_materials.mfront</span><span class="w"> </span><span class="kn">import</span> <span class="n">MFrontMaterial</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dolfinx_materials.solvers</span><span class="w"> </span><span class="kn">import</span> <span class="n">NonlinearMaterialProblem</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">utils</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">interface_int_entities</span><span class="p">,</span>
+    <span class="n">transfer_meshtags_to_submesh</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<section id="meshing-and-subdomains">
+<h2>Meshing and subdomains<a class="headerlink" href="#meshing-and-subdomains" title="Link to this heading">#</a></h2>
+<p>We first create the mesh and define the different tags for identifying physical domains and interfaces.</p>
+<div class="cell tag_hide-input docutils container">
+<details class="admonition hide above-input">
+<summary aria-label="Toggle hidden content">
+<p class="collapsed admonition-title">Show code cell source</p>
+<p class="expanded admonition-title">Hide code cell source</p>
+</summary>
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">create_matrix_inclusion_mesh</span><span class="p">(</span><span class="n">L</span><span class="p">,</span> <span class="n">W</span><span class="p">,</span> <span class="n">R</span><span class="p">,</span> <span class="n">hsize</span><span class="p">):</span>
+    <span class="n">comm</span> <span class="o">=</span> <span class="n">MPI</span><span class="o">.</span><span class="n">COMM_WORLD</span>
+
+    <span class="n">gmsh</span><span class="o">.</span><span class="n">initialize</span><span class="p">()</span>
+    <span class="n">gdim</span> <span class="o">=</span> <span class="mi">2</span>
+    <span class="n">model_rank</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">if</span> <span class="n">comm</span><span class="o">.</span><span class="n">rank</span> <span class="o">==</span> <span class="n">model_rank</span><span class="p">:</span>
+        <span class="n">gmsh</span><span class="o">.</span><span class="n">option</span><span class="o">.</span><span class="n">setNumber</span><span class="p">(</span><span class="s2">&quot;General.Terminal&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>  <span class="c1"># to disable meshing info</span>
+        <span class="n">gmsh</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="s2">&quot;Model&quot;</span><span class="p">)</span>
+
+        <span class="n">gmsh</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">occ</span><span class="o">.</span><span class="n">addRectangle</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="n">L</span><span class="p">,</span> <span class="n">W</span><span class="p">,</span> <span class="n">tag</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">gmsh</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">occ</span><span class="o">.</span><span class="n">addDisk</span><span class="p">(</span><span class="mf">0.4</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="n">R</span><span class="p">,</span> <span class="n">R</span><span class="p">,</span> <span class="n">tag</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">gmsh</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">occ</span><span class="o">.</span><span class="n">addDisk</span><span class="p">(</span><span class="mf">0.6</span><span class="p">,</span> <span class="n">W</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="n">R</span><span class="p">,</span> <span class="n">R</span><span class="p">,</span> <span class="n">tag</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+        <span class="n">gmsh</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">occ</span><span class="o">.</span><span class="n">fragment</span><span class="p">([(</span><span class="n">gdim</span><span class="p">,</span> <span class="mi">1</span><span class="p">)],</span> <span class="p">[(</span><span class="n">gdim</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="p">(</span><span class="n">gdim</span><span class="p">,</span> <span class="mi">3</span><span class="p">)],</span> <span class="n">removeObject</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="n">gmsh</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">occ</span><span class="o">.</span><span class="n">synchronize</span><span class="p">()</span>
+
+        <span class="n">gmsh</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">occ</span><span class="o">.</span><span class="n">remove</span><span class="p">([(</span><span class="n">gdim</span><span class="p">,</span> <span class="mi">5</span><span class="p">),</span> <span class="p">(</span><span class="n">gdim</span><span class="p">,</span> <span class="mi">4</span><span class="p">)],</span> <span class="n">recursive</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="n">gmsh</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">occ</span><span class="o">.</span><span class="n">synchronize</span><span class="p">()</span>
+
+        <span class="n">gmsh</span><span class="o">.</span><span class="n">option</span><span class="o">.</span><span class="n">setNumber</span><span class="p">(</span><span class="s2">&quot;Mesh.CharacteristicLengthMin&quot;</span><span class="p">,</span> <span class="n">hsize</span><span class="p">)</span>
+        <span class="n">gmsh</span><span class="o">.</span><span class="n">option</span><span class="o">.</span><span class="n">setNumber</span><span class="p">(</span><span class="s2">&quot;Mesh.CharacteristicLengthMax&quot;</span><span class="p">,</span> <span class="n">hsize</span><span class="p">)</span>
+
+        <span class="n">gmsh</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">addPhysicalGroup</span><span class="p">(</span><span class="n">gdim</span><span class="p">,</span> <span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="mi">1</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;Matrix&quot;</span><span class="p">)</span>
+        <span class="n">gmsh</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">addPhysicalGroup</span><span class="p">(</span><span class="n">gdim</span><span class="p">,</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="mi">2</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;Inclusions&quot;</span><span class="p">)</span>
+
+        <span class="n">gmsh</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">addPhysicalGroup</span><span class="p">(</span><span class="n">gdim</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="p">[</span><span class="mi">3</span><span class="p">],</span> <span class="mi">1</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;left&quot;</span><span class="p">)</span>
+        <span class="n">gmsh</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">addPhysicalGroup</span><span class="p">(</span><span class="n">gdim</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="p">[</span><span class="mi">7</span><span class="p">],</span> <span class="mi">2</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;right&quot;</span><span class="p">)</span>
+        <span class="n">gmsh</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">addPhysicalGroup</span><span class="p">(</span><span class="n">gdim</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">5</span><span class="p">],</span> <span class="mi">3</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;interface&quot;</span><span class="p">)</span>
+        <span class="n">gmsh</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">addPhysicalGroup</span><span class="p">(</span><span class="n">gdim</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">9</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">6</span><span class="p">],</span> <span class="mi">4</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;sides&quot;</span><span class="p">)</span>
+        <span class="n">gmsh</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">mesh</span><span class="o">.</span><span class="n">generate</span><span class="p">(</span><span class="n">gdim</span><span class="p">)</span>
+
+    <span class="n">partitioner</span> <span class="o">=</span> <span class="n">cpp</span><span class="o">.</span><span class="n">mesh</span><span class="o">.</span><span class="n">create_cell_partitioner</span><span class="p">(</span><span class="n">mesh</span><span class="o">.</span><span class="n">GhostMode</span><span class="o">.</span><span class="n">shared_facet</span><span class="p">)</span>
+    <span class="n">mesh_data</span> <span class="o">=</span> <span class="n">io</span><span class="o">.</span><span class="n">gmsh</span><span class="o">.</span><span class="n">model_to_mesh</span><span class="p">(</span>
+        <span class="n">gmsh</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">MPI</span><span class="o">.</span><span class="n">COMM_WORLD</span><span class="p">,</span> <span class="n">model_rank</span><span class="p">,</span> <span class="n">gdim</span><span class="o">=</span><span class="n">gdim</span><span class="p">,</span> <span class="n">partitioner</span><span class="o">=</span><span class="n">partitioner</span>
+    <span class="p">)</span>
+    <span class="n">cells</span> <span class="o">=</span> <span class="n">mesh_data</span><span class="o">.</span><span class="n">cell_tags</span>
+    <span class="n">facets</span> <span class="o">=</span> <span class="n">mesh_data</span><span class="o">.</span><span class="n">facet_tags</span>
+    <span class="n">domain</span> <span class="o">=</span> <span class="n">mesh_data</span><span class="o">.</span><span class="n">mesh</span>
+    <span class="n">gmsh</span><span class="o">.</span><span class="n">finalize</span><span class="p">()</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">domain</span><span class="p">,</span> <span class="n">cells</span><span class="p">,</span> <span class="n">facets</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</details>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">length</span> <span class="o">=</span> <span class="mf">1.0</span>
+<span class="n">width</span> <span class="o">=</span> <span class="mf">0.5</span>
+<span class="n">radius</span> <span class="o">=</span> <span class="mf">0.25</span>
+<span class="n">hsize</span> <span class="o">=</span> <span class="mf">0.01</span>
+<span class="n">domain</span><span class="p">,</span> <span class="n">cells</span><span class="p">,</span> <span class="n">facets</span> <span class="o">=</span> <span class="n">create_matrix_inclusion_mesh</span><span class="p">(</span><span class="n">length</span><span class="p">,</span> <span class="n">width</span><span class="p">,</span> <span class="n">radius</span><span class="p">,</span> <span class="n">hsize</span><span class="p">)</span>
+<span class="n">MATRIX_TAG</span> <span class="o">=</span> <span class="mi">1</span>  <span class="c1"># tag of matrix phase</span>
+<span class="n">INCL_TAG</span> <span class="o">=</span> <span class="mi">2</span>  <span class="c1"># tag of inclusion phase</span>
+<span class="n">INT_TAG</span> <span class="o">=</span> <span class="mi">3</span>  <span class="c1"># tag of interface</span>
+<span class="n">LEFT_TAG</span> <span class="o">=</span> <span class="mi">1</span>  <span class="c1"># tag of left boundary</span>
+<span class="n">RIGHT_TAG</span> <span class="o">=</span> <span class="mi">2</span>  <span class="c1"># tag of right boundary</span>
+<span class="n">interface_facets</span> <span class="o">=</span> <span class="n">facets</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="n">INT_TAG</span><span class="p">)</span>
+
+<span class="n">tdim</span> <span class="o">=</span> <span class="n">domain</span><span class="o">.</span><span class="n">topology</span><span class="o">.</span><span class="n">dim</span>
+<span class="n">fdim</span> <span class="o">=</span> <span class="n">tdim</span> <span class="o">-</span> <span class="mi">1</span>
+</pre></div>
+</div>
+</div>
+</div>
+<section id="submesh-creation">
+<h3>Submesh creation<a class="headerlink" href="#submesh-creation" title="Link to this heading">#</a></h3>
+<p>We define three submeshes: two submeshes (of codim. 0) corresponding to the matrix and inclusion 2D domains and one submesh (of codim. 1) corresponding to the facet restriction on the interface</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">subdomain2</span><span class="p">,</span> <span class="n">subdomain2_cell_map</span><span class="p">,</span> <span class="n">subdomain2_vertex_map</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">mesh</span><span class="o">.</span><span class="n">create_submesh</span><span class="p">(</span>
+    <span class="n">domain</span><span class="p">,</span> <span class="n">tdim</span><span class="p">,</span> <span class="n">cells</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="n">INCL_TAG</span><span class="p">)</span>
+<span class="p">)</span>
+<span class="n">subdomain1</span><span class="p">,</span> <span class="n">subdomain1_cell_map</span><span class="p">,</span> <span class="n">subdomain1_vertex_map</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">mesh</span><span class="o">.</span><span class="n">create_submesh</span><span class="p">(</span>
+    <span class="n">domain</span><span class="p">,</span> <span class="n">tdim</span><span class="p">,</span> <span class="n">cells</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="n">MATRIX_TAG</span><span class="p">)</span>
+<span class="p">)</span>
+<span class="n">interface_mesh</span><span class="p">,</span> <span class="n">interface_cell_map</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">mesh</span><span class="o">.</span><span class="n">create_submesh</span><span class="p">(</span>
+    <span class="n">domain</span><span class="p">,</span> <span class="n">fdim</span><span class="p">,</span> <span class="n">interface_facets</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<p>Now that we have defined submeshes, we need to transfer (facets) meshtags from those defined on the original domain to their subdomain counterpart. This function is available in <a class="reference download internal" download="" href="../../../_downloads/952762f8d972821cbfd683a730976155/utils.py"><code class="xref download docutils literal notranslate"><span class="pre">./utils.py</span></code></a>.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">subdomain1_facet_tags</span><span class="p">,</span> <span class="n">subdomain1_facet_map</span> <span class="o">=</span> <span class="n">transfer_meshtags_to_submesh</span><span class="p">(</span>
+    <span class="n">domain</span><span class="p">,</span> <span class="n">facets</span><span class="p">,</span> <span class="n">subdomain1</span><span class="p">,</span> <span class="n">subdomain1_vertex_map</span><span class="p">,</span> <span class="n">subdomain1_cell_map</span>
+<span class="p">)</span>
+<span class="n">subdomain2_facet_tags</span><span class="p">,</span> <span class="n">subdomain2_facet_map</span> <span class="o">=</span> <span class="n">transfer_meshtags_to_submesh</span><span class="p">(</span>
+    <span class="n">domain</span><span class="p">,</span> <span class="n">facets</span><span class="p">,</span> <span class="n">subdomain2</span><span class="p">,</span> <span class="n">subdomain2_vertex_map</span><span class="p">,</span> <span class="n">subdomain2_cell_map</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+</section>
+</section>
+<section class="tex2jax_ignore mathjax_ignore" id="entity-map-and-integration-measures">
+<h1>### Entity map and integration measures<a class="headerlink" href="#entity-map-and-integration-measures" title="Link to this heading">#</a></h1>
+<p>Similarly to the previous CZM tour, <em>entity maps</em> must be defined to link integration of quantities defined on the subdomains.</p>
+<p>Before setting up the <code class="docutils literal notranslate"><span class="pre">entity_maps</span></code> list, we need a specific treatment for integrating terms on the interface.
+The <code class="docutils literal notranslate"><span class="pre">interface_int_integration</span></code> manually defines the specific integration quantities on the interface. Besides, interface terms seen from one specific subdomain only exist on one side. The helper function defines a consistent ordering such that cells for which <code class="docutils literal notranslate"><span class="pre">marker[cell]</span> <span class="pre">!=</span> <span class="pre">0</span></code> correspond to the <code class="docutils literal notranslate"><span class="pre">&quot;+&quot;</span></code> restriction (inclusions here), and cells for which <code class="docutils literal notranslate"><span class="pre">marker[cell]</span> <span class="pre">==</span> <span class="pre">0</span></code> correspond to the <code class="docutils literal notranslate"><span class="pre">&quot;-&quot;</span></code> restriction (matrix here).</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">subdomain1</span><span class="o">.</span><span class="n">topology</span><span class="o">.</span><span class="n">create_connectivity</span><span class="p">(</span><span class="n">fdim</span><span class="p">,</span> <span class="n">tdim</span><span class="p">)</span>
+<span class="n">subdomain2</span><span class="o">.</span><span class="n">topology</span><span class="o">.</span><span class="n">create_connectivity</span><span class="p">(</span><span class="n">fdim</span><span class="p">,</span> <span class="n">tdim</span><span class="p">)</span>
+
+<span class="c1"># Create a marker to identify cells on the &quot;+&quot; side of the interface</span>
+<span class="n">cell_imap</span> <span class="o">=</span> <span class="n">domain</span><span class="o">.</span><span class="n">topology</span><span class="o">.</span><span class="n">index_map</span><span class="p">(</span><span class="n">tdim</span><span class="p">)</span>
+<span class="n">num_cells</span> <span class="o">=</span> <span class="n">cell_imap</span><span class="o">.</span><span class="n">size_local</span> <span class="o">+</span> <span class="n">cell_imap</span><span class="o">.</span><span class="n">num_ghosts</span>
+<span class="n">marker</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">num_cells</span><span class="p">)</span>
+<span class="n">marker</span><span class="p">[</span><span class="n">cells</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="n">INCL_TAG</span><span class="p">)]</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="n">interface_entities</span> <span class="o">=</span> <span class="n">interface_int_entities</span><span class="p">(</span><span class="n">domain</span><span class="p">,</span> <span class="n">interface_facets</span><span class="p">,</span> <span class="n">marker</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<p>Finally, the list of entity maps relating both subdomains and the interface to the parent mesh is defined.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">entity_maps</span> <span class="o">=</span> <span class="p">[</span><span class="n">subdomain1_cell_map</span><span class="p">,</span> <span class="n">subdomain2_cell_map</span><span class="p">,</span> <span class="n">interface_cell_map</span><span class="p">]</span>
+<span class="c1"># -</span>
+</pre></div>
+</div>
+</div>
+</div>
+<p>We are now in position to define the various integration measures. The key point here is that the <code class="docutils literal notranslate"><span class="pre">dInt</span></code> interface measure is defined using prescribed integration entities which have been defined earlier. This is done by passing them to <code class="docutils literal notranslate"><span class="pre">subdomain_data</span></code> as follows.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">dx</span> <span class="o">=</span> <span class="n">ufl</span><span class="o">.</span><span class="n">Measure</span><span class="p">(</span><span class="s2">&quot;dx&quot;</span><span class="p">,</span> <span class="n">domain</span><span class="o">=</span><span class="n">domain</span><span class="p">,</span> <span class="n">subdomain_data</span><span class="o">=</span><span class="n">cells</span><span class="p">)</span>
+<span class="n">ds</span> <span class="o">=</span> <span class="n">ufl</span><span class="o">.</span><span class="n">Measure</span><span class="p">(</span><span class="s2">&quot;ds&quot;</span><span class="p">,</span> <span class="n">domain</span><span class="o">=</span><span class="n">domain</span><span class="p">,</span> <span class="n">subdomain_data</span><span class="o">=</span><span class="n">facets</span><span class="p">)</span>
+<span class="n">dx_int</span> <span class="o">=</span> <span class="n">ufl</span><span class="o">.</span><span class="n">Measure</span><span class="p">(</span><span class="s2">&quot;dx&quot;</span><span class="p">,</span> <span class="n">domain</span><span class="o">=</span><span class="n">interface_mesh</span><span class="p">)</span>
+<span class="n">dInt</span> <span class="o">=</span> <span class="n">ufl</span><span class="o">.</span><span class="n">Measure</span><span class="p">(</span>
+    <span class="s2">&quot;dS&quot;</span><span class="p">,</span>
+    <span class="n">domain</span><span class="o">=</span><span class="n">domain</span><span class="p">,</span>
+    <span class="n">subdomain_data</span><span class="o">=</span><span class="p">[(</span><span class="n">INT_TAG</span><span class="p">,</span> <span class="n">interface_entities</span><span class="p">)],</span>
+    <span class="n">subdomain_id</span><span class="o">=</span><span class="n">INT_TAG</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<section id="nonlinear-behavior-formulation">
+<h2>Nonlinear behavior formulation<a class="headerlink" href="#nonlinear-behavior-formulation" title="Link to this heading">#</a></h2>
+<p><span class="math notranslate nohighlight">\(\newcommand{\bu}{\boldsymbol{u}}
+\newcommand{\bv}{\boldsymbol{v}}
+\newcommand{\jump}[1]{[\![#1]\!]}\)</span>
+We now define the relevant function spaces. As hinted before, the unknown <span class="math notranslate nohighlight">\(\bu\)</span> will consist of two displacements <span class="math notranslate nohighlight">\((\bu^{(1)},\bu^{(2)})\)</span> respectively belonging to a continuous Lagrange space defined on subdomains 1 and 2. We use a <code class="docutils literal notranslate"><span class="pre">MixedFunctionSpace</span></code> for this, meaning that we will end up with a block system.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">strain</span><span class="p">(</span><span class="n">u</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">ufl</span><span class="o">.</span><span class="n">as_vector</span><span class="p">(</span>
+        <span class="p">[</span>
+            <span class="n">u</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">dx</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span>
+            <span class="n">u</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">dx</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span>
+            <span class="mf">0.0</span><span class="p">,</span>
+            <span class="mi">1</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">u</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">dx</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">+</span> <span class="n">u</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">dx</span><span class="p">(</span><span class="mi">1</span><span class="p">)),</span>
+            <span class="mf">0.0</span><span class="p">,</span>
+            <span class="mf">0.0</span><span class="p">,</span>
+        <span class="p">]</span>
+    <span class="p">)</span>
+
+
+<span class="n">V1</span> <span class="o">=</span> <span class="n">fem</span><span class="o">.</span><span class="n">functionspace</span><span class="p">(</span><span class="n">subdomain1</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;Lagrange&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="p">(</span><span class="n">tdim</span><span class="p">,)))</span>
+<span class="n">V2</span> <span class="o">=</span> <span class="n">fem</span><span class="o">.</span><span class="n">functionspace</span><span class="p">(</span><span class="n">subdomain2</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;Lagrange&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="p">(</span><span class="n">tdim</span><span class="p">,)))</span>
+<span class="n">W</span> <span class="o">=</span> <span class="n">ufl</span><span class="o">.</span><span class="n">MixedFunctionSpace</span><span class="p">(</span><span class="n">V1</span><span class="p">,</span> <span class="n">V2</span><span class="p">)</span>
+<span class="n">u1</span> <span class="o">=</span> <span class="n">fem</span><span class="o">.</span><span class="n">Function</span><span class="p">(</span><span class="n">V1</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;Displacement&quot;</span><span class="p">)</span>
+<span class="n">u2</span> <span class="o">=</span> <span class="n">fem</span><span class="o">.</span><span class="n">Function</span><span class="p">(</span><span class="n">V2</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;Displacement&quot;</span><span class="p">)</span>
+<span class="n">v1</span><span class="p">,</span> <span class="n">v2</span> <span class="o">=</span> <span class="n">ufl</span><span class="o">.</span><span class="n">TestFunctions</span><span class="p">(</span><span class="n">W</span><span class="p">)</span>
+<span class="n">du1</span><span class="p">,</span> <span class="n">du2</span> <span class="o">=</span> <span class="n">ufl</span><span class="o">.</span><span class="n">TrialFunctions</span><span class="p">(</span><span class="n">W</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<section id="material-laws-on-subdomains">
+<h3>Material laws on subdomains<a class="headerlink" href="#material-laws-on-subdomains" title="Link to this heading">#</a></h3>
+<p>Second, we define two different <code class="docutils literal notranslate"><span class="pre">MFrontMaterial</span></code> on the two subdomains. In this example, we use two plastic behaviors with different yield surfaces and hardening laws. In the matrix, a von Mises criterion is used with an exponential Voce hardening whereas in the stiffer inclusions, we use a Hosford criterion and linear isotropic hardening.</p>
+<div class="admonition important">
+<p class="admonition-title">Important</p>
+<p>It is perfectly possible to use behaviors with different internal state variables, and even with different gradients/fluxes etc. They are really independent from each other and will only be combined by summing their contribution to the resulting weak form. As a result, we could also combine a MFront implementation and a JAX implementation for instance.</p>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">material1</span> <span class="o">=</span> <span class="n">MFrontMaterial</span><span class="p">(</span>
+    <span class="s2">&quot;src/libBehaviour.so&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;IsotropicPlasticMisesFlowVoce&quot;</span><span class="p">,</span>
+    <span class="n">material_properties</span><span class="o">=</span><span class="p">{</span>
+        <span class="s2">&quot;young_modulus&quot;</span><span class="p">:</span> <span class="mf">70e3</span><span class="p">,</span>
+        <span class="s2">&quot;poisson_ratio&quot;</span><span class="p">:</span> <span class="mf">0.3</span><span class="p">,</span>
+        <span class="s2">&quot;R0&quot;</span><span class="p">:</span> <span class="mf">200.0</span><span class="p">,</span>
+        <span class="s2">&quot;Rinf&quot;</span><span class="p">:</span> <span class="mi">450</span><span class="p">,</span>
+        <span class="s2">&quot;b&quot;</span><span class="p">:</span> <span class="mi">100</span><span class="p">,</span>
+    <span class="p">},</span>
+<span class="p">)</span>
+<span class="c1"># material2 = MFrontMaterial(</span>
+<span class="c1">#     &quot;src/libBehaviour.so&quot;,</span>
+<span class="c1">#     &quot;IsotropicPlasticHosfordFlowLinear&quot;,</span>
+<span class="c1">#     material_properties={</span>
+<span class="c1">#         &quot;young_modulus&quot;: 90e3,</span>
+<span class="c1">#         &quot;poisson_ratio&quot;: 0.25,</span>
+<span class="c1">#         &quot;hardening_slope&quot;: 10.0,</span>
+<span class="c1">#         &quot;R0&quot;: 200.0,</span>
+<span class="c1">#     },</span>
+<span class="c1"># )</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dolfinx_materials.jaxmat</span><span class="w"> </span><span class="kn">import</span> <span class="n">JAXMaterial</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">jax.numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">jnp</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">jaxmat.materials</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">jm</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">equinox</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">eqx</span>
+
+<span class="n">elasticity</span> <span class="o">=</span> <span class="n">jm</span><span class="o">.</span><span class="n">LinearElasticIsotropic</span><span class="p">(</span><span class="n">E</span><span class="o">=</span><span class="mf">90e3</span><span class="p">,</span> <span class="n">nu</span><span class="o">=</span><span class="mf">0.25</span><span class="p">)</span>
+<span class="n">yield_stress</span> <span class="o">=</span> <span class="n">jm</span><span class="o">.</span><span class="n">VoceHardening</span><span class="p">(</span><span class="n">sig0</span><span class="o">=</span><span class="mf">200.0</span><span class="p">,</span> <span class="n">b</span><span class="o">=</span><span class="mf">10.0</span><span class="p">,</span> <span class="n">sigu</span><span class="o">=</span><span class="mf">300.0</span><span class="p">)</span>
+<span class="n">behavior</span> <span class="o">=</span> <span class="n">jm</span><span class="o">.</span><span class="n">vonMisesIsotropicHardening</span><span class="p">(</span>
+    <span class="n">elasticity</span><span class="o">=</span><span class="n">elasticity</span><span class="p">,</span> <span class="n">yield_stress</span><span class="o">=</span><span class="n">yield_stress</span>
+<span class="p">)</span>
+<span class="n">material2</span> <span class="o">=</span> <span class="n">JAXMaterial</span><span class="p">(</span><span class="n">behavior</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<p>As a result, we define two different <code class="docutils literal notranslate"><span class="pre">QuadratureMap</span></code> defined on both subdomains. Note that the registered gradients involve the two different displacements <code class="docutils literal notranslate"><span class="pre">u1</span></code> and <code class="docutils literal notranslate"><span class="pre">u2</span></code> respectively. Note that when assembling mixed forms it is more convenient that integration measures are defined on the similar parent domain (the full mesh) and to pass the entity maps when compiling the forms. We thus redefine the <code class="docutils literal notranslate"><span class="pre">qmap</span></code> measures metadata accordingly. Finally, we define the contributions of both subdomains to the total residual form.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">deg_quad</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="n">qmap1</span> <span class="o">=</span> <span class="n">QuadratureMap</span><span class="p">(</span><span class="n">subdomain1</span><span class="p">,</span> <span class="n">deg_quad</span><span class="p">,</span> <span class="n">material1</span><span class="p">)</span>
+<span class="n">qmap1</span><span class="o">.</span><span class="n">register_gradient</span><span class="p">(</span><span class="s2">&quot;Strain&quot;</span><span class="p">,</span> <span class="n">strain</span><span class="p">(</span><span class="n">u1</span><span class="p">))</span>
+<span class="n">qmap1</span><span class="o">.</span><span class="n">dx</span> <span class="o">=</span> <span class="n">qmap1</span><span class="o">.</span><span class="n">dx</span><span class="p">(</span><span class="n">domain</span><span class="o">=</span><span class="n">domain</span><span class="p">,</span> <span class="n">subdomain_data</span><span class="o">=</span><span class="n">cells</span><span class="p">)</span>
+<span class="n">sig1</span> <span class="o">=</span> <span class="n">qmap1</span><span class="o">.</span><span class="n">fluxes</span><span class="p">[</span><span class="s2">&quot;Stress&quot;</span><span class="p">]</span>
+
+<span class="n">qmap2</span> <span class="o">=</span> <span class="n">QuadratureMap</span><span class="p">(</span><span class="n">subdomain2</span><span class="p">,</span> <span class="n">deg_quad</span><span class="p">,</span> <span class="n">material2</span><span class="p">)</span>
+<span class="n">qmap2</span><span class="o">.</span><span class="n">register_gradient</span><span class="p">(</span><span class="s2">&quot;strain&quot;</span><span class="p">,</span> <span class="n">strain</span><span class="p">(</span><span class="n">u2</span><span class="p">))</span>
+<span class="n">qmap2</span><span class="o">.</span><span class="n">dx</span> <span class="o">=</span> <span class="n">qmap2</span><span class="o">.</span><span class="n">dx</span><span class="p">(</span><span class="n">domain</span><span class="o">=</span><span class="n">domain</span><span class="p">,</span> <span class="n">subdomain_data</span><span class="o">=</span><span class="n">cells</span><span class="p">)</span>
+<span class="n">sig2</span> <span class="o">=</span> <span class="n">qmap2</span><span class="o">.</span><span class="n">fluxes</span><span class="p">[</span><span class="s2">&quot;stress&quot;</span><span class="p">]</span>
+
+<span class="n">Res_matrix</span> <span class="o">=</span> <span class="n">ufl</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">sig1</span><span class="p">,</span> <span class="n">strain</span><span class="p">(</span><span class="n">v1</span><span class="p">))</span> <span class="o">*</span> <span class="n">qmap1</span><span class="o">.</span><span class="n">dx</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">Res_inclusions</span> <span class="o">=</span> <span class="n">ufl</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">sig2</span><span class="p">,</span> <span class="n">strain</span><span class="p">(</span><span class="n">v2</span><span class="p">))</span> <span class="o">*</span> <span class="n">qmap2</span><span class="o">.</span><span class="n">dx</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="interface-behavior">
+<h3>Interface behavior<a class="headerlink" href="#interface-behavior" title="Link to this heading">#</a></h3>
+<p>As regards the elastic interface of stiffness <span class="math notranslate nohighlight">\(K\)</span>, its contribution to the total residual is given by:</p>
+<div class="math notranslate nohighlight">
+\[
+\int_{\Gamma} K\jump{\bu}\cdot\jump{\bv}\,\text{d}S
+\]</div>
+<p>where we define the displacement <span class="math notranslate nohighlight">\(\jump{\bu} = \bu^{(2)} - \bu^{(1)}\)</span> with <span class="math notranslate nohighlight">\((1)\)</span> denoting subdomain 1 (the matrix) and <span class="math notranslate nohighlight">\((2)\)</span> denoting subdomain 2 (the inclusions). Note that we need to restrict quantities since we work with a facet measure on the interface <span class="math notranslate nohighlight">\(\Gamma\)</span>. Although only one side exist for each subdomain, cells of a given subdomain from one side have been mapped to the other side, as discussed before. As a result, it does not really matter which side is used here. For consistency, we use the the <code class="docutils literal notranslate"><span class="pre">&quot;+&quot;</span></code> side for subdomain 1 and the <code class="docutils literal notranslate"><span class="pre">&quot;-&quot;</span></code> side for subdomain 2.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">jump</span><span class="p">(</span><span class="n">u1</span><span class="p">,</span> <span class="n">u2</span><span class="p">):</span>
+    <span class="c1"># As cell(&quot;+&quot;) are mapped to cell(&quot;-&quot;) when defining the cell maps, it does not really matter which side (&quot;+&quot;/&quot;-&quot;) is used</span>
+    <span class="k">return</span> <span class="n">u2</span><span class="p">(</span><span class="s2">&quot;+&quot;</span><span class="p">)</span> <span class="o">-</span> <span class="n">u1</span><span class="p">(</span><span class="s2">&quot;-&quot;</span><span class="p">)</span>
+
+
+<span class="n">K</span> <span class="o">=</span> <span class="n">fem</span><span class="o">.</span><span class="n">Constant</span><span class="p">(</span><span class="n">domain</span><span class="p">,</span> <span class="mf">1e5</span><span class="p">)</span>
+
+<span class="n">Res_interface</span> <span class="o">=</span> <span class="n">K</span> <span class="o">*</span> <span class="n">ufl</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">jump</span><span class="p">(</span><span class="n">u1</span><span class="p">,</span> <span class="n">u2</span><span class="p">),</span> <span class="n">jump</span><span class="p">(</span><span class="n">v1</span><span class="p">,</span> <span class="n">v2</span><span class="p">))</span> <span class="o">*</span> <span class="n">dInt</span>
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="total-residual-and-jacobian">
+<h3>Total residual and jacobian<a class="headerlink" href="#total-residual-and-jacobian" title="Link to this heading">#</a></h3>
+<p>Finally, the total residual is the sum of all three residuals. Since we work with a <code class="docutils literal notranslate"><span class="pre">MixedFunctionSpace</span></code>, we use <code class="docutils literal notranslate"><span class="pre">ufl.extract_blocks</span></code> to extract the blocks corresponding to both <code class="docutils literal notranslate"><span class="pre">u1</span></code> and <code class="docutils literal notranslate"><span class="pre">u2</span></code>. We then compute the corresponding Jacobian with both <code class="docutils literal notranslate"><span class="pre">qmap.derivative</span></code> in the corresponding trial functions. Both the residual and tangent blocked forms are compiled by passing the <code class="docutils literal notranslate"><span class="pre">entity_maps</span></code> dictionary to <code class="docutils literal notranslate"><span class="pre">fem.form</span></code>.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">Res</span> <span class="o">=</span> <span class="n">Res_matrix</span> <span class="o">+</span> <span class="n">Res_inclusions</span> <span class="o">+</span> <span class="n">Res_interface</span>
+<span class="n">Res_blocked_compiled</span> <span class="o">=</span> <span class="n">fem</span><span class="o">.</span><span class="n">form</span><span class="p">(</span><span class="n">ufl</span><span class="o">.</span><span class="n">extract_blocks</span><span class="p">(</span><span class="n">Res</span><span class="p">),</span> <span class="n">entity_maps</span><span class="o">=</span><span class="n">entity_maps</span><span class="p">)</span>
+
+<span class="n">Jac</span> <span class="o">=</span> <span class="n">qmap1</span><span class="o">.</span><span class="n">derivative</span><span class="p">(</span><span class="n">Res</span><span class="p">,</span> <span class="n">u1</span><span class="p">,</span> <span class="n">du1</span><span class="p">)</span> <span class="o">+</span> <span class="n">qmap2</span><span class="o">.</span><span class="n">derivative</span><span class="p">(</span><span class="n">Res</span><span class="p">,</span> <span class="n">u2</span><span class="p">,</span> <span class="n">du2</span><span class="p">)</span>
+<span class="n">Jac_blocked_compiled</span> <span class="o">=</span> <span class="n">fem</span><span class="o">.</span><span class="n">form</span><span class="p">(</span><span class="n">ufl</span><span class="o">.</span><span class="n">extract_blocks</span><span class="p">(</span><span class="n">Jac</span><span class="p">),</span> <span class="n">entity_maps</span><span class="o">=</span><span class="n">entity_maps</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="boundary-conditions">
+<h3>Boundary conditions<a class="headerlink" href="#boundary-conditions" title="Link to this heading">#</a></h3>
+<p>We apply an imposed displacement on the right boundary and fix the left boundary. We use a virtual test field with unit value on the boundary to compute the consistent reaction force, see <a class="reference external" href="https://bleyerj.github.io/comet-fenicsx/tips/computing_reactions/computing_reactions.html"></a>.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">Uimp</span> <span class="o">=</span> <span class="n">fem</span><span class="o">.</span><span class="n">Constant</span><span class="p">(</span><span class="n">domain</span><span class="p">,</span> <span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">))</span>
+<span class="n">left_dofs</span> <span class="o">=</span> <span class="n">fem</span><span class="o">.</span><span class="n">locate_dofs_topological</span><span class="p">(</span><span class="n">V1</span><span class="p">,</span> <span class="n">fdim</span><span class="p">,</span> <span class="n">subdomain1_facet_tags</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+<span class="n">right_dofs</span> <span class="o">=</span> <span class="n">fem</span><span class="o">.</span><span class="n">locate_dofs_topological</span><span class="p">(</span><span class="n">V1</span><span class="p">,</span> <span class="n">fdim</span><span class="p">,</span> <span class="n">subdomain1_facet_tags</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="mi">2</span><span class="p">))</span>
+
+<span class="n">bcs</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="n">fem</span><span class="o">.</span><span class="n">dirichletbc</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">tdim</span><span class="p">,)),</span> <span class="n">left_dofs</span><span class="p">,</span> <span class="n">V1</span><span class="p">),</span>
+    <span class="n">fem</span><span class="o">.</span><span class="n">dirichletbc</span><span class="p">(</span><span class="n">Uimp</span><span class="p">,</span> <span class="n">right_dofs</span><span class="p">,</span> <span class="n">V1</span><span class="p">),</span>
+<span class="p">]</span>
+
+<span class="n">v_reac1</span> <span class="o">=</span> <span class="n">fem</span><span class="o">.</span><span class="n">Function</span><span class="p">(</span><span class="n">V1</span><span class="p">)</span>
+<span class="n">fem</span><span class="o">.</span><span class="n">set_bc</span><span class="p">(</span><span class="n">v_reac1</span><span class="o">.</span><span class="n">x</span><span class="o">.</span><span class="n">array</span><span class="p">,</span> <span class="n">bcs</span><span class="p">)</span>
+<span class="n">v_reac2</span> <span class="o">=</span> <span class="n">fem</span><span class="o">.</span><span class="n">Function</span><span class="p">(</span><span class="n">V2</span><span class="p">)</span>
+<span class="n">fem</span><span class="o">.</span><span class="n">set_bc</span><span class="p">(</span><span class="n">v_reac2</span><span class="o">.</span><span class="n">x</span><span class="o">.</span><span class="n">array</span><span class="p">,</span> <span class="n">bcs</span><span class="p">)</span>
+<span class="n">virtual_work_form</span> <span class="o">=</span> <span class="n">fem</span><span class="o">.</span><span class="n">form</span><span class="p">(</span>
+    <span class="n">ufl</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">Res</span><span class="p">,</span> <span class="p">{</span><span class="n">v1</span><span class="p">:</span> <span class="n">v_reac1</span><span class="p">,</span> <span class="n">v2</span><span class="p">:</span> <span class="n">v_reac2</span><span class="p">}),</span>
+    <span class="n">entity_maps</span><span class="o">=</span><span class="n">entity_maps</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+</section>
+<section id="resolution">
+<h2>Resolution<a class="headerlink" href="#resolution" title="Link to this heading">#</a></h2>
+<p>Next, we define the <code class="docutils literal notranslate"><span class="pre">NonlinearMaterialProblem</span></code> by passing the list of <code class="docutils literal notranslate"><span class="pre">QuadratureMap</span></code> objects and a list of functions corresponding to the blocked solution. We then define a classical Newton solver.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">petsc_options</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;snes_type&quot;</span><span class="p">:</span> <span class="s2">&quot;newtonls&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;snes_linesearch_type&quot;</span><span class="p">:</span> <span class="s2">&quot;none&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;snes_atol&quot;</span><span class="p">:</span> <span class="mf">1e-6</span><span class="p">,</span>
+    <span class="s2">&quot;snes_rtol&quot;</span><span class="p">:</span> <span class="mf">1e-6</span><span class="p">,</span>
+    <span class="s2">&quot;snes_monitor&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="s2">&quot;ksp_type&quot;</span><span class="p">:</span> <span class="s2">&quot;preonly&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;pc_type&quot;</span><span class="p">:</span> <span class="s2">&quot;lu&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;pc_factor_mat_solver_type&quot;</span><span class="p">:</span> <span class="s2">&quot;mumps&quot;</span><span class="p">,</span>
+<span class="p">}</span>
+<span class="n">problem</span> <span class="o">=</span> <span class="n">NonlinearMaterialProblem</span><span class="p">(</span>
+    <span class="p">[</span><span class="n">qmap1</span><span class="p">,</span> <span class="n">qmap2</span><span class="p">],</span>
+    <span class="n">Res_blocked_compiled</span><span class="p">,</span>
+    <span class="p">[</span><span class="n">u1</span><span class="p">,</span> <span class="n">u2</span><span class="p">],</span>
+    <span class="n">bcs</span><span class="o">=</span><span class="n">bcs</span><span class="p">,</span>
+    <span class="n">J</span><span class="o">=</span><span class="n">Jac_blocked_compiled</span><span class="p">,</span>
+    <span class="n">petsc_options_prefix</span><span class="o">=</span><span class="s2">&quot;multimaterials&quot;</span><span class="p">,</span>
+    <span class="n">petsc_options</span><span class="o">=</span><span class="n">petsc_options</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<section id="time-stepping">
+<h3>Time-stepping<a class="headerlink" href="#time-stepping" title="Link to this heading">#</a></h3>
+<p>Upon time-stepping, post-processing steps are needed. Fields associated with both domains are stored in their own file, since they do not share the same mesh.</p>
+<div class="cell tag_hide-output docutils container">
+<div class="cell_input above-output-prompt docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">N</span> <span class="o">=</span> <span class="mi">30</span>
+<span class="n">Exx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mf">15e-3</span><span class="p">,</span> <span class="n">N</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+
+<span class="n">p1</span> <span class="o">=</span> <span class="n">qmap1</span><span class="o">.</span><span class="n">project_on</span><span class="p">(</span><span class="s2">&quot;EquivalentPlasticStrain&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;DG&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="n">entity_maps</span><span class="o">=</span><span class="n">entity_maps</span><span class="p">)</span>
+<span class="n">p1</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;PlasticStrain1&quot;</span>
+<span class="n">p2</span> <span class="o">=</span> <span class="n">qmap2</span><span class="o">.</span><span class="n">project_on</span><span class="p">(</span><span class="s2">&quot;p&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;DG&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="n">entity_maps</span><span class="o">=</span><span class="n">entity_maps</span><span class="p">)</span>
+<span class="n">p2</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;PlasticStrain2&quot;</span>
+
+
+<span class="n">file1</span> <span class="o">=</span> <span class="n">io</span><span class="o">.</span><span class="n">VTXWriter</span><span class="p">(</span><span class="n">domain</span><span class="o">.</span><span class="n">comm</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;multimaterials_domain1.bp&quot;</span><span class="p">,</span> <span class="n">output</span><span class="o">=</span><span class="p">[</span><span class="n">u1</span><span class="p">,</span> <span class="n">p1</span><span class="p">])</span>
+<span class="n">file1</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">file2</span> <span class="o">=</span> <span class="n">io</span><span class="o">.</span><span class="n">VTXWriter</span><span class="p">(</span><span class="n">domain</span><span class="o">.</span><span class="n">comm</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;multimaterials_domain2.bp&quot;</span><span class="p">,</span> <span class="n">output</span><span class="o">=</span><span class="p">[</span><span class="n">u2</span><span class="p">,</span> <span class="n">p2</span><span class="p">])</span>
+<span class="n">file2</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+<span class="n">Force</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">Exx</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">exx</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">Exx</span><span class="p">[</span><span class="mi">1</span><span class="p">:]):</span>
+    <span class="n">Uimp</span><span class="o">.</span><span class="n">value</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">exx</span> <span class="o">*</span> <span class="n">length</span>
+
+    <span class="n">problem</span><span class="o">.</span><span class="n">solve</span><span class="p">()</span>
+    <span class="k">assert</span> <span class="n">problem</span><span class="o">.</span><span class="n">solver</span><span class="o">.</span><span class="n">getConvergedReason</span><span class="p">()</span>
+
+    <span class="n">qmap1</span><span class="o">.</span><span class="n">project_on</span><span class="p">(</span>
+        <span class="s2">&quot;EquivalentPlasticStrain&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;DG&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="n">fun</span><span class="o">=</span><span class="n">p1</span><span class="p">,</span> <span class="n">entity_maps</span><span class="o">=</span><span class="n">entity_maps</span>
+    <span class="p">)</span>
+    <span class="n">p2</span> <span class="o">=</span> <span class="n">qmap2</span><span class="o">.</span><span class="n">project_on</span><span class="p">(</span><span class="s2">&quot;p&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;DG&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="n">fun</span><span class="o">=</span><span class="n">p2</span><span class="p">,</span> <span class="n">entity_maps</span><span class="o">=</span><span class="n">entity_maps</span><span class="p">)</span>
+
+    <span class="n">file1</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">file2</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+
+    <span class="n">Force</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">fem</span><span class="o">.</span><span class="n">assemble_scalar</span><span class="p">(</span><span class="n">virtual_work_form</span><span class="p">)</span>
+
+<span class="n">file1</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+<span class="n">file2</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<details class="admonition hide below-input">
+<summary aria-label="Toggle hidden content">
+<p class="collapsed admonition-title">Show code cell output</p>
+<p class="expanded admonition-title">Hide code cell output</p>
+</summary>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>  0 SNES Function norm 3.867274333583e+02
+  1 SNES Function norm 1.005746209512e-12
+  0 SNES Function norm 3.867274333583e+02
+  1 SNES Function norm 1.189211204526e-12
+  0 SNES Function norm 3.867274333583e+02
+  1 SNES Function norm 3.981596468693e-02
+  2 SNES Function norm 5.681238450381e-05
+  0 SNES Function norm 3.867274333583e+02
+  1 SNES Function norm 9.845569320718e-01
+  2 SNES Function norm 1.651058214371e-01
+  3 SNES Function norm 1.833559325982e-04
+  0 SNES Function norm 3.867274333583e+02
+  1 SNES Function norm 1.053551916398e+00
+  2 SNES Function norm 7.694065916748e-02
+  3 SNES Function norm 1.073253664261e-04
+  0 SNES Function norm 3.864197294879e+02
+  1 SNES Function norm 1.687112942657e+00
+  2 SNES Function norm 1.376231826681e-01
+  3 SNES Function norm 3.004634817381e-03
+  4 SNES Function norm 6.857250426989e-07
+  0 SNES Function norm 3.864291895754e+02
+  1 SNES Function norm 1.583055476541e+00
+  2 SNES Function norm 9.110746412048e-02
+  3 SNES Function norm 9.662646247803e-05
+  0 SNES Function norm 3.853581525499e+02
+  1 SNES Function norm 1.188749596217e+00
+  2 SNES Function norm 5.079381913853e-02
+  3 SNES Function norm 3.182563791748e-04
+  0 SNES Function norm 3.853901326615e+02
+  1 SNES Function norm 8.508426079848e-01
+  2 SNES Function norm 3.807159912479e-02
+  3 SNES Function norm 6.928270398820e-04
+  4 SNES Function norm 6.449796348614e-09
+  0 SNES Function norm 3.838855573658e+02
+  1 SNES Function norm 7.899140795869e-01
+  2 SNES Function norm 4.104745150924e-02
+  3 SNES Function norm 1.203666052173e-03
+  4 SNES Function norm 1.095087542645e-08
+  0 SNES Function norm 3.830126825534e+02
+  1 SNES Function norm 9.336826486203e-01
+  2 SNES Function norm 5.375074659453e-02
+  3 SNES Function norm 2.156459314747e-03
+  4 SNES Function norm 1.906999259933e-07
+  0 SNES Function norm 3.824006613340e+02
+  1 SNES Function norm 8.540658466848e-01
+  2 SNES Function norm 1.531104195309e-01
+  3 SNES Function norm 1.958237117684e-02
+  4 SNES Function norm 8.262920351463e-04
+  5 SNES Function norm 3.847598073743e-08
+  0 SNES Function norm 3.807501210169e+02
+  1 SNES Function norm 9.189290298069e-01
+  2 SNES Function norm 2.734430961515e-01
+  3 SNES Function norm 2.616186001505e-02
+  4 SNES Function norm 2.874283619265e-04
+  0 SNES Function norm 3.798392893693e+02
+  1 SNES Function norm 9.838900340398e-01
+  2 SNES Function norm 3.771399585701e-01
+  3 SNES Function norm 2.433394094275e-02
+  4 SNES Function norm 2.279724144094e-03
+  5 SNES Function norm 2.913253210949e-06
+  0 SNES Function norm 3.798370866716e+02
+  1 SNES Function norm 8.770812087902e-01
+  2 SNES Function norm 1.698540290392e-01
+  3 SNES Function norm 1.125202988652e-02
+  4 SNES Function norm 2.299741103284e-05
+  0 SNES Function norm 3.788007122753e+02
+  1 SNES Function norm 5.732221452477e-01
+  2 SNES Function norm 1.213679749249e-01
+  3 SNES Function norm 1.199739205369e-02
+  4 SNES Function norm 8.595881253712e-04
+  5 SNES Function norm 2.335478209335e-07
+  0 SNES Function norm 3.782155312025e+02
+  1 SNES Function norm 3.382886474988e-01
+  2 SNES Function norm 2.149919213349e-02
+  3 SNES Function norm 1.509437109401e-04
+  0 SNES Function norm 3.798395075740e+02
+  1 SNES Function norm 1.827608303168e-01
+  2 SNES Function norm 8.754165956163e-03
+  3 SNES Function norm 3.055275630195e-06
+  0 SNES Function norm 3.754663043210e+02
+  1 SNES Function norm 2.040321566546e-01
+  2 SNES Function norm 5.941471921213e-03
+  3 SNES Function norm 9.403364857050e-07
+  0 SNES Function norm 3.770711232687e+02
+  1 SNES Function norm 2.136834469647e-01
+  2 SNES Function norm 3.272800111472e-03
+  3 SNES Function norm 3.905557945631e-07
+  0 SNES Function norm 3.733855302080e+02
+  1 SNES Function norm 2.590791825795e-01
+  2 SNES Function norm 8.931933627167e-03
+  3 SNES Function norm 7.797731047869e-04
+  4 SNES Function norm 5.915535967848e-08
+  0 SNES Function norm 3.773453289937e+02
+  1 SNES Function norm 2.905870030645e-01
+  2 SNES Function norm 9.098327547219e-03
+  3 SNES Function norm 2.652417452184e-04
+  0 SNES Function norm 3.779858301872e+02
+  1 SNES Function norm 3.598588525748e-01
+  2 SNES Function norm 1.287718157325e-02
+  3 SNES Function norm 5.926720020827e-04
+  4 SNES Function norm 2.831704221295e-08
+  0 SNES Function norm 3.756493873059e+02
+  1 SNES Function norm 4.304512099681e-01
+  2 SNES Function norm 1.243927746493e-02
+  3 SNES Function norm 9.388526137411e-04
+  4 SNES Function norm 1.163431709799e-07
+  0 SNES Function norm 3.740628965011e+02
+  1 SNES Function norm 5.745356608210e-01
+  2 SNES Function norm 1.954004570309e-02
+  3 SNES Function norm 1.190764648799e-03
+  4 SNES Function norm 1.809412032636e-07
+  0 SNES Function norm 3.727900654255e+02
+  1 SNES Function norm 6.654251187205e-01
+  2 SNES Function norm 1.899975392644e-02
+  3 SNES Function norm 1.605454526783e-03
+  4 SNES Function norm 2.995326651347e-07
+  0 SNES Function norm 3.732828987153e+02
+  1 SNES Function norm 7.294504972272e-01
+  2 SNES Function norm 2.432722906888e-02
+  3 SNES Function norm 1.260510798628e-03
+  4 SNES Function norm 1.385737309713e-07
+  0 SNES Function norm 3.741318561485e+02
+  1 SNES Function norm 7.819510989738e-01
+  2 SNES Function norm 2.854137723521e-02
+  3 SNES Function norm 2.089094736119e-03
+  4 SNES Function norm 5.058334626362e-07
+  0 SNES Function norm 3.735107836250e+02
+  1 SNES Function norm 7.814730437699e-01
+  2 SNES Function norm 4.904847431846e-02
+  3 SNES Function norm 2.531536913597e-03
+  4 SNES Function norm 5.044370801247e-07
+  0 SNES Function norm 3.718241022232e+02
+  1 SNES Function norm 7.687199062570e-01
+  2 SNES Function norm 5.395979838802e-02
+  3 SNES Function norm 2.090751840782e-03
+  4 SNES Function norm 6.390606662573e-07
+</pre></div>
+</div>
+</div>
+</details>
+</div>
+</section>
+</section>
+<section id="results">
+<h2>Results<a class="headerlink" href="#results" title="Link to this heading">#</a></h2>
+<p>We finally plot the resulting load-displacement curve.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">Exx</span><span class="p">,</span> <span class="n">Force</span><span class="p">,</span> <span class="s2">&quot;-oC3&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">&quot;Imposed horizontal strain&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&quot;Reaction force&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<img alt="../../../_images/1747fe685822dafaca430cf0526e5773df18287148d8d35899931909e41e2411.png" src="../../../_images/1747fe685822dafaca430cf0526e5773df18287148d8d35899931909e41e2411.png" />
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">dolfinx.common</span><span class="w"> </span><span class="kn">import</span> <span class="n">list_timings</span>
+
+<span class="n">list_timings</span><span class="p">(</span><span class="n">MPI</span><span class="o">.</span><span class="n">COMM_WORLD</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>[MPI_MAX] Summary of timings (s)                                            |  reps       avg        tot
+--------------------------------------------------------------------------------------------------------
+Build dofmap data                                                           |    17  0.000182   0.003096
+Compute connectivity 1-0                                                    |     3  0.000045   0.000136
+Compute connectivity 2-0                                                    |     3  0.000021   0.000064
+Compute dof reordering map                                                  |    17  0.000019   0.000321
+Compute entities of dim = 1                                                 |     3  0.002103   0.006309
+Compute entity permutations                                                 |     3  0.000308   0.000925
+Compute graph partition (ParMETIS)                                          |     1  0.000004   0.000004
+Compute local part of mesh dual graph (mixed)                               |     2  0.003088   0.006176
+Compute local-to-local map                                                  |     1  0.000351   0.000351
+Compute non-local part of mesh dual graph                                   |     1  0.000013   0.000013
+Compute-local-to-global links for global/local adjacency list               |     1  0.000085   0.000085
+Distribute fixed-degree adjacency list to destination ranks                 |     1  0.000447   0.000447
+Distribute row-wise data (scalable)                                         |     1  0.000091   0.000091
+GPS: create_level_structure                                                 |     4  0.000139   0.000557
+Gibbs-Poole-Stockmeyer ordering                                             |     1  0.001133   0.001133
+Init dofmap from element dofmap                                             |    17  0.000115   0.001961
+SNES: constitutive update                                                   |   136  0.122995  16.727270
+SNES: solve                                                                 |    30  0.676097  20.282908
+SparsityPattern::finalize                                                   |    63  0.000245   0.015428
+Topology: create                                                            |     1  0.004006   0.004006
+Topology: determine shared index ownership                                  |     1  0.000079   0.000079
+Topology: determine vertex ownership groups (owned, undetermined, unowned)  |     1  0.000173   0.000173
+dx_mat: External state variable update                                      |   272  0.000002   0.000482
+dx_mat: Gradients evaluation                                                |   272  0.000567   0.154216
+dx_mat: Material integration                                                |   272  0.058420  15.890352
+dx_mat: Quadrature Expression evaluation                                    |   274  0.000301   0.082479
+dx_mat: Update values and tangent operators                                 |   272  0.002468   0.671293
+jaxmat: Constitutive update                                                 |   135  0.052274   7.057010
+jaxmat: First pass (includes jit compilation)                               |     1  6.813175   6.813175
+jaxmat: dolfinx to jaxmat conversion                                        |   136  0.002370   0.322384
+jaxmat: jaxmat to dolfinx conversion                                        |   136  0.003191   0.433976
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+</section>
+
+    <script type="text/x-thebe-config">
+    {
+        requestKernel: true,
+        binderOptions: {
+            repo: "binder-examples/jupyter-stacks-datascience",
+            ref: "master",
+        },
+        codeMirrorConfig: {
+            theme: "abcdef",
+            mode: "python"
+        },
+        kernelOptions: {
+            name: "python3",
+            path: "./demos/mfront/multimaterials"
+        },
+        predefinedOutput: true
+    }
+    </script>
+    <script>kernelName = 'python3'</script>
+
+                </article>
+              
+
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="../hyperelasticity/hyperelasticity.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Hyperelastic heterogeneous material</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="../heat_transfer/nonlinear_heat_transfer.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Stationary nonlinear heat transfer</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+  <div class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> Contents
+  </div>
+  <nav class="bd-toc-nav page-toc">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h1 nav-item toc-entry"><a class="reference internal nav-link" href="#">Multiple behaviors on subdomains and interface conditions</a><ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#meshing-and-subdomains">Meshing and subdomains</a><ul class="visible nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#submesh-creation">Submesh creation</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toc-h1 nav-item toc-entry"><a class="reference internal nav-link" href="#entity-map-and-integration-measures">### Entity map and integration measures</a><ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#nonlinear-behavior-formulation">Nonlinear behavior formulation</a><ul class="visible nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#material-laws-on-subdomains">Material laws on subdomains</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#interface-behavior">Interface behavior</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#total-residual-and-jacobian">Total residual and jacobian</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#boundary-conditions">Boundary conditions</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#resolution">Resolution</a><ul class="visible nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#time-stepping">Time-stepping</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#results">Results</a></li>
+</ul>
+</li>
+</ul>
+
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+<div class="bd-footer-content__inner container">
+  
+  <div class="footer-item">
+    
+<p class="component-author">
+By Jeremy Bleyer
+</p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+</div>
+          </footer>
+        
+
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../../../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="../../../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+  <footer class="bd-footer">
+  </footer>
+  </body>
+</html>

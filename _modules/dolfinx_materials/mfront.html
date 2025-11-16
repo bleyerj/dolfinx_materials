@@ -1,0 +1,732 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>dolfinx_materials.mfront &#8212; dolfinx_materials</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../../_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../../_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+
+  
+  <link href="../../_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../../_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../_static/styles/sphinx-book-theme.css?v=eba8b062" />
+    <link rel="stylesheet" type="text/css" href="../../_static/togglebutton.css?v=13237357" />
+    <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../_static/mystnb.8ecb98da25f57f5357bf6f572d296f466b2cfe2517ffebfabe82451661e28f02.css?v=6644e6bb" />
+    <link rel="stylesheet" type="text/css" href="../../_static/sphinx-thebe.css?v=4fa983c6" />
+    <link rel="stylesheet" type="text/css" href="../../_static/sphinx-design.min.css?v=95c83b7e" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="../../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script src="../../_static/documentation_options.js?v=9eb32ce0"></script>
+    <script src="../../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../_static/copybutton.js?v=f281be69"></script>
+    <script src="../../_static/scripts/sphinx-book-theme.js?v=887ef09a"></script>
+    <script>let toggleHintShow = 'Click to show';</script>
+    <script>let toggleHintHide = 'Click to hide';</script>
+    <script>let toggleOpenOnPrint = 'true';</script>
+    <script src="../../_static/togglebutton.js?v=4a39c7ea"></script>
+    <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
+    <script src="../../_static/design-tabs.js?v=f930bc37"></script>
+    <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"; const thebe_selector = ".thebe,.cell"; const thebe_selector_input = "pre"; const thebe_selector_output = ".output, .cell_output"</script>
+    <script async="async" src="../../_static/sphinx-thebe.js?v=c100c467"></script>
+    <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
+    <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"; const thebe_selector = ".thebe,.cell"; const thebe_selector_input = "pre"; const thebe_selector_output = ".output, .cell_output"</script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/dolfinx_materials/mfront';</script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search..."
+         aria-label="Search..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+        
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../index.html">
+  
+  
+  
+  
+  
+  
+    <p class="title logo__title">dolfinx_materials</p>
+  
+</a></div>
+        <div class="sidebar-primary-item">
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script></div>
+        <div class="sidebar-primary-item"><nav class="bd-links bd-docs-nav" aria-label="Main">
+    <div class="bd-toc-item navbar-nav active">
+        
+        <ul class="nav bd-sidenav bd-sidenav__home-link">
+            <li class="toctree-l1">
+                <a class="reference internal" href="../../index.html">
+                    Documentation
+                </a>
+            </li>
+        </ul>
+        <p aria-level="2" class="caption" role="heading"><span class="caption-text">User guide</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../../intro.html">General framework</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../jax.html">JAX implementation of material behaviors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../mfront.html">Using MFront behaviors</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">JAX demos</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../../demos/jax/elastoplasticity/plane_elastoplasticity.html">Finite-element simulations of JAX elastoplasticity</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../demos/jax/finite_strain_elastoplasticity/finite_strain_elastoplasticity.html">Finite-strain <span class="math notranslate nohighlight">\(\boldsymbol{F}^\text{e}\boldsymbol{F}^\text{p}\)</span> plasticity</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">MFront demos</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../../demos/mfront/finite_strain_elastoplasticity/finite_strain_elastoplasticity.html">Finite-strain elastoplasticity within the logarithmic strain framework</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../demos/mfront/hyperelasticity/hyperelasticity.html">Hyperelastic heterogeneous material</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../demos/mfront/heat_transfer/nonlinear_heat_transfer.html">Stationary nonlinear heat transfer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../demos/mfront/heat_transfer/phase_change.html">Transient heat equation with phase change</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Multi-materials</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../../demos/multimaterials/multimaterials.html">Multiple behaviors on subdomains and interface conditions</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">CVXPY demos</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../../cvxpy.html">Convex optimization-based constitutive update</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../demos/cvxpy/cvxpy_return_mapping.html">Computing yield surfaces</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">API</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../../api/material.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">material</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../api/quadrature_map.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">quadrature_map</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../api/solvers.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">solvers</span></code></a></li>
+</ul>
+
+    </div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+
+<div class="sbt-scroll-pixel-helper"></div>
+
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item"><button class="sidebar-toggle primary-toggle btn btn-sm" title="Toggle primary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <span class="fa-solid fa-bars"></span>
+</button></div>
+      
+    </div>
+  
+  
+    <div class="header-article-items__end">
+      
+        <div class="header-article-item">
+
+<div class="article-header-buttons">
+
+
+<a href="https://github.com/bleyerj/dolfinx_materials" target="_blank"
+   class="btn btn-sm btn-source-repository-button"
+   title="Source repository"
+   data-bs-placement="bottom" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fab fa-github"></i>
+  </span>
+
+</a>
+
+
+
+
+<button onclick="toggleFullScreen()"
+  class="btn btn-sm btn-fullscreen-button"
+  title="Fullscreen mode"
+  data-bs-placement="bottom" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-expand"></i>
+  </span>
+
+</button>
+
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script>
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm pst-navbar-icon search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+  </button>
+`);
+</script>
+
+</div></div>
+      
+    </div>
+  
+</div>
+</div>
+              
+              
+
+<div id="jb-print-docs-body" class="onlyprint">
+    <h1></h1>
+    <!-- Table of contents -->
+    <div id="print-main-content">
+        <div id="jb-print-toc">
+            
+        </div>
+    </div>
+</div>
+
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <h1>Source code for dolfinx_materials.mfront</h1><div class="highlight"><pre>
+<span></span><span class="ch">#!/usr/bin/env python3</span>
+<span class="c1"># -*- coding: utf-8 -*-</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">MFrontNonlinearMaterial class</span>
+
+<span class="sd">@author: Jeremy Bleyer, Ecole Nationale des Ponts et Chaussées,</span>
+<span class="sd">Laboratoire Navier (ENPC,IFSTTAR,CNRS UMR 8205)</span>
+<span class="sd">@email: jeremy.bleyer@enpc.fr</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">mgis.behaviour</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">mgis_bv</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dolfinx_materials</span><span class="w"> </span><span class="kn">import</span> <span class="n">PerformanceWarning</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">cast_scalar_array</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+    <span class="n">arr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">arr</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>  <span class="c1"># zero-dimensional array, e.g. np.array(5)</span>
+        <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">arr</span><span class="p">)</span>  <span class="c1"># or arr.item()</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">arr</span>
+
+
+<span class="c1"># we filter out brackets from MFront variable names as it messes up with FFCx</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">filter_names</span><span class="p">(</span><span class="n">function</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">new_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">f</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;[&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;]&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">function</span><span class="p">(</span><span class="bp">self</span><span class="p">)]</span>
+
+    <span class="k">return</span> <span class="n">new_function</span>
+
+
+<span class="n">mgis_hypothesis</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;plane_strain&quot;</span><span class="p">:</span> <span class="n">mgis_bv</span><span class="o">.</span><span class="n">Hypothesis</span><span class="o">.</span><span class="n">PlaneStrain</span><span class="p">,</span>
+    <span class="s2">&quot;plane_stress&quot;</span><span class="p">:</span> <span class="n">mgis_bv</span><span class="o">.</span><span class="n">Hypothesis</span><span class="o">.</span><span class="n">PlaneStress</span><span class="p">,</span>
+    <span class="s2">&quot;3d&quot;</span><span class="p">:</span> <span class="n">mgis_bv</span><span class="o">.</span><span class="n">Hypothesis</span><span class="o">.</span><span class="n">Tridimensional</span><span class="p">,</span>
+    <span class="s2">&quot;axisymmetric&quot;</span><span class="p">:</span> <span class="n">mgis_bv</span><span class="o">.</span><span class="n">Hypothesis</span><span class="o">.</span><span class="n">Axisymmetrical</span><span class="p">,</span>
+<span class="p">}</span>
+
+
+<div class="viewcode-block" id="MFrontMaterial">
+<a class="viewcode-back" href="../../api/material.html#dolfinx_materials.mfront.MFrontMaterial">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">MFrontMaterial</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This class is used to define a material behavior compiled with MFront.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">path</span><span class="p">,</span>
+        <span class="n">name</span><span class="p">,</span>
+        <span class="n">hypothesis</span><span class="o">=</span><span class="s2">&quot;3d&quot;</span><span class="p">,</span>
+        <span class="n">material_properties</span><span class="o">=</span><span class="p">{},</span>
+        <span class="n">parameters</span><span class="o">=</span><span class="p">{},</span>
+        <span class="n">rotation_matrix</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">dt</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Parameters</span>
+<span class="sd">        -----------</span>
+
+<span class="sd">        path : str</span>
+<span class="sd">            path to the &#39;libMaterial.so&#39; library containing MFront material laws</span>
+<span class="sd">        name : str</span>
+<span class="sd">            name of the MFront behaviour</span>
+<span class="sd">        hypothesis : {&quot;plane_strain&quot;, &quot;3d&quot;, &quot;axisymmetric&quot;}</span>
+<span class="sd">            modelling hypothesis</span>
+<span class="sd">        material_properties : dict</span>
+<span class="sd">            a dictionary of material properties. The dictionary keys must match</span>
+<span class="sd">            the material property names declared in the MFront behaviour. Values</span>
+<span class="sd">            can be constants or functions.</span>
+<span class="sd">        parameters : dict</span>
+<span class="sd">            a dictionary of parameters. The dictionary keys must match the parameter</span>
+<span class="sd">            names declared in the MFront behaviour. Values must be constants.</span>
+<span class="sd">        rotation_matrix : Numpy array, list of list, UFL matrix</span>
+<span class="sd">            a 3D rotation matrix expressing the rotation from the global</span>
+<span class="sd">            frame to the material frame. The matrix can be spatially variable</span>
+<span class="sd">            (either UFL matrix or function of Tensor type)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">path</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>  <span class="c1"># ensure string in case we use a PosixPath from pathlib</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
+        <span class="c1"># Defining the modelling hypothesis</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">hypothesis</span> <span class="o">=</span> <span class="n">mgis_hypothesis</span><span class="p">[</span><span class="n">hypothesis</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">material_properties</span> <span class="o">=</span> <span class="n">material_properties</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rotation_matrix</span> <span class="o">=</span> <span class="n">rotation_matrix</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">integration_type</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">mgis_bv</span><span class="o">.</span><span class="n">IntegrationType</span><span class="o">.</span><span class="n">IntegrationWithConsistentTangentOperator</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dt</span> <span class="o">=</span> <span class="n">dt</span>
+        <span class="c1"># Loading the behaviour</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">load_behaviour</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">update_parameters</span><span class="p">(</span><span class="n">parameters</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">load_behaviour</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">is_finite_strain</span> <span class="o">=</span> <span class="n">mgis_bv</span><span class="o">.</span><span class="n">isStandardFiniteStrainBehaviour</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_finite_strain</span><span class="p">:</span>
+            <span class="c1"># finite strain options</span>
+            <span class="n">bopts</span> <span class="o">=</span> <span class="n">mgis_bv</span><span class="o">.</span><span class="n">FiniteStrainBehaviourOptions</span><span class="p">()</span>
+            <span class="n">bopts</span><span class="o">.</span><span class="n">stress_measure</span> <span class="o">=</span> <span class="n">mgis_bv</span><span class="o">.</span><span class="n">FiniteStrainBehaviourOptionsStressMeasure</span><span class="o">.</span><span class="n">PK1</span>
+            <span class="n">bopts</span><span class="o">.</span><span class="n">tangent_operator</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="n">mgis_bv</span><span class="o">.</span><span class="n">FiniteStrainBehaviourOptionsTangentOperator</span><span class="o">.</span><span class="n">DPK1_DF</span>
+            <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">behaviour</span> <span class="o">=</span> <span class="n">mgis_bv</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">bopts</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">hypothesis</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">behaviour</span> <span class="o">=</span> <span class="n">mgis_bv</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">hypothesis</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">set_data_manager</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ngauss</span><span class="p">):</span>
+        <span class="c1"># Setting the material data manager</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data_manager</span> <span class="o">=</span> <span class="n">mgis_bv</span><span class="o">.</span><span class="n">MaterialDataManager</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">behaviour</span><span class="p">,</span> <span class="n">ngauss</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">initialize_external_state_variable</span><span class="p">(</span><span class="s2">&quot;Temperature&quot;</span><span class="p">,</span> <span class="mf">293.15</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">update_external_state_variable</span><span class="p">(</span><span class="s2">&quot;Temperature&quot;</span><span class="p">,</span> <span class="mf">293.15</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">update_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parameters</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">parameters</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">behaviour</span><span class="o">.</span><span class="n">setParameter</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">update_material_property</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">values</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">data_manager</span><span class="o">.</span><span class="n">s0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_manager</span><span class="o">.</span><span class="n">s1</span><span class="p">]:</span>
+            <span class="k">if</span> <span class="p">(</span>
+                <span class="nb">isinstance</span><span class="p">(</span><span class="n">values</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">))</span>
+                <span class="ow">and</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">values</span><span class="p">)</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">0</span>
+            <span class="p">):</span>
+                <span class="n">mgis_bv</span><span class="o">.</span><span class="n">setMaterialProperty</span><span class="p">(</span>
+                    <span class="n">s</span><span class="p">,</span>
+                    <span class="n">name</span><span class="p">,</span>
+                    <span class="n">cast_scalar_array</span><span class="p">(</span><span class="n">values</span><span class="p">),</span>
+                <span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">mgis_bv</span><span class="o">.</span><span class="n">setMaterialProperty</span><span class="p">(</span>
+                    <span class="n">s</span><span class="p">,</span>
+                    <span class="n">name</span><span class="p">,</span>
+                    <span class="n">values</span><span class="p">,</span>
+                    <span class="n">mgis_bv</span><span class="o">.</span><span class="n">MaterialStateManagerStorageMode</span><span class="o">.</span><span class="n">LocalStorage</span><span class="p">,</span>
+                <span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_set_external_state_variable</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">values</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">values</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)):</span>
+            <span class="n">mgis_bv</span><span class="o">.</span><span class="n">setExternalStateVariable</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">cast_scalar_array</span><span class="p">(</span><span class="n">values</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">mgis_bv</span><span class="o">.</span><span class="n">setExternalStateVariable</span><span class="p">(</span>
+                <span class="n">state</span><span class="p">,</span>
+                <span class="n">name</span><span class="p">,</span>
+                <span class="n">values</span><span class="p">,</span>
+                <span class="n">mgis_bv</span><span class="o">.</span><span class="n">MaterialStateManagerStorageMode</span><span class="o">.</span><span class="n">LocalStorage</span><span class="p">,</span>
+            <span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">update_external_state_variable</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">values</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_set_external_state_variable</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data_manager</span><span class="o">.</span><span class="n">s1</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">values</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">initialize_external_state_variable</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">values</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_set_external_state_variable</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data_manager</span><span class="o">.</span><span class="n">s0</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">values</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_parameter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">behaviour</span><span class="o">.</span><span class="n">getParameterDefaultValue</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">parameter_names</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">behaviour</span><span class="o">.</span><span class="n">params</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">material_property_names</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">svar</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">svar</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">behaviour</span><span class="o">.</span><span class="n">mps</span><span class="p">]</span>
+
+    <span class="nd">@property</span>
+    <span class="nd">@filter_names</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">external_state_variable_names</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">svar</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">svar</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">behaviour</span><span class="o">.</span><span class="n">external_state_variables</span><span class="p">]</span>
+
+    <span class="nd">@property</span>
+    <span class="nd">@filter_names</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">internal_state_variable_names</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">svar</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">svar</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">behaviour</span><span class="o">.</span><span class="n">internal_state_variables</span><span class="p">]</span>
+
+    <span class="nd">@property</span>
+    <span class="nd">@filter_names</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">gradient_names</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">svar</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">svar</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">behaviour</span><span class="o">.</span><span class="n">gradients</span><span class="p">]</span>
+
+    <span class="nd">@property</span>
+    <span class="nd">@filter_names</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">flux_names</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">svar</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">svar</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">behaviour</span><span class="o">.</span><span class="n">thermodynamic_forces</span><span class="p">]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">gradients</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">dim</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">dim</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">gradient_names</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">gradient_sizes</span><span class="p">)}</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">fluxes</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">dim</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">dim</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">flux_names</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">flux_sizes</span><span class="p">)}</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">internal_state_variables</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="n">k</span><span class="p">:</span> <span class="n">dim</span>
+            <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">dim</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">internal_state_variable_names</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">internal_state_variable_sizes</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="p">}</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">variables</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">dict_grad</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">gradients</span>
+        <span class="n">dict_flux</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fluxes</span>
+        <span class="n">dict_isv</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">internal_state_variables</span>
+        <span class="k">return</span> <span class="p">{</span><span class="o">**</span><span class="n">dict_grad</span><span class="p">,</span> <span class="o">**</span><span class="n">dict_flux</span><span class="p">,</span> <span class="o">**</span><span class="n">dict_isv</span><span class="p">}</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">material_property_sizes</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">[</span>
+            <span class="n">mgis_bv</span><span class="o">.</span><span class="n">getVariableSize</span><span class="p">(</span><span class="n">svar</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">hypothesis</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">svar</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">behaviour</span><span class="o">.</span><span class="n">mps</span>
+        <span class="p">]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">external_state_variable_sizes</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">[</span>
+            <span class="n">mgis_bv</span><span class="o">.</span><span class="n">getVariableSize</span><span class="p">(</span><span class="n">svar</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">hypothesis</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">svar</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">behaviour</span><span class="o">.</span><span class="n">external_state_variables</span>
+        <span class="p">]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">internal_state_variable_sizes</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">[</span>
+            <span class="n">mgis_bv</span><span class="o">.</span><span class="n">getVariableSize</span><span class="p">(</span><span class="n">svar</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">hypothesis</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">svar</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">behaviour</span><span class="o">.</span><span class="n">internal_state_variables</span>
+        <span class="p">]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">has_internal_state_variables</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">behaviour</span><span class="o">.</span><span class="n">internal_state_variables</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">gradient_sizes</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">[</span>
+            <span class="n">mgis_bv</span><span class="o">.</span><span class="n">getVariableSize</span><span class="p">(</span><span class="n">svar</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">hypothesis</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">svar</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">behaviour</span><span class="o">.</span><span class="n">gradients</span>
+        <span class="p">]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">flux_sizes</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">[</span>
+            <span class="n">mgis_bv</span><span class="o">.</span><span class="n">getVariableSize</span><span class="p">(</span><span class="n">svar</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">hypothesis</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">svar</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">behaviour</span><span class="o">.</span><span class="n">thermodynamic_forces</span>
+        <span class="p">]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">tangent_block_names</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">[(</span><span class="n">t</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">t</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">name</span><span class="p">)</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">behaviour</span><span class="o">.</span><span class="n">tangent_operator_blocks</span><span class="p">]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">tangent_block_sizes</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">[</span>
+            <span class="nb">tuple</span><span class="p">([</span><span class="n">mgis_bv</span><span class="o">.</span><span class="n">getVariableSize</span><span class="p">(</span><span class="n">tt</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">hypothesis</span><span class="p">)</span> <span class="k">for</span> <span class="n">tt</span> <span class="ow">in</span> <span class="n">t</span><span class="p">])</span>
+            <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">behaviour</span><span class="o">.</span><span class="n">tangent_operator_blocks</span>
+        <span class="p">]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">tangent_blocks</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="n">k</span><span class="p">:</span> <span class="n">dim</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">dim</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tangent_block_names</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">tangent_block_sizes</span><span class="p">)</span>
+        <span class="p">}</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">integrate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">eps</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data_manager</span><span class="o">.</span><span class="n">s1</span><span class="o">.</span><span class="n">gradients</span><span class="p">[:,</span> <span class="p">:]</span> <span class="o">=</span> <span class="n">eps</span>
+        <span class="n">integrate_status</span> <span class="o">=</span> <span class="n">mgis_bv</span><span class="o">.</span><span class="n">integrate</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">data_manager</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">integration_type</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dt</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_manager</span><span class="o">.</span><span class="n">n</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="n">integrate_status</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+                <span class="s2">&quot;Integration of constitutive law has failed.&quot;</span><span class="p">,</span> <span class="n">PerformanceWarning</span>
+            <span class="p">)</span>
+        <span class="n">K</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_manager</span><span class="o">.</span><span class="n">K</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_internal_state_variables</span><span class="p">:</span>
+            <span class="n">isv</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_manager</span><span class="o">.</span><span class="n">s1</span><span class="o">.</span><span class="n">internal_state_variables</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">isv</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">K</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="n">K</span> <span class="o">=</span> <span class="n">K</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="n">K</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="o">-</span><span class="mi">1</span><span class="p">))</span>
+        <span class="k">return</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">data_manager</span><span class="o">.</span><span class="n">s1</span><span class="o">.</span><span class="n">thermodynamic_forces</span><span class="p">,</span>
+            <span class="n">isv</span><span class="p">,</span>
+            <span class="n">K</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">set_initial_state_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state</span><span class="p">):</span>
+        <span class="n">buff</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">s</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">gradient_names</span><span class="p">):</span>
+            <span class="n">block_shape</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">gradient_sizes</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="k">if</span> <span class="p">(</span>
+                <span class="n">s</span> <span class="ow">in</span> <span class="n">state</span>
+            <span class="p">):</span>  <span class="c1"># test if in state so that we can update only a few state variables</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">data_manager</span><span class="o">.</span><span class="n">s0</span><span class="o">.</span><span class="n">gradients</span><span class="p">[:,</span> <span class="n">buff</span> <span class="p">:</span> <span class="n">buff</span> <span class="o">+</span> <span class="n">block_shape</span><span class="p">]</span> <span class="o">=</span> <span class="n">state</span><span class="p">[</span><span class="n">s</span><span class="p">]</span>
+            <span class="n">buff</span> <span class="o">+=</span> <span class="n">block_shape</span>
+        <span class="n">buff</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">s</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">flux_names</span><span class="p">):</span>
+            <span class="n">block_shape</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">flux_sizes</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">state</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">data_manager</span><span class="o">.</span><span class="n">s0</span><span class="o">.</span><span class="n">thermodynamic_forces</span><span class="p">[</span>
+                    <span class="p">:,</span> <span class="n">buff</span> <span class="p">:</span> <span class="n">buff</span> <span class="o">+</span> <span class="n">block_shape</span>
+                <span class="p">]</span> <span class="o">=</span> <span class="n">state</span><span class="p">[</span><span class="n">s</span><span class="p">]</span>
+            <span class="n">buff</span> <span class="o">+=</span> <span class="n">block_shape</span>
+        <span class="n">buff</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">s</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">internal_state_variable_names</span><span class="p">):</span>
+            <span class="n">block_shape</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">internal_state_variable_sizes</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">state</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">data_manager</span><span class="o">.</span><span class="n">s0</span><span class="o">.</span><span class="n">internal_state_variables</span><span class="p">[</span>
+                    <span class="p">:,</span> <span class="n">buff</span> <span class="p">:</span> <span class="n">buff</span> <span class="o">+</span> <span class="n">block_shape</span>
+                <span class="p">]</span> <span class="o">=</span> <span class="n">state</span><span class="p">[</span><span class="n">s</span><span class="p">]</span>
+            <span class="n">buff</span> <span class="o">+=</span> <span class="n">block_shape</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_final_state_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">state</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">buff</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">s</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">gradient_names</span><span class="p">):</span>
+            <span class="n">block_shape</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">gradient_sizes</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="n">state</span><span class="p">[</span><span class="n">s</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_manager</span><span class="o">.</span><span class="n">s1</span><span class="o">.</span><span class="n">gradients</span><span class="p">[:,</span> <span class="n">buff</span> <span class="p">:</span> <span class="n">buff</span> <span class="o">+</span> <span class="n">block_shape</span><span class="p">]</span>
+            <span class="n">buff</span> <span class="o">+=</span> <span class="n">block_shape</span>
+        <span class="n">buff</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">s</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">flux_names</span><span class="p">):</span>
+            <span class="n">block_shape</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">flux_sizes</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="n">state</span><span class="p">[</span><span class="n">s</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_manager</span><span class="o">.</span><span class="n">s1</span><span class="o">.</span><span class="n">thermodynamic_forces</span><span class="p">[</span>
+                <span class="p">:,</span> <span class="n">buff</span> <span class="p">:</span> <span class="n">buff</span> <span class="o">+</span> <span class="n">block_shape</span>
+            <span class="p">]</span>
+            <span class="n">buff</span> <span class="o">+=</span> <span class="n">block_shape</span>
+        <span class="n">buff</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">s</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">internal_state_variable_names</span><span class="p">):</span>
+            <span class="n">block_shape</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">internal_state_variable_sizes</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="n">state</span><span class="p">[</span><span class="n">s</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_manager</span><span class="o">.</span><span class="n">s1</span><span class="o">.</span><span class="n">internal_state_variables</span><span class="p">[</span>
+                <span class="p">:,</span> <span class="n">buff</span> <span class="p">:</span> <span class="n">buff</span> <span class="o">+</span> <span class="n">block_shape</span>
+            <span class="p">]</span>
+            <span class="n">buff</span> <span class="o">+=</span> <span class="n">block_shape</span>
+        <span class="k">return</span> <span class="n">state</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">rotate_gradients</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">gradient_vals</span><span class="p">,</span> <span class="n">rotation_values</span><span class="p">):</span>
+        <span class="n">mgis_bv</span><span class="o">.</span><span class="n">rotateGradients</span><span class="p">(</span><span class="n">gradient_vals</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">behaviour</span><span class="p">,</span> <span class="n">rotation_values</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">rotate_fluxes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">flux_vals</span><span class="p">,</span> <span class="n">rotation_values</span><span class="p">):</span>
+        <span class="n">mgis_bv</span><span class="o">.</span><span class="n">rotateThermodynamicForces</span><span class="p">(</span><span class="n">flux_vals</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">behaviour</span><span class="p">,</span> <span class="n">rotation_values</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">rotate_tangent_operator</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">Ct_vals</span><span class="p">,</span> <span class="n">rotation_values</span><span class="p">):</span>
+        <span class="n">mgis_bv</span><span class="o">.</span><span class="n">rotateTangentOperatorBlocks</span><span class="p">(</span><span class="n">Ct_vals</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">behaviour</span><span class="p">,</span> <span class="n">rotation_values</span><span class="p">)</span></div>
+
+</pre></div>
+
+                </article>
+              
+
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+<div class="bd-footer-content__inner container">
+  
+  <div class="footer-item">
+    
+<p class="component-author">
+By Jeremy Bleyer
+</p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+</div>
+          </footer>
+        
+
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="../../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+  <footer class="bd-footer">
+  </footer>
+  </body>
+</html>
