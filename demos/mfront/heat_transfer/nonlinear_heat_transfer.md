@@ -1,20 +1,20 @@
 ---
 jupytext:
-  formats: md:myst,py
+  formats: md:myst,py:percent,ipynb
   text_representation:
     extension: .md
     format_name: myst
     format_version: 0.13
-    jupytext_version: 1.16.1
+    jupytext_version: 1.18.1
 kernelspec:
-  display_name: Python 3
+  display_name: fenicsx-v0.10
   language: python
   name: python3
 ---
 
 # Stationary nonlinear heat transfer
 
-This demo shows how to use a simple `MFront` behavior to solve a non-linear stationary heat transfer equation with `dolfinx_materials`.
+This demo shows how to use a simple `MFront` behaviour to solve a non-linear sationary heat transfer equation with `dolfinx_materials`.
 
 ## Description of the non-linear constitutive heat transfer law
 
@@ -44,20 +44,18 @@ conductivity.
 As discussed below, the consistent linearisation of the heat transfer
 equilibrium requires to compute:
 
--   the derivative
-    ${\displaystyle \frac{\displaystyle \partial \mathbf{j}}{\displaystyle \partial \mathbf{\nabla} T}}$
-    of the heat flux with respect to the temperature gradient.
-    ${\displaystyle \frac{\displaystyle \partial \mathbf{j}}{\displaystyle \partial \mathbf{\nabla} T}}$
-    is given by: $$
-      {\displaystyle \frac{\displaystyle \partial \mathbf{j}}{\displaystyle \partial \mathbf{\nabla} T}}=-k\left(T\right)\,\matrix{I}
-    $$
--   the derivative
-    ${\displaystyle \frac{\displaystyle \partial \mathbf{j}}{\displaystyle \partial T}}$
-    of the heat flux with respect to the temperature.
-    ${\displaystyle \frac{\displaystyle \partial \mathbf{j}}{\displaystyle \partial T}}$
-    is given by: $$
-      {\displaystyle \frac{\displaystyle \partial \mathbf{j}}{\displaystyle \partial T}}=-{\displaystyle \frac{\displaystyle \partial k\left(T\right)}{\displaystyle \partial T}}\,\mathbf{\nabla} T=B\,k^{2}\,\mathbf{\nabla} T
-    $$
+- the derivative
+  ${\displaystyle \frac{\displaystyle \partial \mathbf{j}}{\displaystyle \partial \mathbf{\nabla} T}}$ of the heat flux with respect to the temperature gradient. ${\displaystyle \frac{\displaystyle \partial \mathbf{j}}{\displaystyle \partial \mathbf{\nabla} T}}$ is given by:
+
+  $$
+    {\displaystyle \frac{\displaystyle \partial \mathbf{j}}{\displaystyle \partial \mathbf{\nabla} T}}=-k\left(T\right)\,\matrix{I}
+  $$
+
+- the derivative ${\displaystyle \frac{\displaystyle \partial \mathbf{j}}{\displaystyle \partial T}}$ of the heat flux with respect to the temperature. ${\displaystyle \frac{\displaystyle \partial \mathbf{j}}{\displaystyle \partial T}}$ is given by:
+
+  $$
+    {\displaystyle \frac{\displaystyle \partial \mathbf{j}}{\displaystyle \partial T}}=-{\displaystyle \frac{\displaystyle \partial k\left(T\right)}{\displaystyle \partial T}}\,\mathbf{\nabla} T=B\,k^{2}\,\mathbf{\nabla} T
+  $$
 
 ## `MFront`’ implementation
 
@@ -65,14 +63,14 @@ equilibrium requires to compute:
 
 Every `MFront` file is handled by a domain specific language (DSL), which
 aims at providing the most suitable abstraction for a particular choice
-of behavior and integration algorithm. See `mfront mfront --list-dsl`
+of behaviour and integration algorithm. See `mfront mfront --list-dsl`
 for a list of the available DSLs.
 
-The name of DSL’s handling generic behaviors ends with
+The name of DSL’s handling generic behaviours ends with
 `GenericBehaviour`. The first part of a DSL’s name is related to the
 integration algorithm used.
 
-In the case of this non linear transfer behavior, the heat flux is
+In the case of this non linear transfer behaviour, the heat flux is
 explicitly computed from the temperature and the temperature gradient.
 The `DefaultGenericBehaviour` is the most suitable choice:
 
@@ -82,7 +80,7 @@ The `DefaultGenericBehaviour` is the most suitable choice:
 
 ### Some metadata
 
-The following lines define the name of the behavior, the name of the
+The following lines define the name of the behaviour, the name of the
 author and the date of its writing:
 
 ```
@@ -93,7 +91,7 @@ author and the date of its writing:
 
 ### Gradients and fluxes
 
-Generic behaviors relate pairs of gradients and fluxes. Gradients and
+Generic behaviours relate pairs of gradients and fluxes. Gradients and
 fluxes are declared independently but the first declared gradient is
 assumed to be conjugated with the first declared fluxes and so on…
 
@@ -109,8 +107,8 @@ This is helpful for the calling code.
 
 After this declaration, the following variables will be defined:
 
--   The temperature gradient `∇T` at the beginning of the time step.
--   The increment of the temperature gradient `Δ∇T` over the time step.
+- The temperature gradient `∇T` at the beginning of the time step.
+- The increment of the temperature gradient `Δ∇T` over the time step.
 
 The heat flux is then declared as follows:
 
@@ -155,16 +153,16 @@ discussed below.
 A local variable is accessible in each code blocks.
 
 Here, we declare the thermal conductivity `k` as a local variable in
-order to be able to compute its value during the behavior integration
+order to be able to compute its value during the behaviour integration
 and to reuse this value when computing the tangent operator.
 
 ```
 @LocalVariable thermalconductivity k;
 ```
 
-### Integration of the behavior
+### Integration of the behaviour
 
-The behavior integration is straightforward: one starts to compute the
+The behaviour integration is straightforward: one starts to compute the
 temperature at the end of the time step, then we compute the thermal
 conductivity (at the end of the time step) and the heat flux using the
 temperature gradient (at the end of the time step).
@@ -188,22 +186,22 @@ The computation of the tangent operator blocks is equally simple:
 @TangentOperator {
   ∂j∕∂Δ∇T = -k ⋅ tmatrix<N, N, real>::Id();
   ∂j∕∂ΔT  =  B ⋅ k ⋅ k ⋅ (∇T + Δ∇T);
-} // end of @TangentOperator 
+} // end of @TangentOperator
 ```
+
 ## `FEniCSx` implementation
 
 We consider a rectanglar domain with imposed temperatures `Tl` (resp. `Tr`) on the left (resp. right) boundaries. We want to solve for the temperature field `T` inside the domain using a $P^1$-interpolation. We initialize the temperature at value `Tl` throughout the domain.
 
-```{code-cell}
+```{code-cell} ipython3
 import numpy as np
 import matplotlib.pyplot as plt
 import ufl
 from mpi4py import MPI
 from dolfinx import fem, mesh
-from dolfinx.cpp.nls.petsc import NewtonSolver
 from dolfinx_materials.quadrature_map import QuadratureMap
 from dolfinx_materials.solvers import NonlinearMaterialProblem
-from dolfinx_materials.material.mfront import MFrontMaterial
+from dolfinx_materials.mfront import MFrontMaterial
 import os
 
 
@@ -235,11 +233,11 @@ right_dofs = fem.locate_dofs_geometrical(V, right)
 bcs = [fem.dirichletbc(Tl, left_dofs, V), fem.dirichletbc(Tr, right_dofs, V)]
 ```
 
-### Loading the material behavior
+### Loading the material behaviour
 
-We use the `MFrontMaterial` class for describing the material behavior. The first argument corresponds to the path where material libraries have been compiled, the second correspond to the name of the behavior (declared with `@Behaviour`). Finally, the modelling hypothesis is specified (default behavior is `"3d"`).
+We use the `MFrontMaterial` class for describing the material behaviour. The first argument corresponds to the path where material librairies have been compiled, the second correspond to the name of the behaviour (declared with `@Behaviour`). Finally, the modelling hypothesis is specified (default behaviour is `"3d"`).
 
-```{code-cell}
+```{code-cell} ipython3
 material = MFrontMaterial(
     os.path.join(current_path, "src/libBehaviour.so"),
     "StationaryHeatTransfer",
@@ -247,9 +245,9 @@ material = MFrontMaterial(
 )
 ```
 
-The `MFront` behavior declares the field `"TemperatureGradient"` as a Gradient variable, with its associated Flux called `"HeatFlux"`. We can check that the `material` object retrieves `MFront`'s gradient and flux names, as well as the different tangent operator blocks which have been defined, namely `dj_ddgT` and `dj_ddT` in the present case:
+The `MFront` behaviour declares the field `"TemperatureGradient"` as a Gradient variable, with its associated Flux called `"HeatFlux"`. We can check that the `material` object retrieves `MFront`'s gradient and flux names, as well as the different tangent operator blocks which have been defined, namely `dj_ddgT` and `dj_ddT` in the present case:
 
-```{code-cell}
+```{code-cell} ipython3
 print(material.gradients)
 print(material.fluxes)
 
@@ -260,7 +258,7 @@ print(["d{}_d{}".format(*t) for t in material.tangent_blocks])
 
 We now define the non-linear residual form that we want to solve. After defining test and trial functions, we instantiate the `QuadratureMap` object which will handle the *black-box* constitutive equation based on the `material` object. We must provide the requested quadrature degree which will control the number of quadrature points used in each cell to compute the non-linear constitutive law. Here, we specify a quadrature of degree 2 (i.e. 3 Gauss points for a triangular element).
 
-```{code-cell}
+```{code-cell} ipython3
 T_ = ufl.TestFunction(V)
 dT = ufl.TrialFunction(V)
 
@@ -270,13 +268,13 @@ qmap = QuadratureMap(domain, deg_quad, material)
 
 #### Variable registration
 
-The `MFront` behavior implicitly declares the temperature as an external state variable called `"Temperature"`. We must therefore associate this external state variable to a known mechanical field. This can be achieved explicitly using the `register_external_state_variable` method. 
+The `MFront` behaviour implicitly declares the temperature as an external state variable called `"Temperature"`. We must therefore associate this external state variable to a known mechanical field. This can be achieved explicitly using the `register_external_state_variable` method.
 
 For problems in which the temperature only acts as a parameter (no jacobian blocks with respect to the temperature), the temperature can be automatically registered as a constant value ($293.15 \text{ K}$ by default) or to any other (`dolfin.Constant`, `float` or `dolfin.Function`) value using the `register_external_state_variable` method.
 
 Finally, we need to associate to `MFront` gradient object the corresponding UFL expression as a function of the unknown field `T`. To do so, we use the `register_gradient` method linking `MFront` `"TemperatureGradient"` object to the UFL expression `grad(T)`.
 
-```{code-cell}
+```{code-cell} ipython3
 qmap.register_external_state_variable("Temperature", T)
 qmap.register_gradient("TemperatureGradient", ufl.grad(T))
 ```
@@ -295,27 +293,42 @@ The `qmap.derivative` function works similarly to the standard `ufl.derivative` 
 J(\widehat{T},T^*) = \int_{\Omega} \nabla \widehat{T}\cdot\left(\dfrac{\partial \mathbf{j}}{\partial \mathbf{g}}\cdot \nabla T^*+\dfrac{\partial \mathbf{j}}{\partial T}\cdot T^*\right) \text{dx}
 \end{equation}
 
-The resulting nonlinear problem is managed by the `NonlinearMaterialProblem` class. It is solved using a Newton non-linear solver. The `solve` method returns the converged status and the number of Newton iterations.
+The resulting nonlinear problem is managed by the `NonlinearMaterialProblem` class. It is solved using a SNES Newton non-linear solver. The `problem.solver` returns the underlying SNES object, from which one can recover the converged status and the number of Newton iterations.
 
-```{code-cell}
+```{code-cell} ipython3
 j = qmap.fluxes["HeatFlux"]
 
 F = ufl.dot(j, ufl.grad(T_)) * qmap.dx
 Jac = qmap.derivative(F, T, dT)
 
-problem = NonlinearMaterialProblem(qmap, F, Jac, T, bcs)
+petsc_options = {
+    "snes_type": "newtonls",
+    "snes_linesearch_type": "none",
+    "snes_atol": 1e-6,
+    "snes_rtol": 1e-6,
+    "snes_monitor": None,
+}
+problem = NonlinearMaterialProblem(
+    qmap,
+    F,
+    T,
+    bcs=bcs,
+    J=Jac,
+    petsc_options_prefix="heat_transfer",
+    petsc_options=petsc_options,
+)
 
-newton = NewtonSolver(MPI.COMM_WORLD)
+problem.solve()
 
-converged, it = problem.solve(newton)
-
+converged = problem.solver.getConvergedReason()
+num_iter = problem.solver.getIterationNumber()
 # Problem is weakly nonlinear, it should converge in a few iterations
-assert converged and it < 10
+assert converged and num_iter < 10
 ```
 
-We finally check that the thermal conductivity coefficient $k$, computed from the ratio between the horizontal heat flux and temperature gradient matches the temperature-dependent expressions implemented in the `MFront` behavior.
+We finally check that the thermal conductivity coefficient $k$, computed from the ratio between the horizontal heat flux and temperature gradient matches the temperature-dependent expressions implemented in the `MFront` behaviour.
 
-```{code-cell}
+```{code-cell} ipython3
 j_vals = j.x.array
 g_vals = qmap.gradients["TemperatureGradient"].function.x.array
 k_gauss = -j_vals[::2] / g_vals[::2]

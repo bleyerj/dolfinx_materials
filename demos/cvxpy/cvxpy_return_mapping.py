@@ -25,13 +25,11 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.collections import LineCollection
-from dolfinx_materials.jax_materials import LinearElasticIsotropic
 from cvxpy_materials import CvxPyMaterial
 import cvxpy as cp
 
 
 E, nu = 70e3, 0.2
-elastic_model = LinearElasticIsotropic(E, nu)
 
 
 def plot_stress_paths(material, ax):
@@ -99,7 +97,7 @@ class PlaneStressvonMises(CvxPyMaterial):
 
 fig, ax = plt.subplots()
 sig0 = 30
-material = PlaneStressvonMises(elastic_model, sig0=sig0)
+material = PlaneStressvonMises(E=E, nu=nu, sig0=sig0)
 plot_stress_paths(material, ax)
 sig = np.array([[np.cos(t), np.sin(t)] for t in np.linspace(0, 2 * np.pi, 100)])
 sig_eq = np.sqrt(sig[:, 0] ** 2 + sig[:, 1] ** 2 - sig[:, 0] * sig[:, 1])
@@ -143,7 +141,7 @@ fig, ax = plt.subplots()
 fc, ft = 30.0, 10.0
 yield_surface = np.array([[-fc, -fc], [-fc, ft], [ft, ft], [ft, -fc], [-fc, -fc]])
 ax.plot(yield_surface[:, 0], yield_surface[:, 1], "-k", linewidth=0.5)
-material = Rankine(elastic_model, fc=fc, ft=ft)
+material = Rankine(E=E, nu=nu, fc=fc, ft=ft)
 plot_stress_paths(material, ax)
 plt.xlabel(r"Stress $\sigma_{xx}$")
 plt.ylabel(r"Stress $\sigma_{yy}$")
@@ -199,7 +197,7 @@ class PlaneStressHosford(CvxPyMaterial):
 
 fig, ax = plt.subplots()
 sig0 = 30
-material = PlaneStressHosford(elastic_model, sig0=sig0, a=10)
+material = PlaneStressHosford(E=E, nu=nu, sig0=sig0, a=10)
 plot_stress_paths(material, ax)
 plt.xlabel(r"Stress $\sigma_{xx}$")
 plt.ylabel(r"Stress $\sigma_{yy}$")

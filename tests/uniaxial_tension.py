@@ -6,10 +6,9 @@ from dolfinx import fem, mesh, io
 from dolfinx_materials.quadrature_map import QuadratureMap
 
 from dolfinx_materials.solvers import NonlinearMaterialProblem
-from dolfinx.cpp.nls.petsc import NewtonSolver  # noqa
 
 
-def uniaxial_tension_2D(material, Exx, N=1, order=1, save_fields=None):
+def uniaxial_tension_2D(material, Exx, N=1, order=1, save_fields=None, angle=None):
     domain = mesh.create_unit_square(MPI.COMM_WORLD, N, N, mesh.CellType.quadrilateral)
     V = fem.functionspace(domain, ("P", order, (2,)))
 
@@ -57,35 +56,63 @@ def uniaxial_tension_2D(material, Exx, N=1, order=1, save_fields=None):
 
     qmap = QuadratureMap(domain, deg_quad, material)
     qmap.register_gradient(material.gradient_names[0], strain(u))
+    if angle is not None:
+        phi = fem.Constant(domain, angle)
+        qmap.material.rotation_matrix = ufl.as_matrix(
+            [
+                [ufl.cos(phi), ufl.sin(phi), 0],
+                [-ufl.sin(phi), ufl.cos(phi), 0],
+                [0, 0, 1.0],
+            ]
+        )
+        qmap.update_material_rotation_matrix()
 
     sig = qmap.fluxes[material.flux_names[0]]
     Res = ufl.dot(sig, strain(v)) * qmap.dx
     Jac = qmap.derivative(Res, u, du)
 
-    problem = NonlinearMaterialProblem(qmap, Res, Jac, u, bcs)
-    newton = NewtonSolver(MPI.COMM_WORLD)
-    newton.rtol = 1e-6
-    newton.max_it = 10
-
-    file_results = io.XDMFFile(
-        domain.comm,
-        f"{material.name}_results.xdmf",
-        "w",
+    petsc_options = {
+        "snes_type": "newtonls",
+        "snes_linesearch_type": "none",
+        "snes_atol": 1e-10,
+        "snes_rtol": 1e-10,
+        "ksp_type": "preonly",
+        "pc_type": "lu",
+        "pc_factor_mat_solver_type": "mumps",
+    }
+    problem = NonlinearMaterialProblem(
+        qmap,
+        Res,
+        u,
+        bcs=bcs,
+        J=Jac,
+        petsc_options_prefix="test",
+        petsc_options=petsc_options,
     )
-    file_results.write_mesh(domain)
+
+    if save_fields:
+        file_results = io.XDMFFile(
+            domain.comm,
+            f"{material.name}_results.xdmf",
+            "w",
+        )
+        file_results.write_mesh(domain)
+
     Stress = np.zeros((len(Exx), 6))
     for i, exx in enumerate(Exx[1:]):
         uD_x_r.x.array[:] = exx
 
-        converged, _ = problem.solve(newton)
+        problem.solve()
+        converged = problem.solver.getConvergedReason()
 
         assert converged
         Stress[i + 1, :] = sig.x.array[:6]
 
-        if save_fields is not None:
+        if save_fields:
             for field_name in save_fields:
                 field = qmap.project_on(field_name, ("DG", 0))
                 file_results.write_function(field, i)
 
-    file_results.close()
+    if save_fields:
+        file_results.close()
     return Stress

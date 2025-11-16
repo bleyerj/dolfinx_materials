@@ -7,7 +7,7 @@ author: Jeremy Bleyer
 # Force re-execution of notebooks on each build.
 # See https://jupyterbook.org/content/execute.html
 execute:
-  execute_notebooks: cache
+  execute_notebooks: off
 
   # Set timeout for any example to 20 minutes
   timeout: 1800
@@ -32,7 +32,7 @@ exclude_patterns: [
     ...,
     docs/index.md,
     README.md,
-    "**/*.ipynb"]
+    "demos/**/*.md"]
 
 # Sphinx configuration for custom theme
 sphinx:
@@ -60,7 +60,9 @@ sphinx:
   - 'sphinx.ext.napoleon'
   - 'sphinx.ext.viewcode'
   - 'sphinx.ext.autosummary'
+  - 'sphinx_math_dollar'
   - 'docs.remove_docstring' # remove module docstring
+  
     
 parse:
   myst_enable_extensions:

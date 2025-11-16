@@ -1,18 +1,21 @@
-from dolfinx_materials.material import Material
+from dolfinx_materials.generic import Material
 import cvxpy as cp
 import numpy as np
 
 
 class CvxPyMaterial(Material):
-    def __init__(self, elastic_model, **kwargs):
+    def __init__(self, E, nu, **kwargs):
         super().__init__()
-        self.elastic_model = elastic_model
+        self.E, self.nu = E, nu
 
         # Handle any additional keyword arguments passed
         for key, value in kwargs.items():
             setattr(self, key, value)
 
-        self.C = np.array(self.elastic_model.compute_C_plane_stress())
+        # Plane stress stiffness matrix (Kelvin–Mandel form)
+        self.C = (self.E / (1 - self.nu**2)) * np.array(
+            [[1.0, self.nu, 0.0], [self.nu, 1.0, 0.0], [0.0, 0.0, (1.0 - self.nu)]]
+        )
         self.set_cvxpy_model()
 
     @property

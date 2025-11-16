@@ -1,0 +1,11 @@
+@DSL IsotropicPlasticMisesFlow; //< domain specific language
+@Behaviour Plasticity;          //< name of the behaviour
+@MaterialProperty stress H;
+H.setEntryName("HardeningSlope");
+@MaterialProperty stress s0;
+s0.setGlossaryName("YieldStress");
+@FlowRule { //< flow rule
+  f = seq - H * p - s0;
+  df_dseq = 1;
+  df_dp = -H;
+}

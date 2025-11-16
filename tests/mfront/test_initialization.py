@@ -2,7 +2,7 @@
 # -*-coding:utf-8 -*-
 """
 
-@Author  :   Jeremy Bleyer, Ecole des Ponts ParisTech, Navier
+@Author  :   Jeremy Bleyer, Ecole Nationale des Ponts et Chaussées, Navier
 @Contact :   jeremy.bleyer@enpc.fr
 @Time    :   20/12/2023
 """
@@ -12,87 +12,145 @@ import ufl
 from mpi4py import MPI
 from dolfinx import fem, mesh
 from dolfinx_materials.quadrature_map import QuadratureMap
-from dolfinx_materials.material.mfront import MFrontMaterial
+from dolfinx_materials.mfront import MFrontMaterial
 from dolfinx_materials.utils import (
     symmetric_tensor_to_vector,
 )
-
-path = pathlib.Path(__file__).parent.absolute()
-
-domain = mesh.create_unit_square(
-    MPI.COMM_WORLD,
-    1,
-    1,
-    cell_type=mesh.CellType.quadrilateral,
-)
-gdim = domain.topology.dim
+import pytest
 
 
-V = fem.functionspace(domain, ("Q", 1, (gdim,)))
+@pytest.fixture
+def domain():
+    return mesh.create_unit_square(
+        MPI.COMM_WORLD,
+        1,
+        1,
+        cell_type=mesh.CellType.quadrilateral,
+    )
 
 
-u = fem.Function(V, name="Displacement")
+@pytest.fixture
+def V(domain):
+    gdim = domain.topology.dim
+    return fem.functionspace(domain, ("Q", 1, (gdim,)))
 
 
-def eps(u):
-    return symmetric_tensor_to_vector(ufl.sym(ufl.grad(u)))
+@pytest.fixture
+def u(V):
+    return fem.Function(V)
 
 
-x = ufl.SpatialCoordinate(domain)
-exx = fem.Constant(domain, 1e-2)
-E_macro = ufl.as_matrix([[exx, 0], [0, 0]])
-u_exp = fem.Expression(ufl.dot(E_macro, x), V.element.interpolation_points())
+@pytest.fixture
+def material():
+    path = pathlib.Path(__file__).parent.absolute()
 
-mat_prop = {
-    "YoungModulus": 70e3,
-    "PoissonRatio": 0.3,
-    "HardeningSlope": 5e3,
-    "YieldStrength": 250.0,
-}
-material = MFrontMaterial(
-    path / "src/libBehaviour.so",
-    "IsotropicLinearHardeningPlasticity",
-    hypothesis="plane_strain",
-    material_properties=mat_prop,
-)
+    mat_prop = {
+        "YoungModulus": 70e3,
+        "PoissonRatio": 0.0,
+        "HardeningSlope": 5e3,
+        "YieldStrength": 250.0,
+    }
+    return MFrontMaterial(
+        path / "src/libBehaviour.so",
+        "IsotropicLinearHardeningPlasticity",
+        hypothesis="plane_strain",
+        material_properties=mat_prop,
+    )
 
-qmap = QuadratureMap(domain, 2, material)
-qmap.register_gradient("Strain", eps(u))
-sig = qmap.fluxes["Stress"]
-p = qmap.internal_state_variables["EquivalentPlasticStrain"]
 
-qmap.initialize_state()
+def test_initialization(domain, V, u, material):
 
-u.interpolate(u_exp)
+    def eps(u):
+        return symmetric_tensor_to_vector(ufl.sym(ufl.grad(u)))
 
-p.x.array[:] = 1e-4
-# without value
-qmap.update_initial_state("EquivalentPlasticStrain")
-assert np.allclose(p.x.array, 1e-4)
+    x = ufl.SpatialCoordinate(domain)
+    exx = fem.Constant(domain, 1e-2)
+    E_macro = ufl.as_matrix([[exx, 0], [0, 0]])
+    u_exp = fem.Expression(ufl.dot(E_macro, x), V.element.interpolation_points)
 
-# with value
-qmap.update_initial_state("EquivalentPlasticStrain", 1e-3)
-assert np.allclose(p.x.array, 1e-3)
+    qmap = QuadratureMap(domain, 2, material)
+    qmap.register_gradient("Strain", eps(u))
+    sig = qmap.fluxes["Stress"]
+    p = qmap.internal_state_variables["EquivalentPlasticStrain"]
 
-# with fem.Constant
-p0 = fem.Constant(domain, 2e-3)
-qmap.update_initial_state("EquivalentPlasticStrain", p0)
-assert np.allclose(p.x.array, 2e-3)
+    qmap.initialize_state()
 
-# with fem.Function
-V0 = fem.functionspace(domain, ("DG", 0))
-p0 = fem.Function(V0)
-p0.x.petsc_vec.set(3e-3)
-qmap.update_initial_state("EquivalentPlasticStrain", p0)
-assert np.allclose(p.x.array, 3e-3)
+    u.interpolate(u_exp)
 
-# vectorial case
-# with fem.Constant
-s0 = np.array([1.0, 2.0, 3.0, 4.0])
-sig0 = fem.Constant(domain, s0)
-qmap.update_initial_state("Stress", sig0)
-assert np.allclose(sig.x.array, np.tile(s0, 4))
+    p.x.array[:] = 1e-4
+    # without value
+    qmap.update_initial_state("EquivalentPlasticStrain")
+    assert np.allclose(p.x.array, 1e-4)
 
-# with numpy array
-qmap.update_initial_state("Stress", 2 * s0)
-assert np.allclose(sig.x.array, np.tile(2 * s0, 4))
+    # with value
+    qmap.update_initial_state("EquivalentPlasticStrain", 1e-3)
+    assert np.allclose(p.x.array, 1e-3)
+
+    # with fem.Constant
+    p0 = fem.Constant(domain, 2e-3)
+    qmap.update_initial_state("EquivalentPlasticStrain", p0)
+    assert np.allclose(p.x.array, 2e-3)
+
+    # with fem.Function
+    V0 = fem.functionspace(domain, ("DG", 0))
+    p0 = fem.Function(V0)
+    p0.x.petsc_vec.set(3e-3)
+    qmap.update_initial_state("EquivalentPlasticStrain", p0)
+    assert np.allclose(p.x.array, 3e-3)
+
+    # vectorial case
+    # with fem.Constant
+    s0 = np.array([1.0, 2.0, 3.0, 4.0])
+    sig0 = fem.Constant(domain, s0)
+    qmap.update_initial_state("Stress", sig0)
+    assert np.allclose(sig.x.array, np.tile(s0, 4))
+
+    # with numpy array
+    qmap.update_initial_state("Stress", 2 * s0)
+    assert np.allclose(sig.x.array, np.tile(2 * s0, 4))
+
+
+def test_material_properties(domain, V, u, material):
+    def eps(u):
+        return symmetric_tensor_to_vector(ufl.sym(ufl.grad(u)))
+
+    x = ufl.SpatialCoordinate(domain)
+    exx = fem.Constant(domain, 1e-3)
+    E_macro = ufl.as_matrix([[exx, 0], [0, 0]])
+    u_exp = fem.Expression(ufl.dot(E_macro, x), V.element.interpolation_points)
+
+    qmap = QuadratureMap(domain, 2, material)
+    qmap.register_gradient("Strain", eps(u))
+    sig = qmap.fluxes["Stress"]
+
+    qmap.initialize_state()
+
+    u.interpolate(u_exp)
+
+    qmap.update()
+    E = 70e3
+    assert np.allclose(sig.x.array[:3], E * np.array([1e-3, 0, 0]))
+
+    E = 200e3
+    material.material_properties["YoungModulus"] = E
+    qmap.update_material_properties()
+    qmap.update()
+    assert np.allclose(sig.x.array[:3], E * np.array([1e-3, 0, 0]))
+
+    E = 100e3
+    material.material_properties["YoungModulus"] = fem.Constant(domain, E)
+    qmap.update_material_properties()
+    qmap.update()
+    assert np.allclose(sig.x.array[:3], E * np.array([1e-3, 0, 0]))
+
+    E = 50e3
+    V0 = fem.functionspace(domain, ("DG", 0))
+    Ef = fem.Function(V0)
+    Ef.x.array[:] = E
+    material.material_properties["YoungModulus"] = Ef
+    qmap.update_material_properties()
+    qmap.update()
+    assert np.allclose(sig.x.array[:3], E * np.array([1e-3, 0, 0]))
+
+
+# test_material_properties()

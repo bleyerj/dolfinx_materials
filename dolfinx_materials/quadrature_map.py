@@ -6,12 +6,17 @@ from .utils import (
     project,
     create_quadrature_functionspace,
     to_mat,
-    get_vals,
-    update_vals,
+    _get_vals,
+    _update_vals,
 )
 from dolfinx.common import Timer
 from .quadrature_function import create_quadrature_function, QuadratureExpression
 from mpi4py import MPI
+
+try:
+    import jax
+except ImportError:
+    pass
 
 
 def my_dot(a, b):
@@ -115,9 +120,9 @@ class QuadratureMap:
 
         self.set_data_manager(self.cells)
 
+        Wrot = create_quadrature_functionspace(self.mesh, self.degree, (3, 3))
+        self.rotation_func = fem.Function(Wrot)
         if self.material.rotation_matrix is not None:
-            Wrot = create_quadrature_functionspace(self.mesh, self.degree, (3, 3))
-            self.rotation_func = fem.Function(Wrot)
             self.update_material_rotation_matrix()
 
         self.update_material_properties()
@@ -155,8 +160,8 @@ class QuadratureMap:
     def update_material_properties(self):
         """Update material properties from provided values."""
         for name, mat_prop in self.material.material_properties.items():
-            if isinstance(mat_prop, (int, float, np.ndarray)):
-                values = mat_prop
+            if isinstance(mat_prop, (int, float, np.ndarray, jax.Array)):
+                values = np.asarray(mat_prop)
             else:
                 shape = mat_prop.ufl_shape
                 Vm = create_quadrature_functionspace(self.mesh, self.degree, shape)
@@ -176,7 +181,7 @@ class QuadratureMap:
         ext_state_var : float, np.ndarray, UFL expression
             Constant or UFL expression to register, e.g. fem.Function(V, name="Temperature")
         """
-        if isinstance(ext_state_var, (int, float, np.ndarray)):
+        if isinstance(ext_state_var, (int, float, np.ndarray, jax.Array)):
             ext_state_var = fem.Constant(self.mesh, ext_state_var)
         state_var = QuadratureExpression(
             name,
@@ -245,7 +250,7 @@ class QuadratureMap:
 
     def get_gradient_vals(self, gradient, cells):
         gradient.eval(cells)
-        return get_vals(gradient.function)[self.dofs, :]
+        return _get_vals(gradient.function)[self.dofs, :]
 
     def _cell_to_dofs(self, cells):
         num_qp = len(self.quadrature_points)
@@ -262,22 +267,23 @@ class QuadratureMap:
             field = self.internal_state_variables[field_name]
         else:
             raise ValueError("Can only initialize a flux or internal state variables.")
-        # if a value is provided we update the field with t
-        values = get_vals(field)[self.dofs]
-        if isinstance(value, (int, float, np.ndarray)):
-            values = np.full_like(values, value)
-            update_vals(field, values, self.cells)
-        elif value is not None:
-            self.eval_quadrature(value, field)
-            values = get_vals(field)[self.dofs]
+        # if a value is provided we update the field with it
+        values = _get_vals(field)[self.dofs]
+        if value is not None:
+            if isinstance(value, (int, float, np.ndarray, jax.Array)):
+                values = np.full_like(values, value)
+                _update_vals(field, values, self.cells)
+            else:
+                self.eval_quadrature(value, field)
+                values = _get_vals(field)[self.dofs]
         self.material.set_initial_state_dict({field_name: values})
 
     def initialize_state(self):
         state_flux = {
-            key: get_vals(field)[self.dofs] for key, field in self.fluxes.items()
+            key: _get_vals(field)[self.dofs] for key, field in self.fluxes.items()
         }
         state_isv = {
-            key: get_vals(field)[self.dofs]
+            key: _get_vals(field)[self.dofs]
             for key, field in self.internal_state_variables.items()
         }
         state_grad = {
@@ -290,14 +296,13 @@ class QuadratureMap:
 
     def update(self):
         """Perform constitutive update call."""
-        num_QP = len(self.quadrature_points) * self.num_cells
         if not self._initialized:
             self.initialize_state()
 
-        with Timer("External state var update"):
+        with Timer("dx_mat: External state variable update"):
             self.update_external_state_variables()
 
-        with Timer("Eval gradients"):
+        with Timer("dx_mat: Gradients evaluation"):
             grad_vals = []
             # loop over gradients in proper order
             for name in self.material.gradients.keys():
@@ -312,38 +317,34 @@ class QuadratureMap:
                 grad_vals.ravel(), self.rotation_func.x.array
             )
 
-        flux_size = sum(list(self.material.fluxes.values()))
-        flux_vals = np.zeros((num_QP, flux_size))
-        Ct_vals = np.zeros_like(get_vals(self.jacobian_flatten)[self.dofs])
-
-        # material integration
-        flux_vals, isv_vals, Ct_vals = self.material.integrate(grad_vals)
-        assert not (np.any(np.isnan(flux_vals)))
-        assert not (np.any(np.isnan(isv_vals)))
-        assert not (np.any(np.isnan(Ct_vals)))
+        with Timer("dx_mat: Material integration"):
+            flux_vals, isv_vals, Ct_vals = self.material.integrate(grad_vals)
+            assert not (np.any(np.isnan(flux_vals)))
+            assert not (np.any(np.isnan(isv_vals)))
+            assert not (np.any(np.isnan(Ct_vals)))
 
         if self.material.rotation_matrix is not None:
             self.material.rotate_fluxes(flux_vals.ravel(), self.rotation_func.x.array)
             self.material.rotate_tangent_operator(
                 Ct_vals.ravel(), self.rotation_func.x.array
             )
-
-        self.update_fluxes(flux_vals)
-        self.update_internal_state_variables(isv_vals)
-        update_vals(self.jacobian_flatten, Ct_vals, self.cells)
+        with Timer("dx_mat: Update values and tangent operators"):
+            self.update_fluxes(flux_vals)
+            self.update_internal_state_variables(isv_vals)
+            _update_vals(self.jacobian_flatten, Ct_vals, self.cells)
 
     def update_fluxes(self, flux_vals):
         buff = 0
         for name, dim in self.material.fluxes.items():
             flux = self.fluxes[name]
-            update_vals(flux, flux_vals[:, buff : buff + dim], self.cells)
+            _update_vals(flux, flux_vals[:, buff : buff + dim], self.cells)
             buff += dim
 
     def update_internal_state_variables(self, isv_vals):
         buff = 0
         for name, dim in self.material.internal_state_variables.items():
             isv = self.internal_state_variables[name]
-            update_vals(isv, isv_vals[:, buff : buff + dim], self.cells)
+            _update_vals(isv, isv_vals[:, buff : buff + dim], self.cells)
             buff += dim
 
     def advance(self):
@@ -353,11 +354,12 @@ class QuadratureMap:
         """
         self.material.data_manager.update()
         final_state = self.material.get_final_state_dict()
+        # print(final_state)
         for key in self.variables.keys():
             if key not in self.gradients:  # update flux and isv but not gradients
-                update_vals(self.variables[key], final_state[key], self.cells)
+                _update_vals(self.variables[key], final_state[key], self.cells)
 
-    def project_on(self, name, interp):
+    def project_on(self, name, interp=None, entity_maps=None, fun=None):
         """
         Computes a projection onto standard FE space.
 
@@ -366,7 +368,11 @@ class QuadratureMap:
         name : str
             Name of the field to project
         interp : tuple
-            Tuple of interpolation space info to project on, e.g. ("DG", 0). Shape is automatically deduced.
+            Tuple of interpolation space info to project on, e.g. ("DG", 0). Shape is automatically deduced. Inferred from `fun` if not provided.
+        entity_maps: dict
+            Entity maps in case of mixed subdomains
+        fun: fem.Function
+            Function in which to write the result
         """
         if name not in self.variables:
             collected = [
@@ -386,7 +392,10 @@ class QuadratureMap:
             shape = field.ufl_shape
             field = field.expression.ufl_expression
 
-        V = fem.functionspace(self.mesh, interp + (shape,))
-        projected = fem.Function(V, name=name)
-        project(field, projected, self.dx)
+        if fun is None:
+            V = fem.functionspace(self.mesh, interp + (shape,))
+            projected = fem.Function(V, name=name)
+        else:
+            projected = fun
+        project(field, projected, self.dx, entity_maps=entity_maps)
         return projected

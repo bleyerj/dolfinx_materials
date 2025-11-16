@@ -1,14 +1,6 @@
-import numpy as np
-from dolfinx_materials.jax_materials import (
-    LinearElasticIsotropic,
-)
-from dolfinx_materials.jax_materials.tensors import to_vect
-from dolfinx_materials.jax_materials.finite_strain_elastoplasticity import (
-    FeFpJ2Plasticity,
-)
-import matplotlib.pyplot as plt
-import jax
 import jax.numpy as jnp
+from dolfinx_materials.jaxmat import JAXMaterial
+import jaxmat.materials as jm
 
 
 def test_FeFp_plasticity(Nbatch=10):
@@ -16,37 +8,26 @@ def test_FeFp_plasticity(Nbatch=10):
     nu = 0.3
     sig0 = 500.0
 
-    b = 10
+    b = 1000
     sigu = 750.0
 
     def yield_stress(p):
         return sig0 + (sigu - sig0) * (1 - jnp.exp(-b * p))
 
-    elastic_model = LinearElasticIsotropic(E, nu)
+    elastic_model = jm.LinearElasticIsotropic(E=E, nu=nu)
 
-    material = FeFpJ2Plasticity(elastic_model, yield_stress, theta=0.5)
-    eps = 2e-2
-    F0 = np.vstack(([1 + eps, 1, 1, 0, 0, 0, 0, 0, 0],) * Nbatch)
+    behavior = jm.FeFpJ2Plasticity(elasticity=elastic_model, yield_stress=yield_stress)
+    material = JAXMaterial(behavior)
     material.set_data_manager(Nbatch)
-    state = material.get_initial_state_dict()
 
-    def initialize(state):
-        I = to_vect(jnp.eye(3))
-        state["F"] = I
-        state["be_bar"] = to_vect(jnp.eye(3), True)
-        return state
+    eps = 2e-2
 
-    state = jax.vmap(initialize)(state)
-    material.set_initial_state_dict(state)
-
-    plt.figure()
     Nsteps = 20
     dt = 0
-    for t in np.linspace(0, 1.0, Nsteps)[1:]:
-        F = np.array(F0)
-        F[:, 0] = 1 + eps * t
+    for t in jnp.linspace(0, 1.0, Nsteps)[1:]:
+        F = jnp.zeros((Nbatch, 9))
+        F = F.at[:, 0].set(1 + eps * t)
+        F = F.at[:, [1, 2]].set(1 - eps / 2 * t)
         P, isv, Ct = material.integrate(F, dt)
-        plt.scatter(eps * t, P[0][0], color="b")
-        material.data_manager.update()
 
-    plt.show()
+        material.data_manager.update()

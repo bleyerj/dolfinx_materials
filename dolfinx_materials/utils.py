@@ -3,7 +3,7 @@
 """
 Utility functions.
 
-@Author  :   Jeremy Bleyer, Ecole des Ponts ParisTech, Navier
+@Author  :   Jeremy Bleyer, Ecole Nationale des Ponts et Chaussées, Navier
 @Contact :   jeremy.bleyer@enpc.fr
 @Time    :   15/05/2023
 """
@@ -12,7 +12,6 @@ import ufl
 from petsc4py import PETSc
 import numpy as np
 from dolfinx.common import Timer
-from functools import lru_cache
 import basix
 
 
@@ -23,6 +22,7 @@ def project(
     dx: ufl.Measure = ufl.dx,
     bcs=[],
     smooth=None,
+    entity_maps=None,
 ):
     """Performs a manual projection of an original function onto a target space.
 
@@ -38,6 +38,8 @@ def project(
         Boundary conditions, by default []
     smooth : float, optional
         Performs a smoothed projection with a Helmholtz filter of size smooth
+    entity_maps: dict
+        Entity maps in case of mixed subdomains
     """
     # Ensure we have a mesh and attach to measure
     V = target_field.function_space
@@ -48,8 +50,8 @@ def project(
     a = ufl.inner(Pv, w) * dx
     if smooth is not None:
         a += smooth**2 * ufl.inner(ufl.grad(Pv), ufl.grad(w)) * dx
-    a = fem.form(a)
-    L = fem.form(ufl.inner(original_field, w) * dx)
+    a = fem.form(a, entity_maps=entity_maps)
+    L = fem.form(ufl.inner(original_field, w) * dx, entity_maps=entity_maps)
 
     # Assemble linear system
     A = fem.petsc.assemble_matrix(a, bcs)
@@ -93,7 +95,7 @@ def create_quadrature_functionspace(domain, deg_quad, shape):
     return fem.functionspace(domain, We)
 
 
-def get_vals(fun):
+def _get_vals(fun):
     """Get values of a function in reshaped form N x dim where dim is the function space dimension"""
     if ufl.shape(fun) == ():
         dim = 1
@@ -102,43 +104,43 @@ def get_vals(fun):
     return fun.x.array.reshape((-1, dim))
 
 
-def cell_to_dofs(cells, V):
-    with Timer("dx_mat:cell_to_dofs"):
-        dofs = fem.locate_dofs_topological(V, V.mesh.geometry.dim, cells)
-        block_size = V.dofmap.bs
-        return cell_to_dofs_cached(tuple(dofs), block_size)
+def _build_cell_to_dofs_map(V):
+    """
+    Build a full cell to DOF map for function space V (including block size)
+    as a dense NumPy array of shape ``(num_cells, dofs_per_cell * block_size)``.
+    """
 
+    # Raw cell->dofs array, shape [num_cells, dofs_per_cell]
+    dofs = np.asarray(V.dofmap.list, dtype=np.int32)
+    num_cells = (
+        V.mesh.topology.index_map(V.mesh.topology.dim).size_local
+        + V.mesh.topology.index_map(V.mesh.topology.dim).num_ghosts
+    )
+    dofs_per_cell = dofs.size // num_cells
+    dofs = dofs.reshape(num_cells, dofs_per_cell)
 
-def cacheRef(f):
-    cache = {}
+    bs = V.dofmap.bs
 
-    def g(*args):
-        # use `id` to get memory address for function argument.
-        cache_key = "-".join(list(map(lambda e: str(id(e)), args)))
-        if cache_key in cache:
-            return cache[cache_key]
-        v = f(*args)
-        cache[cache_key] = v
-        return v
+    # If scalar space: done.
+    if bs == 1:
+        return dofs.copy()
 
-    return g
-
-
-@lru_cache
-def cell_to_dofs_cached(dofs, block_size):
-    return np.asarray(
-        np.kron(np.asarray(dofs), block_size * np.ones(block_size))
-        + np.kron(np.ones(len(dofs)), np.arange(0, block_size)),
-        dtype=np.int32,
+    # Vector/tensor space: expand each scalar DOF into block components.
+    expanded = (
+        (dofs[:, :, None] * bs + np.arange(bs)).reshape(num_cells, -1).astype(np.int32)
     )
 
+    return expanded
 
-def update_vals(fun, array, cells=None):
+
+def _update_vals(fun, array, cells=None):
     if cells is None:
         fun.x.array[:] = array.ravel()
     else:
-        dofs = cell_to_dofs(cells, fun.function_space)
-        fun.x.array[dofs] = array.ravel()
+        arr = array.ravel()
+        bs = len(arr) // len(cells)
+        dofs = np.add.outer(cells * bs, np.arange(bs)).ravel()
+        fun.x.array[dofs] = arr
 
 
 def symmetric_tensor_to_vector(T, T22=0):
@@ -211,11 +213,11 @@ def vector_to_tensor(T):
 
 
 def axi_grad(r, v):
-    """
-    Axisymmetric gradient in cylindrical coordinate (er, etheta, ez) for:
-    * a scalar v(r, z)
-    * a 2d-vectorial (vr(r,z), vz(r, z))
-    * a 3d-vectorial (vr(r,z), 0, vz(r, z))
+    r"""
+    Axisymmetric gradient in cylindrical coordinate $(\boldsymbol{e}_r, \boldsymbol{e}_{\theta}, \boldsymbol{e}_z)$ for:
+      -  a scalar $v(r, z)$
+      - a 2d-vector $(v_r(r,z), v_z(r, z))$
+      - a 3d-vector $(v_r(r,z), 0, v_z(r, z))$
     """
     if ufl.shape(v) == (3,):
         return ufl.as_matrix(
@@ -242,15 +244,15 @@ def grad_3d(u):
 
 
 def symmetric_gradient(g):
-    """Return symmetric gradient components in vector form"""
+    r"""Return symmetric gradient components in vector form."""
     return symmetric_tensor_to_vector(ufl.sym(g))
 
 
-def transformation_gradient(g, dim=3):
-    """Return transformation gradient components in vector form"""
+def deformation_gradient(g, dim=3):
+    r"""Return deformation gradient $\boldsymbol{F}$ components in vector form."""
     return nonsymmetric_tensor_to_vector(ufl.Identity(dim) + g, T22=1)
 
 
 def gradient(g):
-    """Return displacement gradient components in vector form"""
+    """Return displacement gradient components in vector form."""
     return nonsymmetric_tensor_to_vector(g)

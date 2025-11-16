@@ -25,6 +25,7 @@ venv*
 *.pyc
 .ipynb_checkpoints
 .pytest_cache
+/demos/**/*.ipynb
 
 # Build #
 #########
@@ -59,7 +60,9 @@ _minted*
 *.json
 *.vtu
 *.pvtu
+*.bp
 *.pvd
+**/results
 
 # Vscode
 .vscode
@@ -69,7 +72,7 @@ docs/_build
 docs/_static
 docs/_templates
 # ignore copied medias from notebooks
-docss/*.gif
+docs/*.gif
 docs/*.png
 docs/demos
 docs/**/_autosummary
