@@ -224,7 +224,7 @@ class JAXMaterial(Material):
             new_dx_state = jaxmat_to_dolfinx_state(new_jx_state)
             self.data_manager.s1 = new_dx_state
             stress = new_dx_state.get(self.flux_names[0])
-            isv = hcat_mixed(
+            isv = _hcat_mixed(
                 [new_dx_state[key] for key in self.internal_state_variable_names]
             )
         return (
