@@ -272,14 +272,13 @@ import matplotlib.pyplot as plt
 num_iter = average_stats[:, 2]
 constitutive_time = np.diff(average_stats[:, 0], prepend=average_stats[0, 0]) / num_iter
 solver_time = np.diff(average_stats[:, 1], prepend=average_stats[0, 1]) / num_iter
-plt.bar(np.arange(N), constitutive_time, color="crimson", label="Constitutive update")
 plt.bar(
     np.arange(N),
     solver_time,
-    bottom=constitutive_time,
     color="royalblue",
     label="Global solver",
 )
+plt.bar(np.arange(N), constitutive_time, color="crimson", label="Constitutive update")
 plt.xlabel("Loading step")
 plt.ylabel("Wall clock time per global iteration [s]")
 plt.xlim(0, N)
