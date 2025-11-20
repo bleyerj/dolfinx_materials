@@ -204,6 +204,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../api/material.html">Material interfaces</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../api/quadrature_map.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">quadrature_map</span></code></a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../api/solvers.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">solvers</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../api/utils.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">utils</span></code></a></li>
 </ul>
 
     </div>
@@ -550,7 +551,7 @@ document.write(`
             <span class="n">new_dx_state</span> <span class="o">=</span> <span class="n">jaxmat_to_dolfinx_state</span><span class="p">(</span><span class="n">new_jx_state</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">data_manager</span><span class="o">.</span><span class="n">s1</span> <span class="o">=</span> <span class="n">new_dx_state</span>
             <span class="n">stress</span> <span class="o">=</span> <span class="n">new_dx_state</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">flux_names</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
-            <span class="n">isv</span> <span class="o">=</span> <span class="n">hcat_mixed</span><span class="p">(</span>
+            <span class="n">isv</span> <span class="o">=</span> <span class="n">_hcat_mixed</span><span class="p">(</span>
                 <span class="p">[</span><span class="n">new_dx_state</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">internal_state_variable_names</span><span class="p">]</span>
             <span class="p">)</span>
         <span class="k">return</span> <span class="p">(</span>
