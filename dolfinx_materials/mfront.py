@@ -52,6 +52,7 @@ class MFrontMaterial:
         parameters={},
         rotation_matrix=None,
         dt=0,
+        finite_strain_options=None,
     ):
         """
         Parameters
@@ -84,6 +85,10 @@ class MFrontMaterial:
         self.integration_type = (
             mgis_bv.IntegrationType.IntegrationWithConsistentTangentOperator
         )
+        if finite_strain_options is None:
+            self.finite_strain_options = {"stress": "PK1", "tangent": "DPK1_DF"}
+        else:
+            self.finite_strain_options = finite_strain_options
         self.dt = dt
         # Loading the behaviour
         self.load_behaviour(self.path)
@@ -95,9 +100,13 @@ class MFrontMaterial:
         if self.is_finite_strain:
             # finite strain options
             bopts = mgis_bv.FiniteStrainBehaviourOptions()
-            bopts.stress_measure = mgis_bv.FiniteStrainBehaviourOptionsStressMeasure.PK1
-            bopts.tangent_operator = (
-                mgis_bv.FiniteStrainBehaviourOptionsTangentOperator.DPK1_DF
+            bopts.stress_measure = getattr(
+                mgis_bv.FiniteStrainBehaviourOptionsStressMeasure,
+                self.finite_strain_options["stress"],
+            )
+            bopts.tangent_operator = getattr(
+                mgis_bv.FiniteStrainBehaviourOptionsTangentOperator,
+                self.finite_strain_options["tangent"],
             )
             self.behaviour = mgis_bv.load(bopts, path, self.name, self.hypothesis)
         else:
