@@ -75,6 +75,11 @@ class MFrontMaterial:
             a 3D rotation matrix expressing the rotation from the global
             frame to the material frame. The matrix can be spatially variable
             (either UFL matrix or function of Tensor type)
+        finite_strain_options: dict
+            A dictionary with {"stress": "PK1" | "PK2", "tangent": "DPK1_DF" | "DS_DEGL"}
+            specifying if we should work with 1st (PK1) or 2nd (PK2) Piola-Kirchhoff stress.
+            The tangent operator choice should match the corresponding stress choice.
+            Default choice is PK1/F.
         """
         self.path = str(path)  # ensure string in case we use a PosixPath from pathlib
         self.name = name
