@@ -78,7 +78,9 @@ class MFrontMaterial:
         finite_strain_options: dict
             A dictionary with {"stress": "PK1" | "PK2", "tangent": "DPK1_DF" | "DS_DEGL"}
             specifying if we should work with 1st (PK1) or 2nd (PK2) Piola-Kirchhoff stress.
-            The tangent operator choice should match the corresponding stress choice.
+            Attention: the tangent operator choice should match the corresponding stress choice,
+            if one wants to use automatic differentiation. Otherwise, wrong derivatives will be
+            calculated.
             Default choice is PK1/F.
         """
         self.path = str(path)  # ensure string in case we use a PosixPath from pathlib
