@@ -52,6 +52,7 @@ class MFrontMaterial:
         parameters={},
         rotation_matrix=None,
         dt=0,
+        finite_strain_options=None,
     ):
         """
         Parameters
@@ -74,6 +75,13 @@ class MFrontMaterial:
             a 3D rotation matrix expressing the rotation from the global
             frame to the material frame. The matrix can be spatially variable
             (either UFL matrix or function of Tensor type)
+        finite_strain_options: dict
+            A dictionary with {"stress": "PK1" | "PK2", "tangent": "DPK1_DF" | "DS_DEGL"}
+            specifying if we should work with 1st (PK1) or 2nd (PK2) Piola-Kirchhoff stress.
+            Attention: the tangent operator choice should match the corresponding stress choice,
+            if one wants to use automatic differentiation. Otherwise, wrong derivatives will be
+            calculated.
+            Default choice is PK1/F.
         """
         self.path = str(path)  # ensure string in case we use a PosixPath from pathlib
         self.name = name
@@ -84,6 +92,10 @@ class MFrontMaterial:
         self.integration_type = (
             mgis_bv.IntegrationType.IntegrationWithConsistentTangentOperator
         )
+        if finite_strain_options is None:
+            self.finite_strain_options = {"stress": "PK1", "tangent": "DPK1_DF"}
+        else:
+            self.finite_strain_options = finite_strain_options
         self.dt = dt
         # Loading the behaviour
         self.load_behaviour(self.path)
@@ -95,9 +107,13 @@ class MFrontMaterial:
         if self.is_finite_strain:
             # finite strain options
             bopts = mgis_bv.FiniteStrainBehaviourOptions()
-            bopts.stress_measure = mgis_bv.FiniteStrainBehaviourOptionsStressMeasure.PK1
-            bopts.tangent_operator = (
-                mgis_bv.FiniteStrainBehaviourOptionsTangentOperator.DPK1_DF
+            bopts.stress_measure = getattr(
+                mgis_bv.FiniteStrainBehaviourOptionsStressMeasure,
+                self.finite_strain_options["stress"],
+            )
+            bopts.tangent_operator = getattr(
+                mgis_bv.FiniteStrainBehaviourOptionsTangentOperator,
+                self.finite_strain_options["tangent"],
             )
             self.behaviour = mgis_bv.load(bopts, path, self.name, self.hypothesis)
         else:
