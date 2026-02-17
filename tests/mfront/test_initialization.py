@@ -151,6 +151,3 @@ def test_material_properties(domain, V, u, material):
     qmap.update_material_properties()
     qmap.update()
     assert np.allclose(sig.x.array[:3], E * np.array([1e-3, 0, 0]))
-
-
-# test_material_properties()

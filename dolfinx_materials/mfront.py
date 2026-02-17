@@ -13,15 +13,6 @@ import warnings
 import numpy as np
 
 
-def cast_scalar_array(x):
-    arr = np.asarray(x)
-
-    if arr.ndim == 0:  # zero-dimensional array, e.g. np.array(5)
-        return float(arr)  # or arr.item()
-    else:
-        return arr
-
-
 # we filter out brackets from MFront variable names as it messes up with FFCx
 def filter_names(function):
     def new_function(self):
@@ -114,32 +105,35 @@ class MFrontMaterial:
             self.behaviour.setParameter(key, value)
 
     def update_material_property(self, name, values):
+        arr = np.asarray(values)
         for s in [self.data_manager.s0, self.data_manager.s1]:
-            if (
-                isinstance(values, (int, float, np.ndarray))
-                and np.asarray(values).ndim == 0
-            ):
+            if arr.ndim == 0:
                 mgis_bv.setMaterialProperty(
                     s,
                     name,
-                    cast_scalar_array(values),
+                    arr.item(),
                 )
             else:
                 mgis_bv.setMaterialProperty(
                     s,
                     name,
-                    values,
+                    arr,
                     mgis_bv.MaterialStateManagerStorageMode.LocalStorage,
                 )
 
     def _set_external_state_variable(self, state, name, values):
-        if isinstance(values, (int, float, np.ndarray)):
-            mgis_bv.setExternalStateVariable(state, name, cast_scalar_array(values))
+        arr = np.asarray(values)
+        if arr.ndim == 0:
+            mgis_bv.setExternalStateVariable(
+                state,
+                name,
+                arr.item(),
+            )
         else:
             mgis_bv.setExternalStateVariable(
                 state,
                 name,
-                values,
+                arr,
                 mgis_bv.MaterialStateManagerStorageMode.LocalStorage,
             )
 

@@ -1,8 +1,11 @@
 import pathlib
 import numpy as np
+from mpi4py import MPI
 import sys
 import pytest
 import ufl
+from dolfinx import mesh, fem
+from dolfinx_materials.quadrature_map import QuadratureMap
 from dolfinx_materials.mfront import MFrontMaterial
 
 path = pathlib.Path(__file__).parent.absolute()
@@ -34,6 +37,33 @@ def test_mfront_elastoplasticity(mesh_size):
         rtol=1e-2,
         atol=1e-8,
     )
+
+
+def test_external_state_variable():
+    domain = mesh.create_unit_square(MPI.COMM_WORLD, 2, 2)
+    sig0 = 250.0
+    material = MFrontMaterial(
+        path / "src/libBehaviour.so",
+        "Plasticity",
+        material_properties={
+            "YoungModulus": 70e3,
+            "PoissonRatio": 0.3,
+            "HardeningSlope": 1e-6,
+            "YieldStrength": sig0,
+        },
+    )
+
+    V = fem.functionspace(
+        domain,
+        (
+            "P",
+            2,
+        ),
+    )
+    T = fem.Function(V)
+
+    qmap = QuadratureMap(mesh=domain, deg=2, material=material)
+    qmap.register_external_state_variable("Temperature", T)
 
 
 def test_mfront_single_cristal():
