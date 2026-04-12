@@ -7,6 +7,7 @@ Interface to jaxmat behaviors.
 @Contact :   jeremy.bleyer@enpc.fr
 @Time    :   01/11/2025
 """
+
 from dolfinx.common import Timer
 from dolfinx_materials.generic import Material
 import jax
@@ -17,14 +18,12 @@ from jaxmat.materials.behavior import SmallStrainBehavior, FiniteStrainBehavior
 
 
 def get_shape(val):
-    if isinstance(val, Tensor):
-        return val.array_shape[0]
+
+    shape = val.shape
+    if shape == ():
+        return 1
     else:
-        shape = val.shape
-        if shape == ():
-            return 1
-        else:
-            return shape[0]
+        return shape[0]
 
 
 class DataManager:
