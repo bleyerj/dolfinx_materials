@@ -240,14 +240,14 @@ class MaterialStateManager:
         self.internal_state_variables = np.copy(other.internal_state_variables)
 
     def get_flux_index(self, name):
-        index = self._behaviour.flux_names.index(name)
-        pos = np.arange(index, index + self._behaviour.fluxes[name])
-        return pos
+        names = self._behaviour.flux_names
+        start = sum(self._behaviour.fluxes[n] for n in names[:names.index(name)])
+        return np.arange(start, start + self._behaviour.fluxes[name])
 
     def get_gradient_index(self, name):
-        index = self._behaviour.gradient_names.index(name)
-        pos = np.arange(index, index + self._behaviour.gradients[name])
-        return pos
+        names = self._behaviour.gradient_names
+        start = sum(self._behaviour.gradients[n] for n in names[:names.index(name)])
+        return np.arange(start, start + self._behaviour.gradients[name])
 
     def get_internal_state_variable_index(self, name):
 
