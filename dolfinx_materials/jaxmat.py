@@ -133,8 +133,9 @@ def eqx_to_flatdict(module):
 
 @eqx.filter_jit
 def dolfinx_to_jaxmat_state(dx_state, jx_state):
-    eqx.filter_vmap(_dolfinx_to_jaxmat_state, in_axes=0)(dx_state, jx_state)
-    return jx_state
+    new_state = eqx.filter_vmap(_dolfinx_to_jaxmat_state, in_axes=0)(dx_state, jx_state)
+    # dolfinx stores a scalar internal variable as (n, 1): restore the jaxmat state's own shapes
+    return jax.tree.map(lambda new, old: new.reshape(old.shape), new_state, jx_state)
 
 
 class JAXMaterial(Material):
